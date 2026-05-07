@@ -3,39 +3,34 @@
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "headline": "GCC markets mixed as oil prices dip below $80",
-      "summary": "GCC stock markets showed mixed performance on Wednesday, with Saudi Arabia's Tadawul falling 0.3% and Dubai's DFM gaining 0.5%, as Brent crude slipped to $79.80 per barrel amid demand concerns.",
-      "insight": "The divergence reflects ongoing investor caution tied to oil price volatility, though UAE markets remain supported by strong real estate and tourism inflows."
+      "headline": "GCC markets mixed as oil prices hover near $82",
+      "summary": "GCC equity markets saw mixed trading on Wednesday, with Saudi Arabia's Tadawul All Share Index edging up 0.3% while Dubai's DFM fell 0.5%. Brent crude traded at $82.10 per barrel, down 1.2% on demand concerns from China.",
+      "insight": "Oil price volatility continues to drive short-term market swings across the region, but diversified economies like Saudi Arabia are showing relative resilience."
     },
     {
-      "headline": "Saudi non-oil PMI hits 58.2 in April, fastest growth in 8 months",
-      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index rose to 58.2 in April from 57.0 in March, marking the strongest expansion since August 2025, driven by new orders and employment gains.",
-      "insight": "The sustained PMI above 50 signals robust private sector momentum, underpinning Vision 2030 targets and likely boosting Q2 GDP forecasts."
+      "headline": "Saudi non-oil PMI hits 58.2 in April, fastest in 8 months",
+      "summary": "Saudi Arabia's Purchasing Managers' Index for non-oil private sector rose to 58.2 in April from 57.0 in March, marking the strongest expansion since August 2025. New orders and output surged, supported by robust domestic demand.",
+      "insight": "The sustained PMI strength above 50 signals accelerating non-oil growth, underpinning Vision 2030 targets and reducing reliance on hydrocarbon revenues."
     },
     {
-      "headline": "UAE announces $10 billion tech investment fund for AI and cloud",
-      "summary": "The UAE government launched a $10 billion fund to accelerate AI, cloud computing, and advanced manufacturing, with initial allocations to Abu Dhabi's Hub71 and Dubai Internet City.",
-      "insight": "This positions the UAE as a regional tech hub, attracting global talent and diversifying the economy beyond hydrocarbons, with potential spillover effects on fintech and logistics."
+      "headline": "UAE announces $10bn AI investment fund with global partners",
+      "summary": "The UAE launched a $10 billion artificial intelligence investment fund in partnership with global tech firms, aiming to position Abu Dhabi as a leading AI hub. The fund will focus on infrastructure, data centers, and AI startups.",
+      "insight": "This strategic move reinforces the UAE's ambition to diversify beyond oil and attract top-tier technology talent and capital, potentially reshaping the regional tech landscape."
     },
     {
-      "headline": "Regional fintech funding surges 34% to $1.2 billion in Q1 2026",
-      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, up 34% year-on-year, led by Saudi Arabia's $450 million round for digital payments firm Tamara and UAE's Tabby securing $300 million.",
-      "insight": "The funding boom reflects deepening investor appetite for digital financial services, driven by high smartphone penetration and regulatory support across the region."
+      "headline": "GCC fintech funding surges 35% to $1.8bn in Q1 2026",
+      "summary": "Fintech startups across the GCC raised $1.8 billion in Q1 2026, a 35% increase year-on-year, led by Saudi Arabia and UAE. Key deals included a $400 million round for a Riyadh-based digital payments firm.",
+      "insight": "The fintech boom reflects strong investor appetite for digital financial services in a region with high smartphone penetration and supportive regulatory frameworks."
     },
     {
-      "headline": "Saudi Aramco maintains 2026 capex at $50 billion despite oil price dip",
-      "summary": "Saudi Aramco confirmed its $50 billion capital expenditure plan for 2026, focusing on gas expansion and petrochemicals, even as Brent crude averaged $82 in Q1, down from $85 in Q4 2025.",
-      "insight": "Aramco's steady investment signals long-term confidence in energy demand and supports Saudi Arabia's downstream diversification strategy."
+      "headline": "Saudi Aramco maintains $31bn quarterly dividend despite profit dip",
+      "summary": "Saudi Aramco reported a 7% decline in Q1 2026 net profit to $27.5 billion due to lower crude prices, but kept its dividend at $31 billion. The payout supports the Saudi government's budget amid Vision 2030 spending.",
+      "insight": "Aramco's commitment to high dividends underscores its role as a fiscal anchor for Saudi Arabia, though sustained low oil prices could pressure future distributions."
     },
     {
-      "headline": "Qatar's LNG exports hit record 82 million tonnes in 2025",
-      "summary": "QatarEnergy reported record LNG exports of 82 million tonnes in 2025, up 7% from 2024, driven by new production from the North Field expansion project.",
-      "insight": "The record output strengthens Qatar's position as a top global LNG supplier, with further growth expected as the North Field East project ramps up through 2027."
-    },
-    {
-      "headline": "Dubai real estate transactions surge 22% in April to $8.5 billion",
-      "summary": "Dubai's real estate market recorded 12,500 transactions worth $8.5 billion in April 2026, a 22% increase year-on-year, led by off-plan sales in Dubai South and Business Bay.",
-      "insight": "The sustained demand underscores Dubai's appeal as a safe haven for capital, though rising supply could moderate price growth in the second half of 2026."
+      "headline": "QatarEnergy signs 15-year LNG deal with Germany's RWE",
+      "summary": "QatarEnergy inked a 15-year liquefied natural gas supply agreement with German utility RWE, starting in 2027. The deal covers 2 million tonnes per year, boosting Qatar's share in European energy markets.",
+      "insight": "This long-term contract solidifies Qatar's position as a key LNG supplier to Europe amid the continent's push to diversify away from Russian gas."
     }
   ]
 }

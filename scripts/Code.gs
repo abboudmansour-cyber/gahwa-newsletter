@@ -22,6 +22,14 @@
 // ║  runWeeklyRollup()  — Saturday trend analysis                        ║
 // ║  viewRunHistory()   — log last 30 days stats                         ║
 // ╚══════════════════════════════════════════════════════════════════════╝
+// ║                                                                      ║
+// ║  WEBHOOK ENTRY POINT:                                                ║
+// ║  doPost(e)  — Receives JSON payloads from send_to_apps_script.sh     ║
+// ║  doGet(e)   — Health check endpoint                                  ║
+// ║                                                                      ║
+// ║  Expects: { auth_token: "...", ...newsletter_fields }                ║
+// ║  Returns:  JSON with { status: "ok"|"error", ... }                  ║
+// ╚══════════════════════════════════════════════════════════════════════╝
 
 // ════════════════════════════════════════════════════════════════════════
 // CONFIG
@@ -430,3 +438,133 @@ function resetPipeline() {
   props.deleteProperty('RAN_' + new Date().toDateString().replace(/ /g, '_'));
   log('INFO', '\u2705 Reset complete. Run runScoutStep1().');
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// WEBHOOK ENTRY POINT — doPost / doGet
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * doGet — Health check endpoint.
+ * Returns JSON confirming the web app is alive.
+ * Used by monitoring tools and manual URL visits.
+ */
+function doGet() {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status: "ok",
+      app: "Gahwa Newsletter",
+      version: "v5",
+      timestamp: new Date().toISOString()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * doPost — Webhook entry point for external services (e.g. Hetzner cron).
+ *
+ * Called by send_to_apps_script.sh after the operator generates a newsletter.
+ * Validates auth_token against WEBHOOK_SECRET stored in PropertiesService.
+ * Returns structured JSON so the shell script can parse success/failure.
+ *
+ * Expected payload format:
+ * {
+ *   "auth_token": "<shared-secret>",
+ *   "subject": "...",
+ *   "htmlBody": "...",
+ *   "action": "deploy" | "send" | "test"
+ * }
+ */
+function doPost(e) {
+  try {
+    // ── Parse payload ──────────────────────────────────────────────────
+    if (!e || !e.postData || !e.postData.contents) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          status: "error",
+          message: "No POST data received"
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var contents = JSON.parse(e.postData.contents);
+    var secretToken = PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET');
+
+    // ── Security gate ──────────────────────────────────────────────────
+    if (!secretToken) {
+      log('ERROR', 'WEBHOOK_SECRET not set in PropertiesService.');
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          status: "error",
+          message: "Server misconfigured: WEBHOOK_SECRET not set"
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (!contents.auth_token || contents.auth_token !== secretToken) {
+      log('WARN', 'Unauthorized webhook attempt');
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          status: "error",
+          message: "Unauthorized: invalid auth_token"
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // ── Route based on action ──────────────────────────────────────────
+    var action = contents.action || 'send';
+    log('INFO', '📩 Webhook received — action: ' + action);
+
+    if (action === 'deploy') {
+      // Trigger full pipeline run
+      runFullPipeline();
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          status: "ok",
+          message: "Pipeline deploy triggered"
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'send' || action === 'test') {
+      // Send email directly with provided content
+      if (contents.subject && contents.htmlBody) {
+        GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, contents.subject, '', {
+          htmlBody: contents.htmlBody
+        });
+        log('INFO', '📧 Webhook-triggered email sent: ' + contents.subject);
+        return ContentService
+          .createTextOutput(JSON.stringify({
+            status: "ok",
+            message: "Email sent",
+            subject: contents.subject
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          status: "ok",
+          message: "Payload received (no email — missing subject/htmlBody)"
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // ── Unknown action ──────────────────────────────────────────────────
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        status: "ok",
+        message: "Unknown action '" + action + "'. Payload acknowledged."
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    log('ERROR', 'Webhook error: ' + err.message);
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        status: "error",
+        message: err.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+

@@ -5,66 +5,13 @@
 // ╚══════════════════════════════════════════════════════════════════════╝
 
 // ════════════════════════════════════════════════════════════════════════
-// WEBHOOK SECURITY — doPost entry point
+// NOTE: doPost / doGet entry points are now in Code.gs (webhook endpoint).
+// This file only contains the DeepSeek API wrapper and prompt functions.
 // ════════════════════════════════════════════════════════════════════════
-
-/**
- * Webhook entry point for external services (e.g., Hetzner cron).
- * Validates auth_token against WEBHOOK_SECRET stored in PropertiesService.
- * Add WEBHOOK_SECRET via storeSecrets() or manually in Script Properties.
- *
- * This function is a thin GAS adapter. The core logic lives in
- * handleWebhook() so it can be tested independently.
- */
-function doPost(e) {
-  var SECRET_TOKEN = PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET');
-  var contents;
-  try {
-    contents = JSON.parse(e.postData.contents);
-  } catch (parseErr) {
-    log('ERROR', 'Invalid JSON in webhook payload: ' + parseErr.message);
-    return ContentService.createTextOutput("Bad Request").setMimeType(ContentService.MimeType.TEXT);
-  }
-
-  var result = handleWebhook(contents, SECRET_TOKEN);
-  return ContentService.createTextOutput(result.text).setMimeType(ContentService.MimeType.TEXT);
-}
-
-/**
- * Pure-logic webhook handler — no GAS service dependencies.
- * Can be tested without PropertiesService or ContentService.
- *
- * @param {Object} contents     Parsed JSON body from the POST request
- * @param {string} secretToken  The WEBHOOK_SECRET (or null if not configured)
- * @returns {{ text: string, action: string }}
- *          text   — The response body string
- *          action — The action that was taken ('deploy', 'ok', 'unauthorized', 'error')
- */
-function handleWebhook(contents, secretToken) {
-  if (!secretToken) {
-    log('ERROR', 'WEBHOOK_SECRET not set in PropertiesService.');
-    return { text: 'Server Error', action: 'error' };
-  }
-
-  // Security Gate
-  if (!contents || contents.auth_token !== secretToken) {
-    return { text: 'Unauthorized', action: 'unauthorized' };
-  }
-
-  // Route based on action
-  var action = contents.action || '';
-  if (action === 'deploy') {
-    // Trigger a full pipeline run
-    runFullPipeline();
-    return { text: 'Deploy triggered', action: 'deploy' };
-  }
-
-  return { text: 'OK', action: 'ok' };
-}
-
 
 // ════════════════════════════════════════════════════════════════════════
 // API WRAPPER — DeepSeek Anthropic-compatible endpoint
+
 // Base URL: https://api.deepseek.com/anthropic
 // Model:    deepseek-v4-flash (FAST) or deepseek-v4-pro (SMART)
 // ════════════════════════════════════════════════════════════════════════
