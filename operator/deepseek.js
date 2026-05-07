@@ -11,13 +11,19 @@ const API_URL = "https://api.deepseek.com/v1/chat/completions";
 const MODEL = "deepseek-chat";
 const MAX_RETRIES = 1;
 
-const SYSTEM_PROMPT = `You are DeepSeek Reasoner acting as a fully autonomous execution engine.
+/**
+ * Build the system prompt with the current date injected.
+ * This prevents date hallucination by enforcing temporal grounding.
+ */
+function buildSystemPrompt(currentDate) {
+  return `You are DeepSeek Reasoner acting as a fully autonomous execution engine.
 
 Your job is NOT conversation.
 
 Your job is ONLY to produce execution plans that this system executes automatically with zero human intervention.
 
 ---
+SYSTEM CLOCK: Today is ${currentDate}. You MUST use "${currentDate}" as the date for any newsletter content you generate. Do NOT make up or infer any other date.
 
 RULES:
 - You are improving based on past newsletter performance trends. Prioritize GCC relevance, clarity, and conciseness.
@@ -91,6 +97,7 @@ CONSTRAINTS:
 - Do NOT explain reasoning
 - Each fs/docs step must include content or a clear operation
 - Only output JSON`;
+}
 
 const FIX_PROMPT_SUFFIX =
   "\n\n---\nFix output. Return ONLY valid JSON.";
@@ -102,9 +109,10 @@ ${task}
 Generate a plan following the strict OUTPUT FORMAT described in the system prompt.`;
 }
 
-async function callDeepSeek(task, fixMode = false) {
+async function callDeepSeek(task, currentDate, fixMode = false) {
+  const systemPrompt = buildSystemPrompt(currentDate);
   const messages = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
     { role: "user", content: fixMode ? buildUserPrompt(task) + FIX_PROMPT_SUFFIX : buildUserPrompt(task) },
   ];
 
@@ -144,15 +152,18 @@ async function callDeepSeek(task, fixMode = false) {
 /**
  * Parse DeepSeek response into a plan object.
  * Retries ONCE with a "Fix output" instruction if parsing fails.
+ *
+ * @param {string} currentDate - The current date string (YYYY-MM-DD) from the system clock
+ * @param {string} task - The task prompt to send
  */
-export async function askDeepSeek(task) {
+export async function askDeepSeek(currentDate, task) {
   if (!API_KEY) {
     throw new Error("❌ DEEPSEEK_API_KEY is not set in .env");
   }
 
   // ── Attempt 1: normal call ─────────────────────────────────
   console.log("  ⟳ Generating plan...");
-  const text1 = await callDeepSeek(task, false);
+  const text1 = await callDeepSeek(task, currentDate, false);
   const plan1 = tryParse(text1);
 
   if (plan1) {
@@ -161,7 +172,7 @@ export async function askDeepSeek(task) {
 
   // ── Attempt 2: retry with fix instruction ──────────────────
   console.log("  ⟳ Response was invalid JSON. Retrying with fix instruction...");
-  const text2 = await callDeepSeek(task, true);
+  const text2 = await callDeepSeek(task, currentDate, true);
   const plan2 = tryParse(text2);
 
   if (plan2) {

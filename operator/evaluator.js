@@ -66,7 +66,8 @@ Return ONLY valid JSON — no markdown, no code fences, no extra text:
   "issues": []
 }`;
 
-    const result = await askDeepSeek(evalPrompt);
+    const currentDate = newsletter.date || new Date().toISOString().slice(0, 10);
+    const result = await askDeepSeek(currentDate, evalPrompt);
 
     if (result && typeof result === "object") {
       const scores = {

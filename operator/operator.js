@@ -14,12 +14,45 @@ const ROOT = path.resolve(__dirname, "..");
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 process.chdir(ROOT);
 
+// ── CURRENT DATE (from system clock — never hardcoded) ──────────────────────
+const CURRENT_DATE = new Date().toISOString().slice(0, 10); // "2026-05-07"
+
+// ── Startup Health Check ─────────────────────────────────────────────────────
+function validateEnvironment() {
+  const required = [
+    "DEEPSEEK_API_KEY",
+    "APPS_SCRIPT_WEBHOOK_URL",
+  ];
+  const missing = required.filter((key) => !process.env[key]);
+
+  if (missing.length > 0) {
+    console.error("═══════════════════════════════════════════════════════");
+    console.error("❌  ENVIRONMENT VALIDATION FAILED");
+    console.error(`   Missing variables: ${missing.join(", ")}`);
+    console.error("");
+    console.error("   To fix, ensure these are set in operator/.env or");
+    console.error("   passed as environment variables (e.g., via GitHub Secrets).");
+    console.error("═══════════════════════════════════════════════════════");
+    process.exit(1);
+  }
+
+  console.log(`✅ Environment validated — all required variables present`);
+}
+
+// Run health check immediately at module load
+validateEnvironment();
+
 // -----------------------------
 // JOB DEFINITIONS
 // -----------------------------
 const JOBS = {
   "daily-newsletter": `Execute a COMPLETE autonomous pipeline:
+TODAY'S DATE: ${CURRENT_DATE}
+Your newsletter MUST use this date exactly.
+
 Step 1 — docs: Generate today's GCC Morning Brief newsletter in structured JSON format.
+  → Write to FILE: newsletters/gcc-brief-${CURRENT_DATE}.json
+  → The "date" field in the JSON MUST be "${CURRENT_DATE}".
 Step 2 — git: Commit and push all changes to GitHub with a descriptive message.
 Step 3 — push: Trigger the Apps Script delivery webhook to email the newsletter.
 A "complete run" MUST include ALL THREE steps (docs, git, push) in the JSON plan. Do not omit any step.`,
@@ -244,8 +277,14 @@ async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
 // DEEPSEEK PLAN GENERATION
 // -----------------------------
 async function generatePlan(task) {
-  return await askDeepSeek(`
+  // Inject CURRENT_DATE as a REQUIRED constant so DeepSeek never hallucinates dates
+  return await askDeepSeek(
+    CURRENT_DATE,
+    `
 You are an execution planner for an AI newsletter system.
+
+TODAY'S DATE IS ${CURRENT_DATE}. You MUST use this date for all content.
+The "date" field in any newsletter JSON MUST be "${CURRENT_DATE}".
 
 Return ONLY JSON:
 {
@@ -257,7 +296,8 @@ Return ONLY JSON:
 
 TASK:
 ${task}
-`);
+`
+  );
 }
 
 // -----------------------------
@@ -381,6 +421,7 @@ async function run() {
   console.log("\n==================================================");
   console.log("🚀 OPERATOR STARTED");
   console.log("JOB:", jobName);
+  console.log("DATE:", CURRENT_DATE);
   console.log("==================================================");
 
   console.log("\n⏳ Generating plan from DeepSeek...");
