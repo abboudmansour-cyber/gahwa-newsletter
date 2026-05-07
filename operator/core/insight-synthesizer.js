@@ -596,18 +596,19 @@ function updateInsightStatus(existingInsights, newInsights) {
  *   9. Return validated insights for newsletter inclusion
  *
  * @param {Object} fusedOutput - Output from fusion-engine.js fuseSignals()
- * @param {string} runId - Unique run identifier
+ * @param {Object} ctx - ExecutionContext (ONLY source of identity)
  * @returns {Promise<Object>} {
  *   insights: Array<Object>,   // Validated insights (passed all gates)
  *   discarded: Array<Object>,  // Insights that failed the validation gate
  *   store: Object              // Full insight store snapshot
  * }
  */
-export async function synthesizeInsights(fusedOutput, runId = "unknown") {
+export async function synthesizeInsights(fusedOutput, ctx = { runId: "unknown" }) {
   console.log("\n═══════════════════════════════════════════════");
   console.log("🧠 INSIGHT SYNTHESIZER — Generating strategic hypotheses");
   console.log("═══════════════════════════════════════════════");
 
+  const runId = ctx.runId;
   const currentDate = new Date().toISOString().slice(0, 10);
 
   // ── Step 0: Extract signals from fused output ───────────────────────

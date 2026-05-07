@@ -86,24 +86,15 @@ export function initAgentRun(runId) {
 
 /**
  * Mark a specific agent as "complete" in the agent state.
+ * Agent completion status is also written to ctx.agents for in-memory truth.
  *
  * @param {string} agentName - One of "macro", "gcc", "risk", "editor"
- * @param {string} runId - Current run identifier (for verification)
+ * @param {object} ctx - ExecutionContext (uses ctx.runId and writes to ctx.agents)
  * @returns {Object} Updated agent state
  */
-export function markAgentComplete(agentName, runId) {
+export function markAgentComplete(agentName, ctx) {
+  const runId = ctx.runId;
   const state = loadAgentState();
-
-  // ── WARNING ONLY: log mismatch but continue ──────────────────────────
-  // STRICT MODE RELAXATION: Previously this was a hard block that prevented
-  // agent completion on any runId mismatch. This caused deadlocks when
-  // executor.js and operator.js generated different run IDs.
-  // Now: log a warning, apply the mark regardless, and continue.
-  if (state.runId !== runId) {
-    console.warn(`[AGENT-ORCHESTRATOR] ⚠️ Run ID mismatch: state.runId="${state.runId}" !== runId="${runId}". Agent "${agentName}" will still be marked.`);
-    // Continue execution — do not block on ID mismatch
-  }
-
 
   if (!["macro", "gcc", "risk", "editor"].includes(agentName)) {
     console.error(`[AGENT-ORCHESTRATOR] ❌ Unknown agent: "${agentName}"`);
@@ -112,6 +103,11 @@ export function markAgentComplete(agentName, runId) {
 
   state[agentName] = "complete";
   saveAgentState(state);
+
+  // ── Also update ctx.agents for in-memory truth ───────────────────────
+  // ctx is passed by reference, so this mutates the shared context
+  ctx.agents[agentName] = "complete";
+
   console.log(`   ✅ [AGENT-ORCHESTRATOR] Agent "${agentName}" marked complete — run ${runId}`);
   return state;
 }
@@ -127,11 +123,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * are in "complete" state. Returns immediately if already done.
  *
  * @param {string[]} required - Array of agent names to wait for (e.g. ["macro","gcc","risk"])
- * @param {string} runId - Current run identifier
+ * @param {object} ctx - ExecutionContext (read ctx.runId only)
  * @param {number} [timeoutMs=300000] - Max wait time (default 5 min)
  * @returns {Promise<boolean>} true if barrier passed, false if timed out
  */
-export async function waitUntilAllAgentsComplete(required, runId, timeoutMs = 300000) {
+export async function waitUntilAllAgentsComplete(required, ctx, timeoutMs = 300000) {
+  const runId = ctx.runId;
   const startTime = Date.now();
   let attempts = 0;
 
@@ -144,18 +141,10 @@ export async function waitUntilAllAgentsComplete(required, runId, timeoutMs = 30
       return false;
     }
 
+    // ── Read from ctx.agents (in-memory truth) and agent-state.json (disk truth) ──
+    // Since markAgentComplete writes to both, we check disk state for cross-process sync.
+    // ctx.agents is the canonical in-memory record.
     const state = loadAgentState();
-
-    // ── RUN ID CONSISTENCY (WARN ONLY, NO DEADLOCK) ─────────────────────
-    // Previously this looped forever when state.runId !== runId, causing an
-    // infinite reload loop if the agent state file was stale (from a prior run).
-    // Now: log a warning, adopt the state's runId, and continue checking agents.
-    // The actual agents writing to agent-state.json use markAgentComplete which
-    // writes to the state file — the barrier must follow the state file's runId.
-    if (state.runId !== runId) {
-      console.warn(`   ⚠️  [AGENT-ORCHESTRATOR] Barrier: runId mismatch (expected="${runId}", state="${state.runId}"). Adopting state runId to prevent deadlock.`);
-      runId = state.runId;
-    }
 
     const done = required.every((agent) => state[agent] === "complete");
     if (done) {

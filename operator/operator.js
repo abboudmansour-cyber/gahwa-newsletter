@@ -22,6 +22,7 @@ import { initAgentRun } from "./core/agent-orchestrator.js";
 import { fuseSignals, formatSignalContext } from "./core/fusion-engine.js";
 import { synthesizeInsights, formatInsightsForNewsletter } from "./core/insight-synthesizer.js";
 import { generateScenarios, formatScenariosForNewsletter } from "./core/scenario-engine.js";
+import { createExecutionContext } from "./core/context.js";
 
 import { buildEditorialFrame, formatEditorialFrame } from "./core/editor.js";
 
@@ -34,6 +35,12 @@ process.chdir(ROOT);
 
 // ── CURRENT DATE (from system clock — never hardcoded) ──────────────────────
 const CURRENT_DATE = new Date().toISOString().slice(0, 10); // "2026-05-07"
+
+// ── RUN ID GENERATION — single source for ExecutionContext ─────────────────
+// Use RUN_ID from executor.js if available, otherwise generate one deterministically.
+// This is the ONLY place a runId is created in the operator pipeline.
+const RUN_ID = process.env.RUN_ID ||
+  `${process.argv[2] || "daily-newsletter"}-${CURRENT_DATE}`;
 
 // ── JOB NAME — set once at startup, accessible globally ───────────────────
 let JOB_NAME = process.argv[2] || "daily-newsletter";
@@ -144,12 +151,12 @@ function writeFile(filePath, content) {
  * Generate the full newsletter JSON content by calling DeepSeek
  * as a separate content-generation request (not embedded in plan).
  *
- * Uses the pipeline's single runId for all agent barrier tracking,
+ * Uses ctx.runId for all agent barrier tracking,
  * signal fusion, insight synthesis, and scenario generation.
  *
- * @param {string} pipelineRunId - The SINGLE pipeline-level run identifier
+ * @param {object} ctx - ExecutionContext (ONLY source of identity)
  */
-async function generateNewsletterContent(pipelineRunId) {
+async function generateNewsletterContent(ctx) {
   console.log("\n📝 GENERATING NEWSLETTER CONTENT...");
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -160,8 +167,8 @@ async function generateNewsletterContent(pipelineRunId) {
   const editorialBlock = formatEditorialFrame(editorialFrame);
 
   console.log("\n   🧠 Running signal fusion engine (with editorial gatekeeping)...");
-  // ── Pass pipelineRunId to fuseSignals for agent barrier tracking ──
-  const fusedSignals = await fuseSignals(CURRENT_DATE, editorialFrame, { runId: pipelineRunId });
+  // ── Pass ctx to fuseSignals for agent barrier tracking ──
+  const fusedSignals = await fuseSignals(CURRENT_DATE, editorialFrame, ctx);
   const signalContext = formatSignalContext(fusedSignals);
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -169,7 +176,7 @@ async function generateNewsletterContent(pipelineRunId) {
   //          Generates 2-4 structured, signal-grounded hypotheses
   // ═══════════════════════════════════════════════════════════════════════
   console.log("\n   🧠 Running strategic insight synthesis...");
-  const insightResult = await synthesizeInsights(fusedSignals, pipelineRunId);
+  const insightResult = await synthesizeInsights(fusedSignals, ctx);
   const insightNewsletterSection = formatInsightsForNewsletter(insightResult.insights);
   console.log(`   ✅ Insights generated: ${insightResult.insights.length} passed validation gate`);
   if (insightResult.discarded.length > 0) {
@@ -279,7 +286,7 @@ Return ONLY valid JSON — no markdown, no code fences, no extra text.`;
   //          Generates 1-3 structured, signal-grounded scenarios
   // ═══════════════════════════════════════════════════════════════════════
   console.log("\n   📊 Running scenario engine...");
-  const scenarioResult = await generateScenarios(fusedSignals, insightResult.insights, pipelineRunId);
+  const scenarioResult = await generateScenarios(fusedSignals, insightResult.insights, ctx);
   const scenarioNewsletterSection = formatScenariosForNewsletter(scenarioResult.scenarios);
   console.log(`   ✅ Scenarios generated: ${scenarioResult.scenarios.length} passed validation gates`);
   if (scenarioResult.scenarios.length > 0) {
@@ -423,7 +430,7 @@ function validateAppsScriptResponse(res, bodyText) {
  * Reads APPS_SCRIPT_WEBHOOK_URL and WEBHOOK_SECRET from .env.
  * Replicates the logic from scripts/send_to_apps_script.sh natively in JS.
  */
-async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
+async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json") {
   const webhookUrl = process.env.APPS_SCRIPT_WEBHOOK_URL;
   const webhookSecret = process.env.WEBHOOK_SECRET;
 
@@ -460,6 +467,13 @@ async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
   // ── IDEMPOTENCY: inject deliveryId — unique per (job, date, git commit) ──
   payload.deliveryId = getDeliveryId(JOB_NAME);
   console.log(`   🆔 Delivery ID: ${payload.deliveryId}`);
+
+  // ── EXECUTION CONTEXT: tie Apps Script delivery back to ctx.runId ──
+  payload._ctx = {
+    runId: ctx.runId,
+    gitCommit: ctx.metadata.gitCommit,
+    startedAt: ctx.startedAt,
+  };
 
   payload.auth_token = webhookSecret;
 
@@ -585,7 +599,7 @@ ${task}`
 // -----------------------------
 // EXECUTE PLAN
 // -----------------------------
-async function executePlan(plan, pipelineRunId) {
+async function executePlan(plan, ctx) {
   let success = 0;
   let failed = 0;
 
@@ -601,7 +615,7 @@ async function executePlan(plan, pipelineRunId) {
           continue;
         }
 
-        const newsletter = await generateNewsletterContent(pipelineRunId);
+        const newsletter = await generateNewsletterContent(ctx);
 
         // Save to output/latest-newsletter.json
         writeFile(outputPath, JSON.stringify(newsletter, null, 2));
@@ -625,7 +639,7 @@ async function executePlan(plan, pipelineRunId) {
       // ── Handle "push" action (Apps Script delivery) ──────
       if (step.action === "push") {
         const payloadPath = step.path || "output/latest-newsletter.json";
-        const pushed = await pushToAppsScript(payloadPath);
+        const pushed = await pushToAppsScript(ctx, payloadPath);
         if (pushed) {
           console.log(`✅ [STEP SUCCESS] push — ${payloadPath}`);
           success++;
@@ -742,34 +756,59 @@ async function run() {
     console.log("   ℹ️  No existing agent state to sanitize");
   }
 
-  // ── GENERATE SINGLE PIPELINE RUN ID ───────────────────────────
-  // This runId is the SINGLE source of truth for the entire pipeline.
-  // It propagates through executePlan() → generateNewsletterContent()
-  // → fuseSignals() → all agent orchestrator calls.
-  // No component may generate a secondary runId.
-  const pipelineRunId = `${jobName}-${CURRENT_DATE}-${Date.now()}`;
+  // ── STARTUP SANITIZATION: Clear stale runtime state ──────────────
+  // Also sanitize runtime/state.json to remove stale activeRunId,
+  // stale consecutiveFailures, and any orphaned state from prior runs.
+  // This prevents runId mismatch warnings caused by stale state.json.
+  try {
+    const runtimeStatePath = path.resolve(__dirname, "runtime", "state.json");
+    if (fs.existsSync(runtimeStatePath)) {
+      const currentRuntimeState = JSON.parse(fs.readFileSync(runtimeStatePath, "utf-8"));
+      const staleRunId = currentRuntimeState.activeRunId || "";
+      if (staleRunId !== "" && (staleRunId.startsWith("test-run-") || staleRunId.includes("undefined"))) {
+        fs.writeFileSync(runtimeStatePath, JSON.stringify({
+          mode: "NORMAL",
+          activeRunId: "",
+          flags: {
+            recoveryRunning: false,
+            replayRunning: false,
+            lastFailureTimestamp: null,
+            safeMode: false,
+            consecutiveFailures: 0
+          }
+        }, null, 2), "utf-8");
+        console.log("   ✅ Cleared stale runtime state: " + staleRunId);
+      }
+    }
+  } catch {
+    console.log("   ℹ️  No existing runtime state to sanitize");
+  }
 
-  // ── INITIALIZE AGENT STATE with the pipeline's runId ──────────
+  // ── CREATE SINGLE ExecutionContext (ONLY source of identity) ──
+  // This ctx propagates through EVERY downstream module.
+  // No component may generate a secondary runId.
+  const ctx = createExecutionContext({
+    runId: RUN_ID,
+    job: jobName,
+  });
+
+  // ── INITIALIZE AGENT STATE with ctx.runId ─────────────────────
   // This must happen BEFORE fuseSignals() calls markAgentComplete(),
   // otherwise the agent state file will contain stale runIds and
   // trigger "Run ID mismatch" warnings.
-  initAgentRun(pipelineRunId);
+  initAgentRun(ctx.runId);
 
   // ── LOOP ISOLATION: Print mode banner ──────────────────────────────
-  // Every operator.js run prints its mode context for observability.
-  // In REPLAY mode, recovery hooks are disabled so replay cannot
-  // trigger recovery, preventing recursive reinforcement loops.
   const determinedMode = isReplay ? MODES.REPLAY : MODES.NORMAL;
   printModeBanner(determinedMode, `${jobName} — ${CURRENT_DATE}`);
 
   // ── REPLAY MODE GUARD: Do not trigger recovery hooks ──────────────
-  // In --replay mode, operator.js must NOT scan or index failures.
-  // Recovery scanning is the responsibility of executor.js in NORMAL mode.
   console.log("\n==================================================");
   console.log("🚀 OPERATOR STARTED");
   console.log("JOB:", jobName);
   console.log("MODE:", determinedMode);
   console.log("DATE:", CURRENT_DATE);
+  console.log("RUN ID:", ctx.runId);
   if (isReplay) {
     console.log("🔄 REPLAY MODE ACTIVE — skipping regeneration if output exists");
     console.log("   ⛔ Recovery hooks disabled — replay will not trigger recovery");
@@ -789,9 +828,6 @@ async function run() {
   console.log(JSON.stringify(plan, null, 2));
 
   // ── SAFE MODE CHECK + AUTO-RECOVERY ─────────────────────────────
-  // If safe mode is active:
-  //   - If last failure was > 1 hour ago → auto-reset safe mode and allow execution
-  //   - Otherwise → block execution
   const currentState = getState();
   if (currentState.flags && currentState.flags.safeMode) {
     const lastFailure = currentState.flags.lastFailureTimestamp;
@@ -809,7 +845,7 @@ async function run() {
     }
   }
 
-  const result = await executePlan(plan, pipelineRunId);
+  const result = await executePlan(plan, ctx);
 
   // ── CONSECUTIVE FAILURE TRACKING ─────────────────────────────────
   // Track pipeline failures. If 2 consecutive runs have failures,
@@ -886,7 +922,7 @@ async function run() {
 
   console.log("\n⚖️ [TRUTH VERIFICATION] Evaluating pipeline results...");
   const truthResult = evaluateTruth({
-    runId: `${jobName}-${CURRENT_DATE}`,
+    runId: ctx.runId,
     declaredState,
     job: jobName,
     deliveryId,
@@ -932,14 +968,13 @@ async function run() {
       const rawNewsletter = fs.readFileSync(newsletterPath, "utf-8");
       const newsletterJson = JSON.parse(rawNewsletter);
 
-      const runId = `${jobName}-${CURRENT_DATE}-${Date.now()}`;
-
+      // Use ctx.runId — the ONLY source of identity
       console.log("\n🧬 [OPTIMIZER] Running controlled self-optimization cycle...");
 
       // ── Step 1: Process structured feedback (evaluator → feedback.json) ──
       // The processFeedback function handles evaluation, saves to feedback.json,
       // and checks for prompt evolution triggers.
-      const feedbackResult = await processFeedback(runId, newsletterJson, jobName);
+      const feedbackResult = await processFeedback(ctx.runId, newsletterJson, jobName);
 
       console.log(`   Quality score: ${feedbackResult.evaluation.overall}/10`);
       console.log(`   Weaknesses: ${feedbackResult.evaluation.weaknessTags.join("; ")}`);

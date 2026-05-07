@@ -277,20 +277,15 @@ function buildIntelligenceBrief(topSignals) {
  *
  * @param {string} currentDate - ISO date string (YYYY-MM-DD)
  * @param {Object} [editorialFrame] - Optional editorial frame from editor.js
- * @param {Object} [options] - Optional overrides
- * @param {string} [options.runId] - Run identifier for agent barrier tracking
+ * @param {Object} ctx - ExecutionContext (ONLY source of identity)
  * @returns {Promise<Object>} Fused intelligence output
  */
-export async function fuseSignals(currentDate, editorialFrame = null, options = {}) {
-  // ── Use pipeline runId for agent barrier tracking — DO NOT generate a new one ──
-  // The pipelineRunId originates from operator.js run() and flows through
-  // executePlan() → generateNewsletterContent() → fuseSignals() as options.runId.
-  // Every agent state write uses this same ID. No other ID is valid.
-  const agentRunId = options.runId;
+export async function fuseSignals(currentDate, editorialFrame = null, ctx = { runId: "unknown" }) {
+  const runId = ctx.runId;
 
   console.log("\n═══════════════════════════════════════════════");
   console.log("🧠 SIGNAL FUSION ENGINE (Agent-Synchronized)");
-  console.log(`   Agent Run ID: ${agentRunId}`);
+  console.log(`   Run ID: ${runId}`);
   console.log("═══════════════════════════════════════════════");
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -299,7 +294,7 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
   console.log("\n   [AGENT:macro] 📊 Generating MACRO signals...");
   const macroSignals = generateMacroSignals(currentDate, editorialFrame);
   console.log(`   [AGENT:macro] ✅ Generated ${macroSignals.length} macro signals`);
-  markAgentComplete("macro", agentRunId);
+  markAgentComplete("macro", ctx);
 
   // ═══════════════════════════════════════════════════════════════════════
   // AGENT 2: gcc-agent → Generate MARKET + AI/TECH signals → mark complete
@@ -309,7 +304,7 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
   console.log(`   [AGENT:gcc] 🤖 Generating AI/TECH signals...`);
   const aiSignals = generateAITechSignals(currentDate, editorialFrame);
   console.log(`   [AGENT:gcc] ✅ Generated ${marketSignals.length} market + ${aiSignals.length} AI signals`);
-  markAgentComplete("gcc", agentRunId);
+  markAgentComplete("gcc", ctx);
 
   // ═══════════════════════════════════════════════════════════════════════
   // AGENT 3: risk-agent → Generate GEOPOLITICAL signals → mark complete
@@ -317,7 +312,7 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
   console.log("\n   [AGENT:risk] 🌐 Generating GEOPOLITICAL signals...");
   const geoSignals = generateGeopoliticalSignals(currentDate, editorialFrame);
   console.log(`   [AGENT:risk] ✅ Generated ${geoSignals.length} geopolitical signals`);
-  markAgentComplete("risk", agentRunId);
+  markAgentComplete("risk", ctx);
 
   // ═══════════════════════════════════════════════════════════════════════
   // AGENT BARRIER: wait for macro + gcc + risk to all be complete
@@ -326,12 +321,12 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
   console.log("\n   [BARRIER] Waiting for all signal agents to complete...");
   const barrierPassed = await waitUntilAllAgentsComplete(
     ["macro", "gcc", "risk"],
-    agentRunId
+    ctx
   );
 
   if (!barrierPassed) {
     console.error("\n   ❌ [BARRIER] FAILED — agent timeout. Exiting fusion pipeline.");
-    console.error(`   ❌ [BARRIER] Run ID: ${agentRunId}`);
+    console.error(`   ❌ [BARRIER] Run ID: ${runId}`);
     throw new Error(`Agent barrier timeout: macro/gcc/risk did not all complete within timeout`);
   }
 
@@ -359,7 +354,7 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
   console.log("\n   [AGENT:editor] 📋 Running editorial review gate...");
   const { approved: editoriallyApproved, editorialSummary } = runEditorialReview(
     normalized,
-    agentRunId
+    runId
   );
 
   console.log(`   [AGENT:editor] ✅ ${editorialSummary.included} signals APPROVED for fusion`);
@@ -373,7 +368,7 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
     const emptyFused = {
       fusedAt: new Date().toISOString(),
       dateContext: currentDate,
-      agentRunId,
+      runId,
       stats: {
         totalRaw: allRawSignals.length,
         validNormalized: stats.valid,
@@ -394,11 +389,11 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
     };
 
     // Mark editor complete even for empty results
-    markAgentComplete("editor", agentRunId);
+    markAgentComplete("editor", ctx);
 
     console.log("\n═══════════════════════════════════════════════");
     console.log("✅ SIGNAL FUSION COMPLETE (empty — editorial filter)");
-    console.log(`   Agent run: ${agentRunId}`);
+    console.log(`   Run ID: ${runId}`);
     console.log("═══════════════════════════════════════════════\n");
 
     return emptyFused;
@@ -432,7 +427,7 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
   const fused = {
     fusedAt: new Date().toISOString(),
     dateContext: currentDate,
-    agentRunId,
+    runId,
     stats: {
       totalRaw: allRawSignals.length,
       validNormalized: stats.valid,
@@ -457,17 +452,17 @@ export async function fuseSignals(currentDate, editorialFrame = null, options = 
   };
 
   // ── Step 8: Mark editor agent complete ───────────────────────
-  markAgentComplete("editor", agentRunId);
+  markAgentComplete("editor", ctx);
 
   // ── Step 9: Verify ALL agents completed ──────────────────────
-  const allComplete = verifyAgentCompletion(agentRunId, ["macro", "gcc", "risk", "editor"]);
+  const allComplete = verifyAgentCompletion(runId, ["macro", "gcc", "risk", "editor"]);
   if (!allComplete) {
     console.warn(`   ⚠️  [AGENT:editor] Agent completion verification WARNING — some agents not marked complete`);
   }
 
   console.log("\n═══════════════════════════════════════════════");
   console.log("✅ SIGNAL FUSION COMPLETE (Agent-Synchronized)");
-  console.log(`   Agent run:          ${agentRunId}`);
+  console.log(`   Run ID:             ${runId}`);
   console.log(`   All agents done:    ${allComplete}`);
   console.log(`   Editorially approved: ${editorialSummary.included}/${stats.valid}`);
   console.log(`   Top signals:        ${fused.stats.topSignalsCount}`);
@@ -520,7 +515,7 @@ export function formatSignalContext(fusedOutput) {
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ┃ 🧠 GCC INTELLIGENCE SIGNALS — Factual Backbone
 ┃ Generated: ${fusedOutput.fusedAt}
-┃ Agent Run: ${fusedOutput.agentRunId || "N/A"}
+┃ Run ID: ${fusedOutput.runId || "N/A"}
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ┃
 ┃ 🔎 GCC INTELLIGENCE BRIEF (must appear as newsletter section):

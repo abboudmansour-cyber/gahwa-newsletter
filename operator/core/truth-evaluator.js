@@ -73,8 +73,10 @@ function safeExec(command) {
  * Verify Git state:
  *   1. git log -1 — confirm a commit exists locally
  *   2. Detect the current branch name
- *   3. Check if HEAD is pushed to the remote tracking branch
- *      (works for any branch: main, feature/*, etc.)
+ *   3. Confirm that a remote origin is configured
+ *   4. Verify the commit was actually pushed (exists on a remote tracking branch)
+ *      This eliminates false negatives where a local commit exists but wasn't pushed.
+ *      Works for any branch (main, feature/*, etc.) without requiring upstream tracking.
  *
  * @returns {{ verified: boolean, commitHash: string|null, details: object }}
  */
@@ -91,9 +93,17 @@ function verifyGit() {
   const remoteCheck = safeExec("git remote get-url origin 2>/dev/null || echo 'no-remote'");
   const remoteExists = remoteCheck.success && remoteCheck.output !== "no-remote";
 
-  // A commit exists locally AND remote is configured → git is verified.
-  // The actual push was already confirmed by executePlan() returning success.
-  const verified = log.success && remoteExists;
+  // Verify the commit was actually pushed to the remote.
+  // git branch -r --contains <hash> checks if the commit exists on any remote branch.
+  // This eliminates false negatives from the old check that only verified a remote exists.
+  let pushedToRemote = false;
+  if (remoteExists && commitHash) {
+    const remoteContains = safeExec(`git branch -r --contains ${commitHash} 2>/dev/null || true`);
+    pushedToRemote = remoteContains.success && remoteContains.output.trim().length > 0;
+  }
+
+  // A commit exists locally AND was pushed to remote → git is verified.
+  const verified = log.success && remoteExists && pushedToRemote;
 
   return {
     verified,
@@ -102,6 +112,7 @@ function verifyGit() {
       logOutput: log.output,
       branchName,
       remoteExists,
+      pushedToRemote,
     },
   };
 }

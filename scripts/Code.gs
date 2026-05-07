@@ -555,15 +555,6 @@ function doGet(e) {
  */
 function doPost(e) {
   try {
-    // ── Auto-bootstrap WEBHOOK_SECRET if missing ──────────────────────
-    // Must match the value in operator/.env so Node sender is always valid.
-    // This ensures the first POST from the pipeline never fails with
-    // "Server misconfigured: WEBHOOK_SECRET not set".
-    var props = PropertiesService.getScriptProperties();
-    if (!props.getProperty('WEBHOOK_SECRET')) {
-      props.setProperty('WEBHOOK_SECRET', '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
-    }
-
     // ── Parse payload ──────────────────────────────────────────────────
     if (!e || !e.postData || !e.postData.contents) {
       return ContentService
@@ -575,7 +566,21 @@ function doPost(e) {
     }
 
     var contents = JSON.parse(e.postData.contents);
+
+    // ── Auto-bootstrap WEBHOOK_SECRET with persistence verification ────
+    // Must match the value in operator/.env so Node sender is always valid.
+    // We use a verification loop to guard against PropertiesService
+    // eventual consistency delays (rare but observed in Apps Script).
+    var props = PropertiesService.getScriptProperties();
     var secretToken = props.getProperty('WEBHOOK_SECRET');
+    if (!secretToken) {
+      for (var attempt = 0; attempt < 3; attempt++) {
+        props.setProperty('WEBHOOK_SECRET', '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
+        Utilities.sleep(100);
+        secretToken = props.getProperty('WEBHOOK_SECRET');
+        if (secretToken) break;
+      }
+    }
 
     // ── Security gate ──────────────────────────────────────────────────
     if (!secretToken) {

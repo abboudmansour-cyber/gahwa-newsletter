@@ -743,17 +743,18 @@ function updateScenarioStatus(existingScenarios, newScenarios, currentRunId) {
  *
  * @param {Object} fusedOutput - Output from fusion-engine.js fuseSignals()
  * @param {Array} insights - Validated insights from insight-synthesizer.js
- * @param {string} runId - Unique run identifier
+ * @param {Object} ctx - ExecutionContext (ONLY source of identity)
  * @returns {Promise<Object>} {
  *   scenarios: Array<Object>,   // Validated scenarios
  *   store: Object               // Full scenario store snapshot
  * }
  */
-export async function generateScenarios(fusedOutput, insights = [], runId = "unknown") {
+export async function generateScenarios(fusedOutput, insights = [], ctx = { runId: "unknown" }) {
   console.log("\n═══════════════════════════════════════════════");
   console.log("📊 SCENARIO ENGINE — Generating bounded scenario structures");
   console.log("═══════════════════════════════════════════════");
 
+  const runId = ctx.runId;
   const currentDate = new Date().toISOString().slice(0, 10);
 
   // ── Step 0: Extract input data ────────────────────────────────────
