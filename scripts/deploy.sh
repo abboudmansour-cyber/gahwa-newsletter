@@ -151,7 +151,7 @@ run_push() {
     exit 1
   fi
 
-  echo "   Webhook: $APPS_SCRIPT_WEBHOOK_URL"
+  echo "   Webhook: configured ✅"
   echo ""
 
   # Check that JSON payload exists before attempting push

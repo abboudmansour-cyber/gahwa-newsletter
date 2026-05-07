@@ -16,14 +16,14 @@ The newsletter is generated once per day, targeting delivery by 7:00 AM Saudi Ar
 
 | Time (SAST) | Stage | Component | Description |
 |---|---|---|---|
-| 5:30 AM | Trigger | Hetzner cron | Cron job initiates generation |
-| 5:35 AM | Prompt Assembly | `Claude.gs` / Python | Dynamic context injected into master prompt |
-| 5:40 AM | AI Generation | DeepSeek API | Content generated via API call |
-| 5:45 AM | Validation | Python / `Parser.gs` | JSON validated against schema |
-| 5:50 AM | Push to Apps Script | `send_to_apps_script.sh` | Validated JSON sent to Apps Script |
-| 5:55 AM | HTML Rendering | `Render.gs` + `Html.gs` | JSON compiled into HTML email |
-| 6:00 AM | Delivery | `Code.gs` | Email sent to subscriber list |
-| 6:05 AM | Logging | `Utilities.gs` | Delivery status logged |
+| 7:00 AM | Trigger | Hetzner cron | Cron initiates generation via local webhook POST |
+| 7:01 AM | Prompt Assembly | `Claude.gs` / Python | Dynamic context injected into master prompt |
+| 7:02 AM | AI Generation | DeepSeek API | Content generated via API call |
+| 7:05 AM | Validation | Python / `Parser.gs` | JSON validated against schema |
+| 7:06 AM | Push to Apps Script | `send_to_apps_script.sh` | Validated JSON sent to Apps Script |
+| 7:08 AM | HTML Rendering | `Render.gs` + `Html.gs` | JSON compiled into HTML email |
+| 7:09 AM | Delivery | `Code.gs` | Email sent to subscriber list |
+| 7:10 AM | Logging | `Utilities.gs` | Delivery status logged |
 
 ---
 
@@ -31,15 +31,18 @@ The newsletter is generated once per day, targeting delivery by 7:00 AM Saudi Ar
 
 ### 1. Cron Execution
 
-The Hetzner VM has a cron job configured at `/etc/cron.d/gahwa-newsletter`:
+The Hetzner VM has a cron job that sends a local POST to the webhook listener:
 
 ```
-30 5 * * 1-6 root /home/user/gahwa-newsletter/scripts/deploy.sh generate >> /var/log/gahwa.log 2>&1
+0 7 * * * curl -s -X POST http://127.0.0.1:3000/webhook \
+  -H 'Content-Type: application/json' \
+  -d '{"job":"daily-newsletter","trigger":"cron"}' \
+  >> /opt/gahwa-newsletter/operator/logs/cron-daily.log 2>&1
 ```
 
-- Runs Monday through Saturday (6 days/week).
-- Skipped on Sunday (no edition).
-- The cron job triggers `deploy.sh` with the `generate` command.
+- Runs daily at 7:00 AM SAST.
+- The listener handles locking, git pull (if needed), and operator execution.
+- This is the same endpoint that receives GitHub webhooks on push events.
 
 ### 2. Prompt Assembly
 
@@ -184,4 +187,4 @@ If pipeline automation fails, manual generation can be triggered:
 ./scripts/deploy.sh regenerate --reason "schema validation failed"
 ```
 
-Manual overrides require SSH access to the Hetzner VM and are logged in `changelog.md`.
+Manual overrides require direct SSH access to the Hetzner VM (not from CI) and are logged in `changelog.md`.

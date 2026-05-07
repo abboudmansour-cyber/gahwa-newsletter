@@ -1,0 +1,17 @@
+[
+  {
+    "timestamp": "2026-05-07T16:12:01.844Z",
+    "error": "test error",
+    "context": "test"
+  },
+  {
+    "timestamp": "2026-05-07T16:12:27.043Z",
+    "error": "operator.js exited with code 1",
+    "context": "daily-newsletter"
+  },
+  {
+    "timestamp": "2026-05-07T16:14:24.410Z",
+    "error": "test error",
+    "context": "test"
+  }
+]

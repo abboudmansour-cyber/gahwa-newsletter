@@ -1,6 +1,7 @@
 # Gahwa Newsletter — Architecture
 
 > Last updated: 2026-05-07
+> Deployment model: **Event-driven webhook (no SSH from GitHub)**
 
 ## Overview
 
@@ -10,7 +11,7 @@ The architecture follows a lean editorial pipeline with three core infrastructur
 
 1. **AI Generation** — DeepSeek via Hetzner
 2. **Rendering & Delivery** — Google Apps Script
-3. **Orchestration & Storage** — GitHub
+3. **Orchestration** — GitHub (source of truth) + Webhook-driven deployment
 
 ---
 
@@ -18,16 +19,18 @@ The architecture follows a lean editorial pipeline with three core infrastructur
 
 Hetzner provides the compute layer for running AI generation workloads.
 
-- A Linux VM hosts the newsletter generation scripts.
-- The VM runs scheduled cron jobs to trigger daily newsletter generation.
+- A Linux VM hosts the newsletter generation scripts and the webhook listener daemon.
+- The VM runs a persistent systemd service (`gahwa-listener.service`) on port 3000.
+- Pushes to GitHub trigger a webhook → server pulls latest code → runs operator.
+- A cron job at 7:00 AM AST also triggers the pipeline via local POST.
 - Python scripts orchestrate calls to the DeepSeek API for content generation.
 - The VM is lightweight (CX22 or equivalent), costing ~€5–8/month.
 - No database is hosted on Hetzner; output is pushed directly to Apps Script.
-- SSH keys are used for secure access; no persistent secrets are stored on disk.
+- The VM has its own SSH deploy key (for `git pull`), configured separately from CI.
 
 **Key scripts running on Hetzner:**
 - `scripts/setup_hetzner.sh` — Initial VM provisioning
-- `scripts/deploy.sh` — Deployment orchestration
+- `scripts/deploy.sh` — Newsletter generation orchestration
 - `scripts/send_to_apps_script.sh` — Pushing generated content to Apps Script
 
 ---
@@ -55,11 +58,11 @@ Google Apps Script handles the rendering, templating, and email delivery layer.
 
 ## GitHub Role
 
-GitHub serves as the source of truth, CI/CD pipeline, and collaboration layer.
+GitHub serves as the source of truth and triggers deployment via webhooks.
 
 - All scripts, templates, and configuration live in the repository.
-- GitHub Actions (`.github/workflows/deploy.yml`) automates deployment.
-- Changes to `main` trigger automatic deployment to Hetzner and Apps Script.
+- Pushes to `main` trigger a GitHub webhook → Hetzner listener → code pull + pipeline execution.
+- No SSH keys are stored in GitHub for deployment. No appleboy/SSH actions.
 - The `/docs` directory acts as the project's permanent memory system.
 - `.clinerules` defines AI behavior and editorial constraints.
 
@@ -110,7 +113,7 @@ The content generation pipeline operates in three stages:
 
 ### Stage 2: Content Generation
 - The master prompt (`newsletter_prompt.md`) is loaded and hydrated with current context.
-- DeepSeek API is called from the Hetzner VM using Python.
+- DeepSeek API is called from the Hetzner VM using Node.js.
 - The AI generates structured JSON output adhering to editorial rules (`editorial_style.md`).
 
 ### Stage 3: Parsing & Validation
@@ -120,14 +123,47 @@ The content generation pipeline operates in three stages:
 
 ---
 
+## Execution Daemon (Webhook-Driven Deployment)
+
+All execution triggers (GitHub webhooks, cron) route through a persistent **systemd service** (`gahwa-listener.service`) that provides deployment and reliability:
+
+```
+GitHub push ──▶ Webhook POST ──▶ gahwa-listener.service (port 3000)
+                                      │
+                                      ├── Validate: push event + main branch + HMAC sig
+                                      ├── git fetch origin main && git reset --hard origin/main
+                                      ├── acquireLock() — anti-duplicate
+                                      ├── runJob("daily-newsletter") → spawns operator.js
+                                      ├── operator.js → DeepSeek → Apps Script
+                                      └── releaseLock()
+
+Cron (7 AM) ──▶ Local POST ──────────┘
+```
+
+**8 reliability guarantees:**
+1. **Execution Lock** — Prevents concurrent runs via `/tmp/gahwa-lock.json` (10 min TTL)
+2. **Event Validation** — Only `push` events trigger deployment (not ping, not issues)
+3. **Branch Guard** — Non-main branch pushes are silently ignored
+4. **Webhook Security** — HMAC-SHA256 signature verification via `GITHUB_WEBHOOK_SECRET`
+5. **Retry Mechanism** — Up to 2 retries with 10s delay on failure
+6. **Dead Letter Queue** — Failures logged to `logs/failed.json`
+7. **Success Log** — Successful runs logged to `logs/success.json`
+8. **Lock Cleanup** — Lock ALWAYS released via `try/finally`, even on crash
+
+---
+
 ## Delivery Flow
 
-1. **Cron Trigger** → Hetzner VM cron job fires at scheduled time (e.g., 6:00 AM SAST).
-2. **Generation** → Python script calls DeepSeek API with the master prompt.
-3. **Push** → Generated JSON is sent to Apps Script via `send_to_apps_script.sh`.
-4. **Render** → `Parser.gs` structures the content; `Render.gs` builds the HTML email.
-5. **Send** → Email is dispatched to the subscriber list via Google Workspace (Gmail).
-6. **Log** → Delivery status and metrics are logged for performance tracking.
+1. **GitHub Push** → Developer pushes to `main` → GitHub sends webhook to Hetzner.
+2. **Webhook Received** → Listener validates event type, branch, and HMAC signature.
+3. **Code Pull** → `git fetch origin main && git reset --hard origin/main` (deployment).
+4. **Lock Acquired** → Prevents concurrent runs.
+5. **Generation** → `operator.js` calls DeepSeek API to generate structured newsletter JSON.
+6. **Push** → Generated JSON is sent to Apps Script via `pushToAppsScript()`.
+7. **Render** → `Parser.gs` structures the content; `Render.gs` builds the HTML email.
+8. **Send** → Email is dispatched to the subscriber list via Google Workspace (Gmail).
+9. **Log** → Listener logs success to `success.json` or failure to `failed.json`.
+10. **Lock Release** → Lock ALWAYS released, even on execution failure.
 
 ---
 
@@ -145,9 +181,9 @@ The architecture intentionally eliminates reliance on a local macOS development 
 ### How It Was Achieved
 1. All generation scripts were migrated from local execution to the Hetzner VM.
 2. Cron replaced manual triggering (e.g., `npm run generate` on a dev machine).
-3. GitHub Actions handles CI/CD from a central location, not a local workstation.
+3. GitHub webhooks replace SSH-based CI/CD for deployment.
 4. Apps Script web app receives content directly from Hetzner — no local relay server needed.
-5. Development remains on local machines; production runs fully serverless (Hetzner + Apps Script + GitHub).
+5. Development remains on local machines; production runs fully event-driven (GitHub webhook → Hetzner → Apps Script).
 
 ### Current Local Mac Role
 - Development and testing only.
@@ -160,20 +196,30 @@ The architecture intentionally eliminates reliance on a local macOS development 
 ## Architecture Diagram (Text)
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────────┐
-│   Hetzner VM │────▶│  DeepSeek    │────▶│  Apps Script     │
-│  (Cron Job)  │     │  API (AI)    │     │  (Render + Send) │
-└──────────────┘     └──────────────┘     └────────┬─────────┘
-                                                   │
-                                                   ▼
-                                           ┌──────────────────┐
-                                           │  Gmail /         │
-                                           │  Subscribers     │
-                                           └──────────────────┘
-                           ┌──────────────────────────────────────┐
-                           │         GitHub (Source of Truth)     │
-                           │  ┌──────┐ ┌──────┐ ┌─────────────┐  │
-                           │  │Actions│ │Scripts│ │  /docs      │  │
-                           │  └──────┘ └──────┘ └─────────────┘  │
-                           └──────────────────────────────────────┘
+Developer pushes to main
+        │
+        ▼
+┌──────────────────┐      ┌──────────────────┐
+│   GitHub         │─────▶│   Hetzner VM     │
+│  (Source of Truth)│     │  (Webhook Svr)   │
+│  No SSH deploy   │      │  Port 3000       │
+└──────────────────┘      └────────┬─────────┘
+                                   │
+                                   ▼
+                          ┌──────────────────┐
+                          │  git pull origin  │
+                          │  main (deploy)    │
+                          └────────┬─────────┘
+                                   │
+                                   ▼
+                          ┌──────────────────┐     ┌──────────────────┐
+                          │  operator.js      │────▶│  DeepSeek API    │
+                          │  (AI Generation)  │     │  (Content Gen)   │
+                          └────────┬─────────┘     └──────────────────┘
+                                   │
+                                   ▼
+                          ┌──────────────────┐     ┌──────────────────┐
+                          │  Apps Script     │────▶│  Gmail /         │
+                          │  (Render + Send) │     │  Subscribers     │
+                          └──────────────────┘     └──────────────────┘
 ```

@@ -1,0 +1,23 @@
+[Unit]
+Description=Gahwa Newsletter — Execution Daemon (Self-Healing Webhook Listener)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/gahwa-newsletter
+ExecStart=/usr/bin/node /opt/gahwa-newsletter/operator/server.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/opt/gahwa-newsletter/operator/logs/listener-stdout.log
+StandardError=append:/opt/gahwa-newsletter/operator/logs/listener-stderr.log
+Environment=NODE_ENV=production
+
+# Security hardening
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/gahwa-newsletter /tmp
+
+[Install]
+WantedBy=multi-user.target

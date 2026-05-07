@@ -94,25 +94,66 @@ if grep -q "your-webhook-secret" /opt/gahwa-newsletter/operator/.env 2>/dev/null
   echo "✅ Webhook Secret generated: ${SECRET}"
 fi
 
-# 4. SSH Key setup for GitHub push
+# 4. Generate GitHub Webhook Secret (if not already set)
+if grep -q "your-webhook-secret-hex" /opt/gahwa-newsletter/operator/.env 2>/dev/null; then
+  GH_SECRET=$(openssl rand -hex 32)
+  sed -i "s/GITHUB_WEBHOOK_SECRET=.*/GITHUB_WEBHOOK_SECRET=${GH_SECRET}/" /opt/gahwa-newsletter/operator/.env
+  echo "✅ GitHub Webhook Secret generated: ${GH_SECRET}"
+  echo "   IMPORTANT: Add this secret to GitHub repo Settings → Webhooks → (your webhook) → Secret"
+fi
+
+# 5. SSH Key setup for git pull (server-side only, NOT used by GitHub Actions)
+# This SSH key is needed so the server can git pull from GitHub via webhook trigger.
+echo ""
+echo "=== Git Authentication Setup ==="
+echo "The Hetzner server needs an SSH deploy key to pull code from GitHub."
+echo "This key is NOT stored in GitHub Actions — it lives only on the server."
+
 if [ ! -f ~/.ssh/id_ed25519 ]; then
-  echo "🔑 Generating SSH key for GitHub deploy..."
+  echo "🔑 Generating SSH key for git pull..."
   ssh-keygen -t ed25519 -C "gahwa-hetzner-$(hostname)" -f ~/.ssh/id_ed25519 -N ""
   echo ""
-  echo "⚠️  ADD THIS SSH KEY TO YOUR GITHUB DEPLOY KEYS:"
+  echo "⚠️  ADD THIS SSH KEY AS A GITHUB DEPLOY KEY:"
   cat ~/.ssh/id_ed25519.pub
   echo ""
   echo "   Go to: https://github.com/${GITHUB_USER}/gahwa-newsletter/settings/keys"
-  echo "   Add as deploy key with write access."
+  echo "   → Add deploy key with read/write access"
+  echo ""
+  echo "   ⚠️  DO NOT add this key to GitHub Actions secrets."
+  echo "      It is for server-side git pull only."
 else
-  echo "✅ SSH key exists at ~/.ssh/id_ed25519"
+  echo "✅ SSH deploy key exists at ~/.ssh/id_ed25519"
+  echo "   (verify it's added as a deploy key in GitHub settings)"
 fi
 
-# 5. Configure git for the repo
+# 6. Configure git for the repo
 cd /opt/gahwa-newsletter
 git config user.email "gahwa-bot@hetzner.local"
 git config user.name "Gahwa Daily Bot"
 git remote set-url origin git@github.com:${GITHUB_USER}/gahwa-newsletter.git
+echo "✅ Git remote configured: git@github.com:${GITHUB_USER}/gahwa-newsletter.git"
+echo "   (server will use its own SSH deploy key on git pull)"
+
+# ── Systemd Service for Webhook Listener ──────────────────────────────
+
+echo ""
+echo "=== Installing Gahwa Listener (systemd) ==="
+
+# Copy systemd service file
+cp /opt/gahwa-newsletter/operator/gahwa-listener.service /etc/systemd/system/gahwa-listener.service
+chmod 644 /etc/systemd/system/gahwa-listener.service
+
+# Create logs directory
+mkdir -p /opt/gahwa-newsletter/operator/logs
+
+# Reload systemd, enable, and start the service
+systemctl daemon-reload
+systemctl enable gahwa-listener
+systemctl restart gahwa-listener
+
+echo "✅ Gahwa Listener service installed and started."
+echo "   Status: systemctl status gahwa-listener"
+echo "   Logs:   /opt/gahwa-newsletter/operator/logs/listener-stdout.log"
 
 # ── Cron Installation ──────────────────────────────────────────────────
 
@@ -123,12 +164,24 @@ echo "=== Installing Daily Cron ==="
 (crontab -l 2>/dev/null | grep -v "gahwa-newsletter" | grep -v "daily-runner" | grep -v "operator.js") | crontab - 2>/dev/null || true
 
 # Install new cron: runs at 7:00 AM Saudi time (UTC+3)
-CRON_LINE="0 7 * * * cd /opt/gahwa-newsletter && /usr/bin/node /opt/gahwa-newsletter/operator/daily-runner.js >> /opt/gahwa-newsletter/operator/logs/cron-daily.log 2>&1"
+# This now sends a POST to the local listener daemon instead of running directly
+CRON_LINE="0 7 * * * curl -s -X POST http://127.0.0.1:3000/webhook -H 'Content-Type: application/json' -d '{\"job\":\"daily-newsletter\",\"trigger\":\"cron\"}' >> /opt/gahwa-newsletter/operator/logs/cron-daily.log 2>&1"
 
 (crontab -l 2>/dev/null; echo "${CRON_LINE}") | crontab -
 
 echo "✅ Cron installed: 0 7 * * * (7:00 AM daily)"
-echo "   Command: cd /opt/gahwa-newsletter && node operator/daily-runner.js"
+echo "   Command: curl -X POST http://127.0.0.1:3000/webhook (triggers gahwa-listener.service)"
+echo "   The listener daemon handles locking, retries, and logging."
+echo ""
+echo "   IMPORTANT: The old cron job ran operator.js directly."
+echo "   The new cron job sends a POST to the local listener daemon"
+echo "   (gahwa-listener.service) which handles duplicate protection,"
+echo "   retries, dead letter queue, and success logging."
+echo ""
+echo "   To bypass the listener for manual runs:"
+echo "     node operator/server.js --once --job=daily-newsletter"
+echo "   or point curl directly at the listener:"
+echo "     curl -X POST http://127.0.0.1:3000/webhook -d '{\"job\":\"daily-newsletter\"}'"
 
 # ── Test Config File ───────────────────────────────────────────────────
 

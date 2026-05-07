@@ -1,0 +1,30 @@
+[
+  {
+    "runId": "2026-05-07-s4fp5",
+    "timestamp": "2026-05-07T16:14:49.544Z",
+    "status": "success",
+    "job": "test-job",
+    "durationMs": 1234,
+    "stepSummary": {
+      "deepseek": true,
+      "operator": true,
+      "git": true,
+      "appsScript": true
+    },
+    "error": null
+  },
+  {
+    "runId": "2026-05-07-sqhrw",
+    "timestamp": "2026-05-07T16:14:49.546Z",
+    "status": "failed",
+    "job": "test-job",
+    "durationMs": 567,
+    "stepSummary": {
+      "deepseek": false,
+      "operator": false,
+      "git": false,
+      "appsScript": false
+    },
+    "error": "Something broke"
+  }
+]

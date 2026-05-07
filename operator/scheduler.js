@@ -11,14 +11,29 @@
  *   node scheduler.js
  */
 
+import { ensureExecutionContext } from "./core/runtime.js";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import { validateEnvironment, logWebhookStatus } from "./core/validate-env.js";
+
+// ── Bootstrap execution context (MUST be called before ANY other logic) ─────
+ensureExecutionContext();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
 const SCHEDULE_FILE = path.join(__dirname, "schedule.json");
 const LOCK_FILE = path.join(__dirname, ".scheduler.lock");
+
+// ── Load environment variables ──────────────────────────────────────────────
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+// ── Startup Health Check ─────────────────────────────────────────────────────
+validateEnvironment();
+logWebhookStatus();
+
 
 async function run() {
   console.log("=".repeat(60));
@@ -76,10 +91,12 @@ async function run() {
 
     try {
       // Execute operator.js with the job's task
+      // cwd is set to ROOT (project root) so operator.js's runtime.js
+      // confirms it's in the correct execution context
       const result = execSync(
         `node ${path.join(__dirname, "operator.js")} "${job.task}"`,
         {
-          cwd: __dirname,
+          cwd: ROOT,
           stdio: "inherit",
           env: { ...process.env },
         }

@@ -74,7 +74,7 @@ fi
 
 echo "🚀 Gahwa Newsletter — Push to Apps Script"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "   Webhook: $WEBAPP_URL"
+echo "   Webhook: configured ✅"
 echo "   Payload: $JSON_FILE"
 echo ""
 

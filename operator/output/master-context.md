@@ -67,7 +67,8 @@ Developer → GitHub → Hetzner VPS (git pull + clasp push) → Google Apps Scr
 
 ### Layer 3: Orchestration & Storage (GitHub)
 - **Repository:** `abboudmansour-cyber/gahwa-newsletter`
-- **CI/CD:** `.github/workflows/deploy.yml` — GitHub Actions → SSH → Hetzner → clasp push
+- **CI/CD:** `.github/workflows/deploy.yml` — CI only (no SSH, no deploy)
+- **Deployment:** GitHub webhook → Hetzner listener → `git pull` → operator
 - **Docs memory system:** `/docs` directory with 7 curated files
 - **Operator scripts:** `/operator` directory with autonomous execution engine
 
@@ -155,7 +156,7 @@ Developer → GitHub → Hetzner VPS (git pull + clasp push) → Google Apps Scr
 - **Source of truth:** GitHub repo `gahwa-newsletter`
 - **Deployment authority:** Hetzner VPS (`/opt/gahwa`)
 - **Runtime target:** Google Apps Script (script ID: `1s9_k1zGgRgCzxWRLtjzoPVAPEKUuCQ9GL7PofLPkRQKqTtdLAteL6sY5`)
-- **CI/CD:** GitHub Actions → SSH → Hetzner → `git pull` → `clasp push`
+- **CI/CD:** GitHub Actions → CI only → Webhook → Hetzner → `git pull` → `clasp push`
 
 ---
 
@@ -171,7 +172,7 @@ Developer → GitHub → Hetzner VPS (git pull + clasp push) → Google Apps Scr
 | `scripts/Html.gs` | Bundled templates (2550 lines: Scout + Gahwa CSS/rendering) |
 | `scripts/Aggregatenewsletters.js` | RSS (20 categories) + Gmail aggregator |
 | `scripts/appsscript.json` | GAS manifest (Asia/Riyadh, V8 runtime) |
-| `.github/workflows/deploy.yml` | GitHub Actions → SSH deploy |
+| `.github/workflows/deploy.yml` | CI only (no SSH deploy) |
 | `tests/mockTest.gs` | Webhook test harness (5 test cases) |
 | `tests/test_deepseek_dryrun.py` | DeepSeek endpoint connectivity test |
 | `tests/test_lead_tracking_api.py` | CRM leads API audit (8 leads) |
@@ -396,11 +397,11 @@ node operator/sync-drive.js
 ### Key Integrations
 | System | Direction | Protocol |
 |--------|-----------|----------|
-| GitHub ↔ Hetzner | Bidirectional | SSH + git pull/push |
+| GitHub ↔ Hetzner | One-way | GitHub webhook → server git pull |
 | Hetzner → Apps Script | One-way | HTTP POST (webhook) |
 | Local → Google Drive | One-way | Google Drive API v3 |
 | Apps Script → Gmail | One-way | GmailApp.sendEmail() |
-| GitHub Actions → Hetzner | One-way | SSH deploy |
+| GitHub Actions → Hetzner | Not used | CI only; deployment via webhook |
 
 
 ---

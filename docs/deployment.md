@@ -1,15 +1,37 @@
 # Gahwa Newsletter — Deployment Guide
 
 > Last updated: 2026-05-07
+> Deployment model: **Event-driven webhook (no SSH from GitHub)**
 
 ## Overview
 
-Gahwa Newsletter uses a three-layer deployment strategy:
-1. **Hetzner VM** — Compute and AI generation
-2. **Google Apps Script** — Rendering and delivery
-3. **GitHub Actions** — CI/CD automation
+Gahwa Newsletter uses a fully event-driven deployment model:
 
-This document covers the setup, configuration, and deployment steps for each layer.
+1. **GitHub push** → triggers webhook to Hetzner
+2. **Hetzner VM** — Receives webhook, pulls code, runs AI generation
+3. **Google Apps Script** — Rendering and delivery
+
+**Key design decision:** GitHub Actions no longer SSHes into anything. Deployment is driven entirely by GitHub webhooks → Hetzner listener.
+
+---
+
+## Architecture
+
+```
+Developer pushes to main
+        ↓
+GitHub sends webhook (HTTP POST)
+        ↓
+Hetzner listener (port 3000) receives webhook
+        ↓
+Validates: push event + main branch + HMAC signature
+        ↓
+git pull origin main (deployment)
+        ↓
+Runs operator.js daily-newsletter
+        ↓
+Sends generated content to Apps Script
+```
 
 ---
 
@@ -17,24 +39,21 @@ This document covers the setup, configuration, and deployment steps for each lay
 
 ### Provisioning
 
-The Hetzner VM is provisioned using `scripts/setup_hetzner.sh`. This script:
-
-1. Updates the system packages.
-2. Installs Python 3, pip, git, curl, and jq.
-3. Clones the repository from GitHub.
-4. Sets up Python virtual environment and installs dependencies.
-5. Configures cron jobs for daily generation.
-6. Sets up log rotation for newsletter generation logs.
-
-**To provision a new VM:**
+The Hetzner VM is provisioned using `scripts/setup_hetzner.sh`:
 
 ```bash
-# SSH into the Hetzner VM
-ssh root@<hetzner-ip>
-
-# Run the setup script
-bash /home/user/gahwa-newsletter/scripts/setup_hetzner.sh
+# On the Hetzner VM
+bash /opt/gahwa-newsletter/scripts/setup_hetzner.sh
 ```
+
+This script:
+1. Updates system packages
+2. Installs Node.js, npm, git, curl, jq
+3. Clones the repository from GitHub
+4. Installs Node.js operator dependencies
+5. Installs the `gahwa-listener` systemd service
+6. Configures cron for daily 7:00 AM trigger
+7. Sets up log rotation
 
 ### VM Specifications
 
@@ -47,65 +66,89 @@ bash /home/user/gahwa-newsletter/scripts/setup_hetzner.sh
 | Cost | ~€5–8/month |
 | Backup | Weekly snapshot (optional, ~€1/month) |
 
-### SSH Key Management
+### Git Authentication on Hetzner
 
-- SSH keys are used for all access (password authentication disabled).
-- The deployment SSH key is stored as a GitHub secret (`HETZNER_SSH_KEY`).
-- No persistent secrets are stored on the VM filesystem.
-- API keys are injected as environment variables at runtime.
+The Hetzner server needs **its own SSH deploy key** (not from GitHub Actions) to pull code:
+
+```bash
+# On the Hetzner VM
+cd /opt/gahwa-newsletter
+git remote set-url origin git@github.com:abboudmansour-cyber/gahwa-newsletter.git
+
+# If no SSH key exists yet, generate one:
+ssh-keygen -t ed25519 -C "gahwa-hetzner-deploy"
+cat ~/.ssh/id_ed25519.pub
+# → Add this key as a deploy key in GitHub repo Settings → Deploy Keys
+```
 
 ### Cron Configuration
 
-Cron is configured at `/etc/cron.d/gahwa-newsletter`:
+Cron triggers the local listener (not direct operator execution):
 
 ```
-30 5 * * 1-6 root /home/user/gahwa-newsletter/scripts/deploy.sh generate >> /var/log/gahwa.log 2>&1
+0 7 * * * curl -s -X POST http://127.0.0.1:3000/webhook \
+  -H 'Content-Type: application/json' \
+  -d '{"job":"daily-newsletter","trigger":"cron"}' \
+  >> /opt/gahwa-newsletter/operator/logs/cron-daily.log 2>&1
 ```
-
-To modify: SSH into the VM and edit the file directly, then update this document.
 
 ---
 
-## GitHub Integration
+## GitHub Webhook Configuration
 
-### Repository Configuration
+### Webhook Setup
 
-The repository at `gahwa-newsletter` is the single source of truth. All deployment artifacts originate from the `main` branch.
+Configure in GitHub repo **Settings → Webhooks → Add webhook**:
 
-### GitHub Secrets
-
-The following secrets must be configured in the repository:
-
-| Secret | Purpose |
+| Field | Value |
 |---|---|
-| `HETZNER_SSH_KEY` | SSH private key for Hetzner VM access |
-| `HETZNER_HOST` | IP address or hostname of Hetzner VM |
-| `HETZNER_USER` | SSH username (typically `root` or `user`) |
-| `APPS_SCRIPT_TOKEN` | Access token for Apps Script API |
-| `DEEPSEEK_API_KEY` | API key for DeepSeek content generation |
-| `CLASP_JSON` | Content of `.clasp.json` for Apps Script push |
+| **Payload URL** | `http://<HETZNER_IP>:3000/webhook` |
+| **Content type** | `application/json` |
+| **Secret** | Match `GITHUB_WEBHOOK_SECRET` in `operator/.env` |
+| **Events** | **Just the push event** (uncheck everything else) |
+| **Active** | ✅ Yes |
 
-### GitHub Actions Workflow
+### Webhook Payload Processing
 
-The CI/CD pipeline is defined in `.github/workflows/deploy.yml`:
+When the server receives a push webhook:
 
-**Trigger:** Push to `main` branch.
+1. **Validate event:** Must be `push` (other events like `ping` are ignored)
+2. **Validate branch:** Must be `main` — pushes to other branches are silently ignored
+3. **Verify signature:** HMAC-SHA256 against `GITHUB_WEBHOOK_SECRET`
+4. **Acquire lock:** Prevents concurrent runs
+5. **Git pull:** `git fetch origin main && git reset --hard origin/main`
+6. **Run operator:** `node operator/operator.js daily-newsletter`
+7. **Release lock**
 
-**Workflow stages:**
-1. Checkout repository.
-2. Install dependencies.
-3. Run tests (`tests/test_deepseek_dryrun.py`, `tests/test_lead_tracking_api.py`).
-4. Deploy scripts to Hetzner VM (rsync via SSH).
-5. Push Apps Script changes using clasp (`clasp_push.py`).
-6. Verify deployment health.
+### HMAC Signature Verification
 
-### Branch Strategy
+The server validates every webhook payload using HMAC-SHA256:
 
-| Branch | Purpose |
-|---|---|
-| `main` | Production-ready code. All deployments from here. |
-| `develop` | Feature development and testing. |
-| `feature/*` | Individual feature branches. |
+```bash
+# On Hetzner, generate a secret:
+openssl rand -hex 32
+
+# Set in operator/.env:
+GITHUB_WEBHOOK_SECRET=your-32-byte-hex-secret
+
+# Enter the same secret in GitHub:
+# Repo Settings → Webhooks → (your webhook) → Secret
+```
+
+Without a configured secret, the server logs a warning and allows requests. For production, always set the secret.
+
+---
+
+## GitHub Actions (CI Only)
+
+The workflow at `.github/workflows/deploy.yml` now does **NO deployment**. It only runs:
+
+- Code checkout
+- Dependency install (`npm ci`)
+- Test suite (optional, continue-on-error)
+- Module validation
+
+**No SSH keys, no appleboy action, no known_hosts, no remote login.**
 
 ---
 
@@ -119,141 +162,72 @@ The Apps Script project is managed using [clasp](https://github.com/google/clasp
 - `.clasp.json` — Project configuration (script ID, root directory).
 - `scripts/appsscript.json` — App manifest (OAuth scopes, runtime, timezone).
 
-### OAuth Scopes
-
-Defined in `appsscript.json`:
-
-```json
-{
-  "oauthScopes": [
-    "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/gmail.send",
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/userinfo.email"
-  ]
-}
-```
-
-### clasp Usage
-
-**Common commands:**
-
-```bash
-# Login to Google Account
-clasp login
-
-# Create a new Apps Script project
-clasp create --type webapp --title "Gahwa Newsletter"
-
-# Push local changes to Apps Script
-clasp push
-
-# Pull remote changes locally
-clasp pull
-
-# Open the Apps Script project in a browser
-clasp open
-
-# Deploy a new version
-clasp deploy --description "v1.2.3 - Updated render logic"
-```
-
 ### Automated Push via Python
 
-The `scripts/clasp_push.py` script automates the push process:
+The `scripts/clasp_push.py` script automates the push process. It runs on the Hetzner VM (triggered by the operator pipeline):
 
 ```bash
+cd /opt/gahwa-newsletter
 python3 scripts/clasp_push.py
 ```
-
-This script:
-1. Validates the `.clasp.json` configuration.
-2. Runs `clasp push` to sync local scripts to Apps Script.
-3. Creates a new deployment version.
-4. Verifies the deployment is active.
-
-### Web App Deployment
-
-The Apps Script project is deployed as a Web App to receive generated newsletter content:
-
-- **Execute as**: Me (the script owner)
-- **Who has access**: Anyone (authenticated requests with token)
-
-The Web App URL is set as the `APPS_SCRIPT_URL` in the Hetzner VM environment.
 
 ---
 
-## Deployment Steps
+## Execution Daemon (Listener)
 
-### Full Deployment (Git → Hetzner + Apps Script)
+The `gahwa-listener.service` is a persistent systemd service listening on port 3000.
 
-1. **Push code changes** to `main` on GitHub.
-   ```bash
-   git checkout main
-   git merge develop
-   git push origin main
-   ```
-
-2. **GitHub Actions** automatically triggers:
-   - Runs test suite.
-   - RSyncs scripts to Hetzner VM.
-   - Runs `clasp_push.py` to update Apps Script.
-
-3. **Verify deployment**:
-   - Check GitHub Actions log for success.
-   - SSH into Hetzner and verify script versions.
-   - Run a test generation: `./scripts/deploy.sh generate --test`
-
-### Hetzner-Only Deployment
-
-If only the generation pipeline changes (no Apps Script changes):
+### Service Management
 
 ```bash
-# From local machine
-./scripts/deploy.sh --hetzner-only
+# View status
+systemctl status gahwa-listener
+
+# Restart after code update (if needed)
+systemctl restart gahwa-listener
+
+# View logs
+journalctl -u gahwa-listener -f
+tail -f /opt/gahwa-newsletter/operator/logs/listener-stdout.log
+tail -f /opt/gahwa-newsletter/operator/logs/listener-stderr.log
 ```
 
-Or manually via SSH:
-```bash
-ssh root@<hetzner-ip>
-cd /home/user/gahwa-newsletter
-git pull origin main
-./scripts/setup_hetzner.sh --update-only
-```
+### HTTP Endpoints
 
-### Apps Script-Only Deployment
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/webhook` | GitHub webhook receiver (triggers deployment + pipeline) |
+| POST | `/trigger` | Alias for `/webhook` |
+| GET | `/health` | Health check (lock status, log counts, uptime) |
+| GET | `/status` | Execution status (lock, PID) |
 
-If only rendering/delivery logic changes (no generation changes):
-
-```bash
-# From local machine
-./scripts/deploy.sh --apps-script-only
-```
-
-Or manually:
-```bash
-python3 scripts/clasp_push.py
-```
-
-### Initial Setup for New Developers
+### Manual Trigger
 
 ```bash
-# 1. Clone the repository
-git clone git@github.com:yourusername/gahwa-newsletter.git
-cd gahwa-newsletter
+# Trigger the full pipeline
+curl -X POST http://<HETZNER_IP>:3000/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"job":"daily-newsletter"}'
 
-# 2. Install clasp globally
-npm install -g @google/clasp
-
-# 3. Login to Google
-clasp login
-
-# 4. Pull the existing Apps Script project
-clasp pull
-
-# 5. Verify by running a test
-python3 -m pytest tests/test_deepseek_dryrun.py
+# One-off execution (bypasses HTTP server)
+node /opt/gahwa-newsletter/operator/server.js --once --job=daily-newsletter
 ```
+
+---
+
+## Safety & Reliability
+
+| Feature | Description |
+|---|---|
+| **Execution Lock** | `/tmp/gahwa-lock.json` prevents concurrent runs (10-min TTL) |
+| **Branch Guard** | Pushes to non-main branches are silently ignored |
+| **Event Filter** | Only `push` events trigger deployment |
+| **HMAC Verification** | Optional SHA-256 signature validation via `GITHUB_WEBHOOK_SECRET` |
+| **Retry Mechanism** | Up to 2 retries with 10s delay on operator failure |
+| **Dead Letter Queue** | Failed runs logged to `logs/failed.json` |
+| **Lock Cleanup** | Lock ALWAYS released via `try/finally`, even on crash |
+| **Trigger Logging** | All webhook receipts logged with pusher, commit, branch |
+| **Invalid Payload Rejection** | Malformed JSON returns HTTP 400 |
 
 ---
 
@@ -261,16 +235,20 @@ python3 -m pytest tests/test_deepseek_dryrun.py
 
 If a deployment introduces issues:
 
-### Rollback Hetzner VM
 ```bash
+# SSH into Hetzner (direct access, NOT from GitHub Actions)
 ssh root@<hetzner-ip>
+
 # Revert to the previous commit
-cd /home/user/gahwa-newsletter
+cd /opt/gahwa-newsletter
 git checkout <previous-stable-commit>
-# Restart cron or manually run generation
+
+# Restart the listener
+systemctl restart gahwa-listener
 ```
 
 ### Rollback Apps Script
+
 ```bash
 # List deployments to find the previous version ID
 clasp deployments
@@ -281,34 +259,42 @@ clasp deploy --version-number <version> --description "Rollback to v<version>"
 
 ---
 
-## Monitoring & Health Checks
+## Environment Variables
 
-### Logging
+Configured in `/opt/gahwa-newsletter/operator/.env`:
 
-- **Generation logs**: `/var/log/gahwa.log` on Hetzner VM
-- **Delivery logs**: Google Sheets (referenced by `Utilities.gs`)
-- **GitHub Actions logs**: Available in the Actions tab on GitHub
+| Variable | Purpose |
+|---|---|
+| `DEEPSEEK_API_KEY` | API key for DeepSeek content generation |
+| `APPS_SCRIPT_WEBHOOK_URL` | URL for pushing content to Apps Script |
+| `WEBHOOK_SECRET` | Auth token for Apps Script webhook |
+| `GITHUB_WEBHOOK_SECRET` | HMAC secret for GitHub webhook verification |
+| `LISTENER_PORT` | Listener port (default: 3000) |
 
-### Health Check Endpoints
+---
 
-The Apps Script web app exposes a health check endpoint:
+## Resulting Flow
 
 ```
-GET <APPS_SCRIPT_URL>/health
+GitHub push to main
+        ↓
+GitHub sends webhook POST → http://<hetzner>:3000/webhook
+        ↓
+server.js validates: push event + main branch + HMAC sig
+        ↓
+git fetch origin main && git reset --hard origin/main
+        ↓
+acquireLock() — prevent concurrent runs
+        ↓
+runJob("daily-newsletter") → spawns operator.js
+        ↓
+operator.js calls DeepSeek → generates newsletter JSON
+        ↓
+Pushes content to Apps Script webhook → email delivery
+        ↓
+releaseLock()
+        ↓
+Respond 200/500 to GitHub with full execution report
 ```
 
-Expected response:
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-05-07T06:00:00Z",
-  "last_generation": "2026-05-06",
-  "edition_count": 141
-}
-```
-
-### Alerting
-
-- Generation failures trigger an email alert to the admin.
-- CI/CD pipeline failures send a notification via GitHub.
-- Monthly log review for systemic issues.
+**No SSH from GitHub. No appleboy. No known_hosts. No secret SSH keys in CI.**

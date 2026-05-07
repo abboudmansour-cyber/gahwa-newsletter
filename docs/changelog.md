@@ -36,19 +36,49 @@
 
 ---
 
-## [YYYY-MM-DD]
+## 2026-05-07 (Editorial Intelligence Layer)
 
-<!-- 
-Template for new entries:
 ### Added
-- 
+- **`operator/core/editor.js` — Editorial Intelligence Engine**
+  - Deterministic topic scoring system: 16 curated GCC topic profiles each with base scores (1–10), categories, and editorial justifications
+  - Priority ranking: oil (9.5), Saudi policy (9.0), SWF moves (8.5), macro indicators (8.0), banking/regulation (7.5), geopolitics (7.5), AI/tech (7.0), startups (6.5), corporate earnings (6.0), fintech (5.5), tourism (5.0), logistics (4.5), public investment (4.5), HORECA (3.5), partnerships (2.5), generic tech (1.5)
+  - Morning Brew–style narrative order: macro → policy → geopolitics → AI/tech → startups → sector deep dives → briefs
+  - Breaking signal detection (4 HIGH signals, 0–4 MEDIUM depending on date)
+  - Seasonal/calendar weight boosting (Hajj season, OPEC+ meetings, SWF annual reviews, trade data windows)
+  - Day-of-week context awareness (Saudi work week: Sun–Thu)
+  - `buildEditorialFrame()` — returns structured editorial frame with priorityRanking, narrativeOrder, breakingSignals, editorialDirective
+  - `formatEditorialFrame()` — formats the frame as a prompt attachment string for DeepSeek injection
+  - Zero AI/ML — fully deterministic rule-based system
+- **Editorial frame integrated into operator.js pipeline**
+  - `generatePlan()` now builds editorial frame before every DeepSeek call
+  - Editorial frame is appended to the DeepSeek prompt as structured guidance
+  - DeepSeek receives explicit editorial directive: "Follow this editorial ordering and prioritization when constructing the newsletter"
 
 ### Changed
-- 
+- **`operator/operator.js`** — `generatePlan()` now runs editorial intelligence layer before DeepSeek call:
+  - Step 1: `buildEditorialFrame(CURRENT_DATE)` generates deterministic topic ranking
+  - Step 2: `formatEditorialFrame()` converts to structured prompt text
+  - Step 3: Editorial frame appended to DeepSeek prompt with constrained ordering instruction
+  - Pipeline log now includes: topic count, narrative slot count, breaking signal count
 
-### Fixed
-- 
+---
+
+## 2026-05-07 (Later)
+
+### Changed
+- **Deployment model migrated from SSH to event-driven webhook**
+
+  - `.github/workflows/deploy.yml` — stripped all SSH/appleboy steps; now CI only
+  - Deployment is triggered by GitHub webhook → Hetzner listener (port 3000)
+  - `server.js` handles: event validation (push only), branch guard (main only), HMAC verification, git pull, operator execution, locking
+  - `setup_hetzner.sh` — clarified SSH key is server-side only (not stored in CI)
+  - All docs updated: `architecture.md`, `deployment.md`, `README.md`, `CHECKPOINT.md`, `workflow.md`, `master-context.md`
+  - `env.hetzner.template` — added `GITHUB_WEBHOOK_SECRET` field for HMAC verification
+  - The system is now fully event-driven: push → webhook → git pull → operator → Apps Script
 
 ### Removed
-- 
--->
+- All SSH-based deployment code from GitHub Actions
+- `appleboy/ssh-action` references
+- SSH key configuration steps from CI workflow
+- `known_hosts` management from CI
+- `HETZNER_SSH_KEY`, `HETZNER_HOST`, `HETZNER_USER` GitHub Secrets dependency

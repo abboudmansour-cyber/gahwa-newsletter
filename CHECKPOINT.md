@@ -1,6 +1,6 @@
 # THE GAHWA — Project Checkpoint
 
-> **Last Updated:** 2026-05-07 15:09 AST  
+> **Last Updated:** 2026-05-07 19:37 AST  
 > **Maintainer:** Cline (VS Code / Cursor Agent)  
 > **Purpose:** Milestone tracker for cross-AI handoff (share this file with Gemini to sync context)
 
@@ -13,64 +13,44 @@
 - **Mission:** Automated daily GCC business intelligence newsletter
 - **Runtime:** Google Apps Script (deployed via Hetzner VPS → clasp)
 - **AI Backend:** DeepSeek v4 (Anthropic-compatible endpoint)
+- **Deployment Model:** Event-driven webhook (no SSH from GitHub)
 
 ---
 
 ## ✅ Latest Milestone — 2026-05-07
 
-**Completed:** Full project inventory & summary compilation
+**Completed:** Migration to event-driven webhook deployment
 
-All 14 source files have been read, analyzed, and documented. The complete project context has been captured, covering:
+All SSH-based deployment has been removed from GitHub Actions. The system now uses:
+- **GitHub Webhook** → Hetzner Listener (port 3000)
+- **No SSH keys in CI** — never stored in GitHub Secrets
+- **No appleboy/SSH Actions** — the deploy workflow is CI-only
+- **git pull** is executed by the Hetzner listener on webhook receipt
 
-- 7 core Apps Script files (Code, Claude, Parser, Utilities, Render, Html, Aggregatenewsletters)
-- 3 deployment scripts (deploy.sh, setup_hetzner.sh, send_to_apps_script.sh)
-- 1 Python utility (clasp_push.py)
-- 1 GitHub Actions CI/CD workflow
-- 3 test files (mockTest.gs, test_lead_tracking_api.py, test_deepseek_dryrun.py)
-- 1 output brief (redcloud_raid_insight.md)
-- Config files (.clasp.json, .clinerules, appsscript.json, .gitignore)
+### What Changed
 
-**Key deliverables from this milestone:**
-- Comprehensive project summary delivered to user
-- This CHECKPOINT.md file created for cross-AI handoff
-
----
-
-## 📋 Pipeline Overview
-
-```
-6:00 AM  → aggregateNewsletters() — Build Intel Dump (20 RSS categories + Gmail)
-9:00 AM  → runScoutStep1() — Extract signals via DeepSeek Flash
-Auto     → runScoutStep2() — Score + Rank signals (GAHWA-R framework) → Part 1
-Auto     → runScoutStep3() — Generate Parts 2-7 (Themes, Viral, Startup, etc.)
-Auto     → runScoutStep4() — Build HTML + Email via Gmail
-11:00 AM → dailyHealthCheck() — Verify delivery
-Saturday → runWeeklyRollup() + consolidateWeeklyIntel()
-2:00 AM  → cleanupTempDocs()
-```
-
-### GAHWA-R Scoring Framework
-| Dimension | Weight |
-|-----------|--------|
-| GCC Proximity | 30% |
-| Actionability | 20% |
-| Human Interest | 15% |
-| Why Today | 20% |
-| Autonomy/Novelty | 15% |
-| **Score out of** | **25** |
+| Before | After |
+|--------|-------|
+| GitHub Actions SSHes into Hetzner | GitHub sends HTTP webhook |
+| SSH keys stored in GitHub Secrets | No SSH keys in CI (Hetzner has own deploy key) |
+| appleboy/ssh-action used for deploy | Pure webhook → `git fetch origin main` + `git reset --hard origin/main` |
+| Workflow ran `git pull` via SSH | Listener runs `git pull` locally on webhook |
+| SSH key config & known_hosts in CI | HMAC signature verification in server.js |
+| Multiple GitHub Secrets for SSH | Zero GitHub Secrets for infrastructure |
 
 ---
 
 ## 🏗️ Architecture
 
 ```mermaid
-Developer → GitHub → Hetzner VPS (git pull + clasp push) → Google Apps Script → Gmail/Drive/RSS
+Developer → GitHub → Webhook → Hetzner VPS (git pull + run operator) → Google Apps Script → Gmail/Drive/RSS
 ```
 
 - **Source of truth:** GitHub repo `gahwa-newsletter`
-- **Deployment authority:** Hetzner VPS (`/opt/gahwa`)
+- **Deployment authority:** Hetzner VPS (`/opt/gahwa-newsletter`)
+- **Trigger mechanism:** GitHub webhook (HTTP POST, no SSH)
 - **Runtime target:** Google Apps Script (script ID: `1s9_k1zGgRgCzxWRLtjzoPVAPEKUuCQ9GL7PofLPkRQKqTtdLAteL6sY5`)
-- **CI/CD:** GitHub Actions → SSH → Hetzner → `git pull` → `clasp push`
+- **CI/CD:** GitHub Actions → CI tests only → Webhook → Hetzner → `git pull` → operator
 
 ---
 
@@ -86,7 +66,8 @@ Developer → GitHub → Hetzner VPS (git pull + clasp push) → Google Apps Scr
 | `scripts/Html.gs` | Bundled templates (2550 lines: Scout + Gahwa CSS/rendering) |
 | `scripts/Aggregatenewsletters.js` | RSS (20 categories) + Gmail aggregator |
 | `scripts/appsscript.json` | GAS manifest (Asia/Riyadh, V8 runtime) |
-| `.github/workflows/deploy.yml` | GitHub Actions → SSH deploy |
+| `.github/workflows/deploy.yml` | CI only (no SSH deploy) |
+| `operator/server.js` | Webhook listener (event-driven deployment) |
 | `tests/mockTest.gs` | Webhook test harness (5 test cases) |
 | `tests/test_deepseek_dryrun.py` | DeepSeek endpoint connectivity test |
 | `tests/test_lead_tracking_api.py` | CRM leads API audit (8 leads) |
@@ -115,6 +96,7 @@ Developer → GitHub → Hetzner VPS (git pull + clasp push) → Google Apps Scr
 | Webhook auth | ✅ Tested (5 test cases passing) |
 | Pipeline retry logic | ✅ Max 2 attempts per step |
 | Continuation triggers | ✅ Handles 6-min GAS limit |
+| Event-driven deploy | ✅ No SSH from GitHub |
 
 ---
 
@@ -129,8 +111,9 @@ Developer → GitHub → Hetzner VPS (git pull + clasp push) → Google Apps Scr
 This file is designed to be shared with Gemini (or any other AI) to provide instant context on the project. The key things to know:
 
 1. **This is a Google Apps Script project** — all `.gs` files run in the GAS runtime
-2. **Deployment is via Hetzner** — not direct from GitHub
-3. **The AI is DeepSeek v4** — not Claude (despite the `callClaude` function naming)
-4. **The scoring is GAHWA-R** — 5 dimensions, weighted, out of 25
-5. **The audience is Saudi/GCC executives** — tone is "Morning Brew energy meets regional intelligence"
-6. **Branding is dual** — "STARTUP SCOUT" (internal) / "THE GAHWA" (public subscriber-facing)
+2. **Deployment is via Hetzner** — triggered by GitHub webhook, not direct from GitHub Actions
+3. **No SSH from GitHub** — deployment is event-driven via HTTP webhook
+4. **The AI is DeepSeek v4** — not Claude (despite the `callClaude` function naming)
+5. **The scoring is GAHWA-R** — 5 dimensions, weighted, out of 25
+6. **The audience is Saudi/GCC executives** — tone is "Morning Brew energy meets regional intelligence"
+7. **Branding is dual** — "STARTUP SCOUT" (internal) / "THE GAHWA" (public subscriber-facing)

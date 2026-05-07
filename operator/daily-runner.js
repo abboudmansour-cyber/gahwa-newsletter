@@ -22,11 +22,16 @@
  * @module daily-runner
  */
 
+import { ensureExecutionContext } from "./core/runtime.js";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import { validateEnvironment, logWebhookStatus } from "./core/validate-env.js";
+
+// ── Bootstrap execution context (MUST be called before ANY other logic) ─────
+ensureExecutionContext();
 
 // ── Load .env (local dev + Hetzner production) ──────────────────────────
 // Try multiple locations in order of preference:
@@ -43,6 +48,11 @@ for (const envPath of ENV_PATHS) {
     dotenv.config({ path: envPath });
   }
 }
+
+// ── Startup Health Check ─────────────────────────────────────────────────────
+validateEnvironment();
+logWebhookStatus();
+
 
 // ── Paths ────────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);

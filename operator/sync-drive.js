@@ -22,11 +22,15 @@
  * @module sync-drive
  */
 
+import { ensureExecutionContext } from "./core/runtime.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { google } from "googleapis";
+
+// ── Bootstrap execution context (MUST be called before ANY other logic) ─────
+ensureExecutionContext();
 
 // ── Path setup ──────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);

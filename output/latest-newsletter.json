@@ -1,35 +1,36 @@
 {
-  "date": "2025-04-09",
+  "date": "2026-05-07",
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "heading": "Market Overview",
-      "content": "GCC markets opened mixed today with Saudi Tadawul down 0.3% and Dubai Financial Market up 0.5%. Oil prices stabilized around $85/barrel."
+      "headline": "GCC markets mixed as oil prices dip 2.3%",
+      "summary": "GCC stock markets showed mixed performance on Wednesday, with Saudi Arabia's Tadawul falling 0.8% and Dubai's DFM gaining 0.5%, as Brent crude slipped to $82.10 per barrel amid demand concerns.",
+      "insight": "The divergence reflects ongoing investor caution tied to oil price volatility, though UAE markets remain supported by strong real estate and tourism inflows."
     },
     {
-      "heading": "Top Stories",
-      "items": [
-        {
-          "title": "UAE Non-Oil Economy Expands 4.5% in Q1",
-          "summary": "Driven by tourism and financial services, the UAE's non-oil GDP growth exceeded expectations."
-        },
-        {
-          "title": "Saudi Arabia Launches New Investment Initiative",
-          "summary": "The Kingdom announced a $50 billion fund targeting renewable energy and tech startups."
-        },
-        {
-          "title": "Qatar Energy Signs LNG Deal with Germany",
-          "summary": "A 15-year agreement to supply 2 million tonnes of LNG annually starting 2026."
-        }
-      ]
+      "headline": "Saudi non-oil PMI hits 58.2 in April",
+      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index rose to 58.2 in April from 57.8 in March, marking the 38th consecutive month of expansion, led by new orders and output growth.",
+      "insight": "Sustained PMI readings above 55 underscore robust private sector momentum, reinforcing the resilience of Vision 2030-driven diversification away from hydrocarbons."
     },
     {
-      "heading": "Currency & Commodities",
-      "content": "USD/SAR at 3.75, USD/AED at 3.67. Gold up 0.2% to $2,340/oz. Brent crude at $85.20."
+      "headline": "UAE GDP growth revised up to 5.1% for 2026",
+      "summary": "The UAE central bank revised its 2026 GDP growth forecast upward to 5.1% from 4.8%, citing strong performance in tourism, logistics, and financial services, with non-oil GDP expected to expand 5.6%.",
+      "insight": "The upward revision signals deepening economic diversification and positions the UAE as a regional growth leader, attracting foreign capital and talent."
     },
     {
-      "heading": "What to Watch Today",
-      "content": "Central bank meetings in UAE and Saudi Arabia. Earnings reports from ADNOC and Qatar National Bank."
+      "headline": "Fintech funding in GCC surges 34% to $1.2B in Q1",
+      "summary": "Fintech investment in the GCC reached $1.2 billion in Q1 2026, up 34% year-on-year, led by Saudi Arabia's $450 million and the UAE's $380 million, with digital payments and BNPL dominating deal flow.",
+      "insight": "The surge reflects regulatory tailwinds and rising digital adoption, positioning the GCC as a top global fintech hub, though scaling remains a challenge for late-stage startups."
+    },
+    {
+      "headline": "Saudi Aramco maintains 12.4 mbpd capacity target",
+      "summary": "Saudi Aramco confirmed it will keep its maximum sustainable capacity at 12.4 million barrels per day, despite OPEC+ production cuts, as it focuses on gas expansion and downstream investments.",
+      "insight": "The capacity hold signals strategic patience, balancing market share preservation with long-term demand uncertainty and the Kingdom's shift toward gas and petrochemicals."
+    },
+    {
+      "headline": "Dubai real estate transactions hit $12.5B in April",
+      "summary": "Dubai recorded $12.5 billion in real estate transactions in April 2026, up 18% year-on-year, driven by off-plan sales in Expo City and luxury villa demand in Palm Jumeirah.",
+      "insight": "Sustained double-digit growth underscores Dubai's appeal as a safe-haven for global capital, though rising supply could moderate price gains in mid-tier segments."
     }
   ]
 }

@@ -1,0 +1,30 @@
+[
+  {
+    "runId": "init",
+    "timestamp": "",
+    "score": {
+      "clarity": 0,
+      "gccRelevance": 0,
+      "marketDepth": 0,
+      "readability": 0,
+      "overall": 0
+    },
+    "weaknessTags": [],
+    "suggestedPromptAdjustments": ""
+  },
+  {
+    "runId": "test-1778171454515",
+    "timestamp": "2026-05-07T16:30:54.515Z",
+    "score": {
+      "clarity": 9,
+      "gccRelevance": 10,
+      "marketDepth": 8,
+      "readability": 7,
+      "overall": 9
+    },
+    "weaknessTags": [
+      "good quality — no major issues detected"
+    ],
+    "suggestedPromptAdjustments": "No adjustments needed."
+  }
+]

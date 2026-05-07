@@ -3,7 +3,7 @@ import path from "path";
 import { execSync } from "child_process";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-import { askDeepSeek } from "./deepseek.js";
+import { askDeepSeek, callDeepSeekForContent } from "./deepseek.js";
 import { evaluateNewsletter } from "./evaluator.js";
 import { saveRun } from "./memory.js";
 
@@ -43,20 +43,20 @@ function validateEnvironment() {
 validateEnvironment();
 
 // -----------------------------
-// JOB DEFINITIONS
+// JOB DEFINITIONS — lightweight, no embedded content
 // -----------------------------
 const JOBS = {
-  "daily-newsletter": `Execute a COMPLETE autonomous pipeline:
-TODAY'S DATE: ${CURRENT_DATE}
-Your newsletter MUST use this date exactly.
+  "daily-newsletter": `
+Generate a plan to:
+1. Generate and save today's GCC Morning Brief newsletter to output/latest-newsletter.json
+2. Commit and push all changes to GitHub
+3. Deliver the newsletter to the Apps Script webhook
 
-Step 1 — docs: Generate today's GCC Morning Brief newsletter in structured JSON format.
-  → Write to FILE: newsletters/gcc-brief-${CURRENT_DATE}.json
-  → The "date" field in the JSON MUST be "${CURRENT_DATE}".
-Step 2 — git: Commit and push all changes to GitHub with a descriptive message.
-Step 3 — push: Trigger the Apps Script delivery webhook to email the newsletter.
-A "complete run" MUST include ALL THREE steps (docs, git, push) in the JSON plan. Do not omit any step.`,
-  "test-run": "Run a minimal test newsletter pipeline.",
+TODAY'S DATE: ${CURRENT_DATE}
+The newsletter date field MUST be "${CURRENT_DATE}".
+Use commit message: "daily newsletter ${CURRENT_DATE}"
+`,
+  "test-run": `Run a minimal test: generate a short GCC Morning Brief and save it to output/latest-newsletter.json.`,
 };
 
 // -----------------------------
@@ -101,53 +101,6 @@ function isPathSafe(targetPath) {
 }
 
 // -----------------------------
-// PARSE DOCS INSTRUCTION
-// -----------------------------
-// Expected format:
-//   FILE: <relative-path>
-//   ---
-//   <file-content>
-// Returns { path: string, content: string } or null on failure.
-function parseDocsInstruction(instruction) {
-  if (!instruction || typeof instruction !== "string") {
-    console.log("❌ [PARSE ERROR] Instruction is missing or not a string");
-    return null;
-  }
-
-  const lines = instruction.split("\n");
-  const fileLine = lines.find((line) => line.startsWith("FILE:"));
-
-  if (!fileLine) {
-    console.log(`❌ [PARSE ERROR] No "FILE:" line found in instruction`);
-    console.log(`  Raw instruction (first 200 chars): ${instruction.slice(0, 200)}`);
-    return null;
-  }
-
-  const filePath = fileLine.replace(/^FILE:\s*/, "").trim();
-  if (!filePath) {
-    console.log(`❌ [PARSE ERROR] Empty file path after "FILE:"`);
-    return null;
-  }
-
-  // Find where content starts (after "---" separator following FILE: line)
-  const fileLineIndex = lines.indexOf(fileLine);
-  const separatorIndex = lines.findIndex((line, i) => i > fileLineIndex && line.trim() === "---");
-  if (separatorIndex === -1) {
-    console.log(`❌ [PARSE ERROR] No "---" separator found after FILE: line`);
-    return null;
-  }
-
-  const contentLines = lines.slice(separatorIndex + 1);
-  const content = contentLines.join("\n");
-
-  if (!content.trim()) {
-    console.log(`⚠️ [PARSE WARNING] Empty content for file: ${filePath}`);
-  }
-
-  return { path: filePath, content };
-}
-
-// -----------------------------
 // EXECUTE FILE OPS
 // -----------------------------
 function writeFile(filePath, content) {
@@ -163,6 +116,116 @@ function writeFile(filePath, content) {
     console.log(`❌ [FILE ERROR] ${err.message}`);
     return false;
   }
+}
+
+// -----------------------------
+// NEWSLETTER CONTENT GENERATION
+// -----------------------------
+/**
+ * Generate the full newsletter JSON content by calling DeepSeek
+ * as a separate content-generation request (not embedded in plan).
+ *
+ * This keeps the planning payload lightweight and avoids
+ * malformed/truncated JSON from massive instruction blocks.
+ */
+async function generateNewsletterContent() {
+  console.log("\n📝 GENERATING NEWSLETTER CONTENT...");
+
+  const prompt = `Generate today's GCC Morning Brief newsletter.
+
+TODAY'S DATE: ${CURRENT_DATE}
+
+OUTPUT FORMAT — Return ONLY valid JSON following this exact schema:
+{
+  "date": "${CURRENT_DATE}",
+  "title": "GCC Morning Brief",
+  "sections": [
+    {
+      "headline": "[Headline 1 — max 15 words]",
+      "summary": "[2-3 sentence summary of this section]",
+      "insight": "[1-2 sentence key insight or what this means]"
+    }
+  ]
+}
+
+CONTENT REQUIREMENTS:
+- Minimum 5 sections, maximum 8 sections
+- Each section must have: headline, summary, and insight
+- Cover GCC markets, Saudi economy, UAE business, regional fintech, and energy
+- Be data-driven: include specific numbers, percentages, and market data
+- Tone: authoritative, direct, professional — suitable for GCC executives
+
+EXAMPLE SECTION:
+{
+  "headline": "Saudi non-oil GDP grows 4.5% in Q1",
+  "summary": "Saudi Arabia's non-oil GDP expanded 4.5% year-on-year in Q1 2026, driven by tourism, logistics, and manufacturing as Vision 2030 diversification gains momentum.",
+  "insight": "The continued strength in non-oil sectors signals resilience against global oil price volatility and reinforces investor confidence in the Kingdom's economic transformation."
+}
+
+Return ONLY valid JSON — no markdown, no code fences, no extra text.`;
+
+  const rawText = await callDeepSeekForContent(prompt, CURRENT_DATE);
+
+  // Extract JSON from response (strip fences, prose, etc.)
+  const cleaned = extractJSON(rawText);
+  if (!cleaned) {
+    throw new Error("Empty response after JSON extraction from content generation");
+  }
+
+  const newsletter = JSON.parse(cleaned);
+
+  // Validate required fields
+  if (!newsletter.date) newsletter.date = CURRENT_DATE;
+  if (!newsletter.title) newsletter.title = "GCC Morning Brief";
+  if (!Array.isArray(newsletter.sections) || newsletter.sections.length === 0) {
+    throw new Error("Generated newsletter has no sections");
+  }
+
+  console.log(`✅ NEWSLETTER GENERATED — ${newsletter.sections.length} sections`);
+  return newsletter;
+}
+
+/**
+ * Extract the first valid JSON object from a response string.
+ * Strips:
+ *   - markdown code fences (json ... )
+ *   - leading prose before the first { or [
+ *   - trailing commentary after the last } or ]
+ */
+function extractJSON(text) {
+  if (!text || typeof text !== "string") return "";
+
+  let cleaned = text.trim();
+
+  // Strip markdown code fences
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "");
+  cleaned = cleaned.replace(/\s*```\s*$/i, "");
+
+  // Find the first opening brace or bracket
+  const firstBrace = cleaned.indexOf("{");
+  const firstBracket = cleaned.indexOf("[");
+  const first =
+    firstBrace === -1
+      ? firstBracket
+      : firstBracket === -1
+        ? firstBrace
+        : Math.min(firstBrace, firstBracket);
+
+  if (first === -1) return cleaned;
+
+  // Find the last closing brace or bracket
+  const lastBrace = cleaned.lastIndexOf("}");
+  const lastBracket = cleaned.lastIndexOf("]");
+  const last =
+    lastBrace === -1
+      ? lastBracket
+      : lastBracket === -1
+        ? lastBrace
+        : Math.max(lastBrace, lastBracket);
+
+  if (last === -1 || last < first) return cleaned;
+
+  return cleaned.slice(first, last + 1);
 }
 
 // -----------------------------
@@ -280,23 +343,8 @@ async function generatePlan(task) {
   // Inject CURRENT_DATE as a REQUIRED constant so DeepSeek never hallucinates dates
   return await askDeepSeek(
     CURRENT_DATE,
-    `
-You are an execution planner for an AI newsletter system.
-
-TODAY'S DATE IS ${CURRENT_DATE}. You MUST use this date for all content.
-The "date" field in any newsletter JSON MUST be "${CURRENT_DATE}".
-
-Return ONLY JSON:
-{
-  "steps": [
-    { "type": "fs", "action": "write", "path": "", "content": "" },
-    { "type": "git", "action": "commit", "message": "" }
-  ]
-}
-
-TASK:
-${task}
-`
+    `TASK:
+${task}`
   );
 }
 
@@ -309,67 +357,21 @@ async function executePlan(plan) {
 
   for (const step of plan.steps) {
     try {
-      // ── Handle "docs" action ──────────────────────────────
-      // DeepSeek system prompt outputs: { action: "docs", instruction: "FILE: path\n---\ncontent" }
-      if (step.action === "docs" || step.action === "fs") {
-        const parsed = parseDocsInstruction(step.instruction);
+      // ── Handle "generate_newsletter" action ──────────────
+      if (step.action === "generate_newsletter") {
+        const newsletter = await generateNewsletterContent();
 
-        if (!parsed) {
-          console.log(`❌ [STEP FAILED] Failed to parse instruction for ${step.action} step`);
-          failed++;
-          continue;
-        }
-
-        if (!isPathSafe(parsed.path)) {
-          failed++;
-          continue;
-        }
-
-        // Resolve relative path against ROOT
-        const absolutePath = path.resolve(ROOT, parsed.path);
-        writeFile(absolutePath, parsed.content);
-        console.log(`✅ [STEP SUCCESS] ${step.action} — ${parsed.path}`);
+        // Save to output/latest-newsletter.json
+        const outputPath = path.resolve(ROOT, "output", "latest-newsletter.json");
+        writeFile(outputPath, JSON.stringify(newsletter, null, 2));
+        console.log(`✅ [STEP SUCCESS] generate_newsletter — output/latest-newsletter.json`);
         success++;
         continue;
       }
 
-      // ── Handle legacy "fs" type (type-based format) ───────
-      if (step.type === "fs") {
-        if (step.path) {
-          if (!isPathSafe(step.path)) {
-            failed++;
-            continue;
-          }
-          const absolutePath = path.resolve(ROOT, step.path);
-          writeFile(absolutePath, step.content);
-          console.log(`✅ [STEP SUCCESS] fs — ${step.path}`);
-          success++;
-        } else if (step.instruction) {
-          // Some fs steps may use instruction format like: CREATE: path\n---\ncontent
-          const parsed = parseDocsInstruction(step.instruction);
-          if (!parsed) {
-            console.log(`❌ [STEP FAILED] Failed to parse instruction for fs step`);
-            failed++;
-            continue;
-          }
-          if (!isPathSafe(parsed.path)) {
-            failed++;
-            continue;
-          }
-          const absolutePath = path.resolve(ROOT, parsed.path);
-          writeFile(absolutePath, parsed.content);
-          console.log(`✅ [STEP SUCCESS] fs — ${parsed.path}`);
-          success++;
-        } else {
-          console.log(`❌ [STEP FAILED] fs step missing both 'path' and 'instruction'`);
-          failed++;
-        }
-        continue;
-      }
-
-      // ── Handle "git" action or type ──────────────────────
-      if (step.type === "git" || step.action === "git") {
-        const commitMsg = step.message || step.instruction || "auto-update";
+      // ── Handle "git" action ──────────────────────────────
+      if (step.action === "git") {
+        const commitMsg = step.instruction || "auto-update";
         runGit("git add .");
         runGit(`git commit -m "${commitMsg}"`);
         runGit("git push origin main");
@@ -380,7 +382,7 @@ async function executePlan(plan) {
 
       // ── Handle "push" action (Apps Script delivery) ──────
       if (step.action === "push") {
-        const payloadPath = step.path || step.file || "output/latest-newsletter.json";
+        const payloadPath = step.path || "output/latest-newsletter.json";
         const pushed = await pushToAppsScript(payloadPath);
         if (pushed) {
           console.log(`✅ [STEP SUCCESS] push — ${payloadPath}`);
@@ -393,7 +395,7 @@ async function executePlan(plan) {
       }
 
       // ── Unknown step type ─────────────────────────────────
-      console.log(`⚠️ [UNKNOWN STEP] type="${step.type}" action="${step.action}" — skipping`);
+      console.log(`⚠️ [UNKNOWN STEP] action="${step.action}" — skipping`);
       failed++;
 
     } catch (err) {
