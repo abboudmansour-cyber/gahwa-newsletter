@@ -3,10 +3,10 @@
 # Uses dynamic pathing: works on both local dev and Hetzner VPS.
 # Features:
 #   - Environment-aware URL resolution (env var + CLI arg)
-#   - 3 retry attempts with exponential backoff
+#   - Self-healing: 3 retry attempts with 30s fixed wait on non-200
 #   - Response capture and structured status logging
 #   - "Success: Newsletter Filed" on 200 OK
-#   - Critical failure logging for rendering errors
+#   - Delivery log written to output/delivery_log.txt
 # Usage: ./send_to_apps_script.sh [webapp_url] [json_file]
 #   webapp_url: The deployed Apps Script web app URL (optional if APPS_SCRIPT_WEBHOOK_URL is set)
 #   json_file:  Path to JSON payload (default: output/latest-newsletter.json)
@@ -93,7 +93,7 @@ echo "   Auth:    ✅ token injected"
 echo "   Payload: $(wc -c < "$PAYLOAD_FILE" | tr -d ' ') bytes"
 echo ""
 
-# ── Send with retry logic (exponential backoff) ────────────────────────────
+# ── Send with retry logic (3-tier, 30s fixed wait) ─────────────────────────
 MAX_ATTEMPTS=3
 ATTEMPT=1
 SUCCESS=false
@@ -167,9 +167,8 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
     *)
       echo "   Response: ${RESPONSE_BODY:-"(empty)"}"
       if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
-        WAIT=$((2 ** ATTEMPT))
-        echo "   ⏳ Unexpected HTTP $HTTP_CODE. Retrying in ${WAIT}s..."
-        sleep "$WAIT"
+        echo "   ⏳ HTTP $HTTP_CODE — not 200 OK. Waiting 30s before retry..."
+        sleep 30
       else
         echo "❌ [FAILED] All $MAX_ATTEMPTS attempts exhausted."
       fi
@@ -179,12 +178,31 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
   ATTEMPT=$((ATTEMPT + 1))
 done
 
+# ── Log final status to output/delivery_log.txt ─────────────────────────────
+LOG_FILE="$PROJECT_ROOT/output/delivery_log.txt"
+mkdir -p "$(dirname "$LOG_FILE")"
+{
+  echo ""
+  echo "--- Delivery Report: $(date -u '+%Y-%m-%dT%H:%M:%SZ') ---"
+  echo "Webhook:    $WEBAPP_URL"
+  echo "Payload:    $JSON_FILE"
+  echo "Attempts:   $((ATTEMPT - 1))"
+  echo "HTTP Code:  $HTTP_CODE"
+  if [ "$SUCCESS" = true ]; then
+    echo "Status:     SUCCESS"
+  else
+    echo "Status:     FAILED"
+  fi
+  echo "Response:   ${RESPONSE_BODY:-(no response)}" | head -c 300
+} >> "$LOG_FILE"
+
 # ── Final status summary ────────────────────────────────────────────────────
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if [ "$SUCCESS" = true ]; then
   echo "✅ Stage 5 (Push): Newsletter successfully filed to Apps Script"
   echo "   Archive:  $JSON_FILE"
+  echo "   Log:      $LOG_FILE"
   echo "   Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   exit 0
 else
@@ -192,12 +210,9 @@ else
   echo "   HTTP:     $HTTP_CODE"
   echo "   URL:      $WEBAPP_URL"
   echo "   Payload:  $JSON_FILE"
+  echo "   Log:      $LOG_FILE"
   echo "   Response: ${RESPONSE_BODY:-(no response)}" | head -c 300
   echo ""
-  echo "   ➤ Debug steps:"
-  echo "     1. Check .env has APPS_SCRIPT_WEBHOOK_URL and WEBHOOK_SECRET"
-  echo "     2. Verify Apps Script is deployed as Web App"
-  echo "     3. Check Apps Script execution logs in script.google.com"
-  echo "     4. Test with: curl -X POST \"\$WEBAPP_URL\" -H \"Content-Type: application/json\" -d '{\"auth_token\":\"test\",\"test\":true}'"
+  echo "   ➤ Debug: Check $LOG_FILE for full details."
   exit 1
 fi

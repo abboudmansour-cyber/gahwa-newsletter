@@ -3,44 +3,44 @@
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "headline": "GCC stock markets mixed as oil prices dip 2.3%",
-      "summary": "GCC bourses saw mixed trading on Wednesday, with Saudi Arabia's Tadawul down 0.8% and Abu Dhabi's ADX falling 0.5%, while Dubai's DFM edged up 0.3%. Brent crude declined 2.3% to $74.10 per barrel amid demand concerns and a stronger dollar.",
-      "insight": "The divergence reflects ongoing volatility in energy markets, with Gulf equities remaining sensitive to oil price movements despite diversification efforts."
+      "headline": "Saudi Tadawul index edges up 0.3% on petchem gains",
+      "summary": "The Saudi Tadawul All Share Index rose 0.3% to 12,456 points on Wednesday, supported by a 1.2% gain in petrochemical stocks led by SABIC. Trading volume reached SAR 6.8 billion, slightly above the 30-day average.",
+      "insight": "Petrochemical strength reflects improving global demand signals, but the index remains range-bound as investors await Q1 corporate earnings for directional cues."
     },
     {
-      "headline": "Saudi non-oil PMI rises to 58.2 in April",
-      "summary": "Saudi Arabia's Purchasing Managers' Index (PMI) for non-oil private sector rose to 58.2 in April from 57.5 in March, indicating robust expansion. New orders and output grew at their fastest pace in six months, driven by strong domestic demand and export growth.",
-      "insight": "The sustained PMI above 50 signals continued momentum in Vision 2030 sectors, supporting GDP growth forecasts of 4.5% for 2026."
+      "headline": "UAE non-oil PMI hits 55.8 in April, fastest in 8 months",
+      "summary": "The UAE's S&P Global purchasing managers' index rose to 55.8 in April from 54.9 in March, marking the strongest improvement in business conditions since August 2025. New orders and employment both expanded at accelerated rates.",
+      "insight": "Sustained PMI expansion above 55 confirms robust private sector momentum, supporting our view of 4.2% non-oil GDP growth for 2026."
     },
     {
-      "headline": "UAE non-oil GDP expands 4.2% in Q1",
-      "summary": "The UAE's non-oil GDP grew 4.2% year-on-year in Q1 2026, driven by tourism, real estate, and financial services. Dubai's tourism sector saw a 12% increase in visitor arrivals, while Abu Dhabi's industrial output rose 6.8%.",
-      "insight": "The UAE's diversification strategy is paying off, with non-oil sectors now contributing over 70% to GDP, reducing reliance on hydrocarbons."
+      "headline": "ADNOC awards $2.3 billion in EPC contracts for Ruwais expansion",
+      "summary": "ADNOC has awarded engineering, procurement, and construction contracts worth $2.3 billion for its Ruwais complex expansion, part of a broader $45 billion downstream investment plan. The contracts cover new petrochemical units and utilities.",
+      "insight": "This award underscores ADNOC's commitment to downstream integration and value-add exports, positioning the UAE to capture higher margins from refined products."
     },
     {
-      "headline": "Regional fintech funding surges 34% to $1.2B in Q1",
-      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, a 34% increase year-on-year, led by Saudi Arabia's Tabby ($150 million) and UAE's Zbooni ($80 million). Digital payments and BNPL sectors attracted the most capital.",
-      "insight": "The surge in fintech investment underscores the region's push toward a cashless economy, with regulatory support from central banks driving innovation."
+      "headline": "Bahrain's GDP grows 2.8% in Q1, fiscal deficit narrows",
+      "summary": "Bahrain's economy expanded 2.8% year-on-year in Q1 2026, with non-oil growth at 3.1%. The fiscal deficit narrowed to 2.1% of GDP from 3.5% a year earlier, supported by higher oil revenues and spending controls.",
+      "insight": "Fiscal consolidation gains traction, but Bahrain's breakeven oil price remains elevated near $95/barrel, leaving the economy vulnerable to price swings."
     },
     {
-      "headline": "Saudi Arabia launches $50 billion green hydrogen project",
-      "summary": "Saudi Arabia announced a $50 billion green hydrogen project in NEOM, expected to produce 1.2 million tonnes annually by 2030. The project will be powered by 20 GW of solar and wind energy, positioning the Kingdom as a global leader in clean energy.",
-      "insight": "This mega-project aligns with Saudi Arabia's goal to become a top hydrogen exporter, leveraging its renewable energy potential to attract foreign investment."
+      "headline": "Qatar's LNG exports rise 4% in April to 7.8 million tonnes",
+      "summary": "Qatar's liquefied natural gas exports increased 4% month-on-month in April to 7.8 million tonnes, with Asia accounting for 72% of shipments. Spot LNG prices averaged $11.20/MMBtu, up 8% from March.",
+      "insight": "Higher volumes and prices boost Qatar's fiscal surplus, but the ramp-up of new US LNG capacity will intensify competition for Asian market share later this year."
     },
     {
-      "headline": "Qatar's LNG expansion boosts GDP growth to 5.1%",
-      "summary": "Qatar's GDP grew 5.1% year-on-year in Q1 2026, driven by a 15% increase in LNG output following the completion of the North Field East expansion. Exports to Asia rose 20%, with China and India as key buyers.",
-      "insight": "Qatar's LNG capacity expansion cements its position as a dominant global supplier, supporting fiscal surplus and economic diversification efforts."
+      "headline": "Dubai's real estate transactions hit AED 38 billion in April",
+      "summary": "Dubai recorded AED 38 billion in real estate transactions in April, up 15% year-on-year, with off-plan sales contributing 42% of the total. Average villa prices rose 8% while apartment prices increased 5%.",
+      "insight": "Sustained demand from foreign investors and high-net-worth individuals continues to drive the market, but affordability constraints may slow price growth in the second half."
     },
     {
-      "headline": "UAE announces 10-year golden visa for AI specialists",
-      "summary": "The UAE launched a 10-year golden visa program for AI and data science professionals, aiming to attract 10,000 experts by 2027. The initiative includes fast-track residency and business setup incentives.",
-      "insight": "This targeted visa program enhances the UAE's competitive edge in the global AI race, supporting its strategy to become a top technology hub."
+      "headline": "Kuwait's M1 money supply grows 6.2% year-on-year in March",
+      "summary": "Kuwait's M1 money supply expanded 6.2% year-on-year in March to KWD 28.5 billion, while private sector credit rose 4.8%. Bank lending to businesses increased 5.1%.",
+      "insight": "Credit growth remains supportive of economic activity, but the pace suggests banks are selectively lending amid elevated non-performing loan ratios."
     },
     {
-      "headline": "GCC inflation remains stable at 2.3% in April",
-      "summary": "GCC inflation held steady at 2.3% year-on-year in April, with food prices rising 1.8% and housing costs up 2.5%. Core inflation excluding energy and food was 1.9%, reflecting moderate price pressures.",
-      "insight": "Stable inflation supports central banks' ability to maintain accommodative monetary policies, encouraging consumer spending and investment."
+      "headline": "GCC fintech funding surges 34% to $1.2 billion in Q1",
+      "summary": "Fintech companies in the GCC raised $1.2 billion in Q1 2026, a 34% increase from the same period last year, driven by a $400 million round by a Saudi digital payments firm and a $250 million round by a UAE lending platform.",
+      "insight": "The funding surge reflects growing investor appetite for digital financial services in the region, with regulatory sandboxes and open banking frameworks accelerating adoption."
     }
   ]
 }
