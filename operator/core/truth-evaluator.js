@@ -71,29 +71,34 @@ function safeExec(command) {
 
 /**
  * Verify Git state:
- *   1. git log -1 — confirm a recent commit exists
- *   2. git status --porcelain — check for uncommitted changes (commit was pushed)
+ *   1. git log -1 — confirm a commit exists locally
+ *   2. git rev-parse origin/main — verify remote tracking branch exists
+ *   3. git merge-base --is-ancestor HEAD origin/main — confirm HEAD was pushed
  *
  * @returns {{ verified: boolean, commitHash: string|null, details: object }}
  */
 function verifyGit() {
   const log = safeExec("git log -1 --format=%H");
-  const status = safeExec("git status --porcelain");
+  const remoteRef = safeExec("git rev-parse origin/main 2>/dev/null || git rev-parse origin/master 2>/dev/null || echo 'no-remote'");
+  const isPushed = safeExec("git merge-base --is-ancestor HEAD origin/main 2>/dev/null && echo 'pushed' || (git merge-base --is-ancestor HEAD origin/master 2>/dev/null && echo 'pushed' || echo 'not-pushed')");
 
   const commitHash = log.success ? log.output : null;
-  const hasUncommitted = status.success && status.output.length > 0;
+  const remoteExists = remoteRef.success && remoteRef.output !== "no-remote";
 
   // SUCCESS if:
   //   - commit exists (log succeeded)
-  //   - no uncommitted changes (all files pushed)
-  const verified = log.success && !hasUncommitted;
+  //   - remote tracking branch exists
+  //   - HEAD is an ancestor of the remote tracking branch (i.e., commit was pushed)
+  const verified = log.success && isPushed.success && isPushed.output === "pushed";
 
   return {
     verified,
     commitHash,
     details: {
       logOutput: log.output,
-      uncommittedChanges: hasUncommitted ? status.output.split("\n").filter(Boolean) : [],
+      remoteExists,
+      remoteRef: remoteRef.output,
+      pushStatus: isPushed.output,
     },
   };
 }

@@ -18,6 +18,7 @@ import {
 import { evaluateTruth, calculateHealthScore, isSystemUnstable } from "./core/truth-evaluator.js";
 import { runOptimization } from "./core/optimizer.js";
 import { processFeedback } from "./core/feedback.js";
+import { initAgentRun } from "./core/agent-orchestrator.js";
 import { fuseSignals, formatSignalContext } from "./core/fusion-engine.js";
 import { synthesizeInsights, formatInsightsForNewsletter } from "./core/insight-synthesizer.js";
 import { generateScenarios, formatScenariosForNewsletter } from "./core/scenario-engine.js";
@@ -143,10 +144,12 @@ function writeFile(filePath, content) {
  * Generate the full newsletter JSON content by calling DeepSeek
  * as a separate content-generation request (not embedded in plan).
  *
- * This keeps the planning payload lightweight and avoids
- * malformed/truncated JSON from massive instruction blocks.
+ * Uses the pipeline's single runId for all agent barrier tracking,
+ * signal fusion, insight synthesis, and scenario generation.
+ *
+ * @param {string} pipelineRunId - The SINGLE pipeline-level run identifier
  */
-async function generateNewsletterContent() {
+async function generateNewsletterContent(pipelineRunId) {
   console.log("\n📝 GENERATING NEWSLETTER CONTENT...");
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -156,15 +159,9 @@ async function generateNewsletterContent() {
   const editorialFrame = buildEditorialFrame(CURRENT_DATE);
   const editorialBlock = formatEditorialFrame(editorialFrame);
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // STEP 2: Run signal fusion across all 4 intelligence modules
-  //         (includes editorial gatekeeping BEFORE fusion)
-  // ═══════════════════════════════════════════════════════════════════════
-  // Pipeline: signals → normalize → EDITORIAL STRATEGIST → fusion → DeepSeek
-  // The fusedSignals already contain only editorially APPROVED stories.
-  // All EXCLUDED and DEFERRED signals have been logged and dropped.
   console.log("\n   🧠 Running signal fusion engine (with editorial gatekeeping)...");
-  const fusedSignals = await fuseSignals(CURRENT_DATE, editorialFrame);
+  // ── Pass pipelineRunId to fuseSignals for agent barrier tracking ──
+  const fusedSignals = await fuseSignals(CURRENT_DATE, editorialFrame, { runId: pipelineRunId });
   const signalContext = formatSignalContext(fusedSignals);
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -172,8 +169,7 @@ async function generateNewsletterContent() {
   //          Generates 2-4 structured, signal-grounded hypotheses
   // ═══════════════════════════════════════════════════════════════════════
   console.log("\n   🧠 Running strategic insight synthesis...");
-  const runId = `${JOB_NAME}-${CURRENT_DATE}-${Date.now()}`;
-  const insightResult = await synthesizeInsights(fusedSignals, runId);
+  const insightResult = await synthesizeInsights(fusedSignals, pipelineRunId);
   const insightNewsletterSection = formatInsightsForNewsletter(insightResult.insights);
   console.log(`   ✅ Insights generated: ${insightResult.insights.length} passed validation gate`);
   if (insightResult.discarded.length > 0) {
@@ -283,7 +279,7 @@ Return ONLY valid JSON — no markdown, no code fences, no extra text.`;
   //          Generates 1-3 structured, signal-grounded scenarios
   // ═══════════════════════════════════════════════════════════════════════
   console.log("\n   📊 Running scenario engine...");
-  const scenarioResult = await generateScenarios(fusedSignals, insightResult.insights, runId);
+  const scenarioResult = await generateScenarios(fusedSignals, insightResult.insights, pipelineRunId);
   const scenarioNewsletterSection = formatScenariosForNewsletter(scenarioResult.scenarios);
   console.log(`   ✅ Scenarios generated: ${scenarioResult.scenarios.length} passed validation gates`);
   if (scenarioResult.scenarios.length > 0) {
@@ -589,7 +585,7 @@ ${task}`
 // -----------------------------
 // EXECUTE PLAN
 // -----------------------------
-async function executePlan(plan) {
+async function executePlan(plan, pipelineRunId) {
   let success = 0;
   let failed = 0;
 
@@ -605,7 +601,7 @@ async function executePlan(plan) {
           continue;
         }
 
-        const newsletter = await generateNewsletterContent();
+        const newsletter = await generateNewsletterContent(pipelineRunId);
 
         // Save to output/latest-newsletter.json
         writeFile(outputPath, JSON.stringify(newsletter, null, 2));
@@ -722,6 +718,43 @@ async function run() {
     return;
   }
 
+  // ── STARTUP SANITIZATION: Clear stale agent state ─────────────
+  // Resets any leftover test-run-* / invalid runIds / orphaned completed states.
+  // This prevents stale state contamination (e.g., "test-run-123")
+  // from producing "Agent Run ID: undefined" or runId mismatch warnings.
+  console.log("\n🧹 [STARTUP] Sanitizing agent state...");
+  try {
+    const agentStatePath = path.resolve(__dirname, "core", "..", "logs", "agent-state.json");
+    const currentAgentState = JSON.parse(fs.readFileSync(agentStatePath, "utf-8"));
+    const currentRunId = currentAgentState.runId || "";
+    if (currentRunId.startsWith("test-run-") || currentRunId === "" || currentRunId.includes("undefined")) {
+      fs.writeFileSync(agentStatePath, JSON.stringify({
+        runId: "",
+        macro: "pending",
+        gcc: "pending",
+        risk: "pending",
+        editor: "pending"
+      }, null, 2), "utf-8");
+      console.log("   ✅ Cleared stale agent state: " + (currentRunId || "(empty)"));
+    }
+  } catch {
+    // agent-state.json may not exist yet — that's fine
+    console.log("   ℹ️  No existing agent state to sanitize");
+  }
+
+  // ── GENERATE SINGLE PIPELINE RUN ID ───────────────────────────
+  // This runId is the SINGLE source of truth for the entire pipeline.
+  // It propagates through executePlan() → generateNewsletterContent()
+  // → fuseSignals() → all agent orchestrator calls.
+  // No component may generate a secondary runId.
+  const pipelineRunId = `${jobName}-${CURRENT_DATE}-${Date.now()}`;
+
+  // ── INITIALIZE AGENT STATE with the pipeline's runId ──────────
+  // This must happen BEFORE fuseSignals() calls markAgentComplete(),
+  // otherwise the agent state file will contain stale runIds and
+  // trigger "Run ID mismatch" warnings.
+  initAgentRun(pipelineRunId);
+
   // ── LOOP ISOLATION: Print mode banner ──────────────────────────────
   // Every operator.js run prints its mode context for observability.
   // In REPLAY mode, recovery hooks are disabled so replay cannot
@@ -776,7 +809,7 @@ async function run() {
     }
   }
 
-  const result = await executePlan(plan);
+  const result = await executePlan(plan, pipelineRunId);
 
   // ── CONSECUTIVE FAILURE TRACKING ─────────────────────────────────
   // Track pipeline failures. If 2 consecutive runs have failures,

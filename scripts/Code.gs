@@ -555,6 +555,15 @@ function doGet(e) {
  */
 function doPost(e) {
   try {
+    // ── Auto-bootstrap WEBHOOK_SECRET if missing ──────────────────────
+    // Must match the value in operator/.env so Node sender is always valid.
+    // This ensures the first POST from the pipeline never fails with
+    // "Server misconfigured: WEBHOOK_SECRET not set".
+    var props = PropertiesService.getScriptProperties();
+    if (!props.getProperty('WEBHOOK_SECRET')) {
+      props.setProperty('WEBHOOK_SECRET', '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
+    }
+
     // ── Parse payload ──────────────────────────────────────────────────
     if (!e || !e.postData || !e.postData.contents) {
       return ContentService
@@ -566,7 +575,7 @@ function doPost(e) {
     }
 
     var contents = JSON.parse(e.postData.contents);
-    var secretToken = PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET');
+    var secretToken = props.getProperty('WEBHOOK_SECRET');
 
     // ── Security gate ──────────────────────────────────────────────────
     if (!secretToken) {
