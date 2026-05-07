@@ -1,5 +1,5 @@
 {
-  "runId": "daily-newsletter-2026-05-07-1778193689827",
+  "runId": "daily-newsletter-2026-05-07-1778193720129",
   "date": "2026-05-07",
   "insights": [
     {
@@ -12,7 +12,7 @@
       ],
       "confidence": 0.91,
       "type": "GEO_STRATEGY",
-      "status": "CONFIRMED",
+      "status": "VALIDATED",
       "signalCount": 4,
       "patternName": "Sovereign Digital Independence",
       "derivedFrom": [
@@ -20,8 +20,8 @@
         "MACRO"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:41:31.427Z",
-      "_confirmedCount": 4
+      "_lastUpdated": "2026-05-07T22:42:01.814Z",
+      "_confirmedCount": 5
     },
     {
       "hypothesis": "GCC capital markets and fiscal indicators show sector rotation away from hydrocarbon-dependent assets toward diversified economic drivers, suggesting the post-oil economic model is gaining structural momentum.",
@@ -33,7 +33,7 @@
       ],
       "confidence": 0.91,
       "type": "MACRO_TREND",
-      "status": "CONFIRMED",
+      "status": "VALIDATED",
       "signalCount": 4,
       "patternName": "Non-Oil Economic Diversification Momentum",
       "derivedFrom": [
@@ -41,8 +41,8 @@
         "MARKET"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:41:31.427Z",
-      "_confirmedCount": 4
+      "_lastUpdated": "2026-05-07T22:42:01.814Z",
+      "_confirmedCount": 5
     },
     {
       "hypothesis": "GCC states are actively diversifying strategic partnerships beyond traditional Western alliances — new trade corridors and diplomatic engagements signal a multipolar alignment strategy that prioritizes economic sovereignty over historical geopolitical dependencies.",
@@ -53,7 +53,7 @@
       ],
       "confidence": 0.91,
       "type": "GEO_STRATEGY",
-      "status": "CONFIRMED",
+      "status": "VALIDATED",
       "signalCount": 3,
       "patternName": "GCC Geopolitical Realignment",
       "derivedFrom": [
@@ -61,8 +61,8 @@
         "MACRO"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:41:31.427Z",
-      "_confirmedCount": 4
+      "_lastUpdated": "2026-05-07T22:42:01.814Z",
+      "_confirmedCount": 5
     },
     {
       "hypothesis": "GCC capital markets are undergoing institutional deepening — increased IPO activity and institutional capital flows signal a structural shift from retail-dominated to institutionally-driven markets, improving price discovery and liquidity depth.",
@@ -73,7 +73,7 @@
       ],
       "confidence": 0.91,
       "type": "MARKET_SHIFT",
-      "status": "CONFIRMED",
+      "status": "VALIDATED",
       "signalCount": 3,
       "patternName": "GCC Capital Markets Deepening",
       "derivedFrom": [
@@ -81,8 +81,8 @@
         "MACRO"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:41:31.427Z",
-      "_confirmedCount": 4
+      "_lastUpdated": "2026-05-07T22:42:01.814Z",
+      "_confirmedCount": 5
     }
   ]
 }
