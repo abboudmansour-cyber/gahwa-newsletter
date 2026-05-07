@@ -1,46 +1,35 @@
 {
-  "date": "2026-05-07",
+  "date": "2025-04-09",
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "headline": "Saudi Tadawul index edges up 0.3% on petchem gains",
-      "summary": "The Saudi Tadawul All Share Index rose 0.3% to 12,456 points on Wednesday, supported by a 1.2% gain in petrochemical stocks led by SABIC. Trading volume reached SAR 6.8 billion, slightly above the 30-day average.",
-      "insight": "Petrochemical strength reflects improving global demand signals, but the index remains range-bound as investors await Q1 corporate earnings for directional cues."
+      "heading": "Market Overview",
+      "content": "GCC markets opened mixed today with Saudi Tadawul down 0.3% and Dubai Financial Market up 0.5%. Oil prices stabilized around $85/barrel."
     },
     {
-      "headline": "UAE non-oil PMI hits 55.8 in April, fastest in 8 months",
-      "summary": "The UAE's S&P Global purchasing managers' index rose to 55.8 in April from 54.9 in March, marking the strongest improvement in business conditions since August 2025. New orders and employment both expanded at accelerated rates.",
-      "insight": "Sustained PMI expansion above 55 confirms robust private sector momentum, supporting our view of 4.2% non-oil GDP growth for 2026."
+      "heading": "Top Stories",
+      "items": [
+        {
+          "title": "UAE Non-Oil Economy Expands 4.5% in Q1",
+          "summary": "Driven by tourism and financial services, the UAE's non-oil GDP growth exceeded expectations."
+        },
+        {
+          "title": "Saudi Arabia Launches New Investment Initiative",
+          "summary": "The Kingdom announced a $50 billion fund targeting renewable energy and tech startups."
+        },
+        {
+          "title": "Qatar Energy Signs LNG Deal with Germany",
+          "summary": "A 15-year agreement to supply 2 million tonnes of LNG annually starting 2026."
+        }
+      ]
     },
     {
-      "headline": "ADNOC awards $2.3 billion in EPC contracts for Ruwais expansion",
-      "summary": "ADNOC has awarded engineering, procurement, and construction contracts worth $2.3 billion for its Ruwais complex expansion, part of a broader $45 billion downstream investment plan. The contracts cover new petrochemical units and utilities.",
-      "insight": "This award underscores ADNOC's commitment to downstream integration and value-add exports, positioning the UAE to capture higher margins from refined products."
+      "heading": "Currency & Commodities",
+      "content": "USD/SAR at 3.75, USD/AED at 3.67. Gold up 0.2% to $2,340/oz. Brent crude at $85.20."
     },
     {
-      "headline": "Bahrain's GDP grows 2.8% in Q1, fiscal deficit narrows",
-      "summary": "Bahrain's economy expanded 2.8% year-on-year in Q1 2026, with non-oil growth at 3.1%. The fiscal deficit narrowed to 2.1% of GDP from 3.5% a year earlier, supported by higher oil revenues and spending controls.",
-      "insight": "Fiscal consolidation gains traction, but Bahrain's breakeven oil price remains elevated near $95/barrel, leaving the economy vulnerable to price swings."
-    },
-    {
-      "headline": "Qatar's LNG exports rise 4% in April to 7.8 million tonnes",
-      "summary": "Qatar's liquefied natural gas exports increased 4% month-on-month in April to 7.8 million tonnes, with Asia accounting for 72% of shipments. Spot LNG prices averaged $11.20/MMBtu, up 8% from March.",
-      "insight": "Higher volumes and prices boost Qatar's fiscal surplus, but the ramp-up of new US LNG capacity will intensify competition for Asian market share later this year."
-    },
-    {
-      "headline": "Dubai's real estate transactions hit AED 38 billion in April",
-      "summary": "Dubai recorded AED 38 billion in real estate transactions in April, up 15% year-on-year, with off-plan sales contributing 42% of the total. Average villa prices rose 8% while apartment prices increased 5%.",
-      "insight": "Sustained demand from foreign investors and high-net-worth individuals continues to drive the market, but affordability constraints may slow price growth in the second half."
-    },
-    {
-      "headline": "Kuwait's M1 money supply grows 6.2% year-on-year in March",
-      "summary": "Kuwait's M1 money supply expanded 6.2% year-on-year in March to KWD 28.5 billion, while private sector credit rose 4.8%. Bank lending to businesses increased 5.1%.",
-      "insight": "Credit growth remains supportive of economic activity, but the pace suggests banks are selectively lending amid elevated non-performing loan ratios."
-    },
-    {
-      "headline": "GCC fintech funding surges 34% to $1.2 billion in Q1",
-      "summary": "Fintech companies in the GCC raised $1.2 billion in Q1 2026, a 34% increase from the same period last year, driven by a $400 million round by a Saudi digital payments firm and a $250 million round by a UAE lending platform.",
-      "insight": "The funding surge reflects growing investor appetite for digital financial services in the region, with regulatory sandboxes and open banking frameworks accelerating adoption."
+      "heading": "What to Watch Today",
+      "content": "Central bank meetings in UAE and Saudi Arabia. Earnings reports from ADNOC and Qatar National Bank."
     }
   ]
 }

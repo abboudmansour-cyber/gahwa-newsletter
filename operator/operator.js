@@ -2,20 +2,27 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import dotenv from "dotenv";
+import fetch from "node-fetch";
 import { askDeepSeek } from "./deepseek.js";
 import { evaluateNewsletter } from "./evaluator.js";
 import { saveRun } from "./memory.js";
 
-dotenv.config({ path: path.resolve(path.dirname(new URL(import.meta.url).pathname), ".env") });
+// ── Dynamic path resolution (works on any server: local, Hetzner, etc.) ─────
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const ROOT = path.resolve(__dirname, "..");
 
-const ROOT = "/Users/AM/Documents/gahwa-newsletter";
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 process.chdir(ROOT);
 
 // -----------------------------
 // JOB DEFINITIONS
 // -----------------------------
 const JOBS = {
-  "daily-newsletter": "Generate today's GCC Morning Brief newsletter in structured JSON format and publish it.",
+  "daily-newsletter": `Execute a COMPLETE autonomous pipeline:
+Step 1 — docs: Generate today's GCC Morning Brief newsletter in structured JSON format.
+Step 2 — git: Commit and push all changes to GitHub with a descriptive message.
+Step 3 — push: Trigger the Apps Script delivery webhook to email the newsletter.
+A "complete run" MUST include ALL THREE steps (docs, git, push) in the JSON plan. Do not omit any step.`,
   "test-run": "Run a minimal test newsletter pipeline.",
 };
 
@@ -126,6 +133,114 @@ function writeFile(filePath, content) {
 }
 
 // -----------------------------
+// PUSH TO APPS SCRIPT (Delivery Bridge)
+// -----------------------------
+/**
+ * POST the latest newsletter JSON to the Apps Script webhook.
+ * Reads APPS_SCRIPT_WEBHOOK_URL and WEBHOOK_SECRET from .env.
+ * Replicates the logic from scripts/send_to_apps_script.sh natively in JS.
+ */
+async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
+  const webhookUrl = process.env.APPS_SCRIPT_WEBHOOK_URL;
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+
+  if (!webhookUrl) {
+    console.log("❌ [PUSH FAILED] APPS_SCRIPT_WEBHOOK_URL is not set in .env");
+    return false;
+  }
+
+  if (!webhookSecret) {
+    console.log("❌ [PUSH FAILED] WEBHOOK_SECRET is not set in .env");
+    return false;
+  }
+
+  const absolutePath = path.resolve(ROOT, filePath);
+  if (!fs.existsSync(absolutePath)) {
+    console.log(`❌ [PUSH FAILED] Payload file not found: ${absolutePath}`);
+    return false;
+  }
+
+  // Read and inject auth_token into payload
+  let payload;
+  try {
+    payload = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
+  } catch (err) {
+    console.log(`❌ [PUSH FAILED] Invalid JSON in payload: ${err.message}`);
+    return false;
+  }
+
+  payload.auth_token = webhookSecret;
+
+  console.log(`\n🚀 Pushing newsletter to Apps Script webhook...`);
+  console.log(`   Payload: ${absolutePath}`);
+
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      console.log(`   ─── Attempt ${attempt} of ${MAX_ATTEMPTS} ───`);
+
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const body = await res.text();
+
+      if (res.status === 200) {
+        console.log(`   ✅ [SUCCESS] Newsletter delivered to Apps Script.`);
+        console.log(`   Response: ${body || "(empty)"}`);
+
+        // Append delivery log
+        const logPath = path.join(ROOT, "output", "delivery_log.txt");
+        fs.mkdirSync(path.dirname(logPath), { recursive: true });
+        fs.appendFileSync(logPath, `\n--- Delivery Report: ${new Date().toISOString()} ---\nHTTP 200 — SUCCESS\n`, "utf-8");
+
+        return true;
+      }
+
+      if (res.status === 429) {
+        const wait = attempt * 5;
+        console.log(`   ⏳ Rate limited. Waiting ${wait}s before retry...`);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+        continue;
+      }
+
+      if (res.status === 502 || res.status === 503) {
+        const wait = 2 ** attempt * 3;
+        console.log(`   ⏳ Service unavailable (${res.status}). Waiting ${wait}s...`);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+        continue;
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        console.log(`   ❌ [AUTH ERROR] Apps Script rejected the request (HTTP ${res.status})`);
+        console.log(`   Response: ${body}`);
+        console.log(`   Fix: WEBHOOK_SECRET must match in both .env and Apps Script PropertiesService.`);
+        break;
+      }
+
+      // Other non-200 status
+      console.log(`   ⚠️ HTTP ${res.status} — not 200 OK. Response: ${body || "(empty)"}`);
+      if (attempt < MAX_ATTEMPTS) {
+        console.log(`   ⏳ Waiting 30s before retry...`);
+        await new Promise((r) => setTimeout(r, 30_000));
+      }
+    } catch (err) {
+      console.log(`   ⚠️ Network error: ${err.message}`);
+      if (attempt < MAX_ATTEMPTS) {
+        const wait = 2 ** attempt * 2;
+        console.log(`   ⏳ Waiting ${wait}s before retry...`);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+      }
+    }
+  }
+
+  console.log(`   ❌ [PUSH FAILED] All ${MAX_ATTEMPTS} attempts exhausted.`);
+  return false;
+}
+
+// -----------------------------
 // DEEPSEEK PLAN GENERATION
 // -----------------------------
 async function generatePlan(task) {
@@ -220,6 +335,20 @@ async function executePlan(plan) {
         runGit("git push origin main");
         console.log(`✅ [STEP SUCCESS] git — "${commitMsg}"`);
         success++;
+        continue;
+      }
+
+      // ── Handle "push" action (Apps Script delivery) ──────
+      if (step.action === "push") {
+        const payloadPath = step.path || step.file || "output/latest-newsletter.json";
+        const pushed = await pushToAppsScript(payloadPath);
+        if (pushed) {
+          console.log(`✅ [STEP SUCCESS] push — ${payloadPath}`);
+          success++;
+        } else {
+          console.log(`❌ [STEP FAILED] push — ${payloadPath}`);
+          failed++;
+        }
         continue;
       }
 

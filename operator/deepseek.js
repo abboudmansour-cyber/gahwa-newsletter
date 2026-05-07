@@ -28,6 +28,7 @@ RULES:
   - "fs"     — file system operations (CREATE, PATCH, APPEND, DELETE files)
   - "git"    — commit and push changes
   - "docs"   — write file content (shorthand for simple file writes)
+  - "push"   — trigger Apps Script webhook delivery of the newsletter JSON
 
 ---
 
@@ -36,11 +37,12 @@ OUTPUT FORMAT:
   "goal": "...",
   "steps": [
     {
-      "action": "fs | git | docs",
+      "action": "fs | git | docs | push",
       "instruction": "..."
     }
   ]
 }
+
 
 ---
 
@@ -73,9 +75,16 @@ INSTRUCTION FORMATS BY ACTION:
    instruction is the commit message.
    The system will automatically git add . && git commit -m "<instruction>" && git push
 
+4. push — Trigger Apps Script Delivery
+   Sends the generated newsletter JSON to the Apps Script webhook for email dispatch.
+   Format:
+     { "action": "push", "path": "output/latest-newsletter.json" }
+   If path is omitted, it defaults to output/latest-newsletter.json.
+
 ---
 
 CONSTRAINTS:
+
 - Keep steps minimal and executable
 - Prefer small incremental changes
 - Do NOT hallucinate tools that do not exist
