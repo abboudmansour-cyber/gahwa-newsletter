@@ -7,6 +7,9 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCHEDULE_FILE = path.join(__dirname, "schedule.json");
 
+// ── Ensure all git commands execute in the repository root ─────
+process.chdir("/Users/AM/Documents/gahwa-newsletter");
+
 // ── CLI flag parsing ────────────────────────────────────────────
 const args = process.argv.slice(2);
 const task = args.find((a) => !a.startsWith("--")) || "";
@@ -260,6 +263,8 @@ async function run() {
 
   // ── 2. Validate & execute all steps ─────────────────────────
   let blockedCount = 0;
+  let successCount = 0;
+  let failCount = 0;
 
   for (const step of plan.steps || []) {
     console.log(`\n▶️  STEP: [${step.action}]`);
@@ -267,57 +272,23 @@ async function run() {
     // Safety validation
     const validation = validateStep(step);
     if (!validation.valid) {
-      console.error(`  ❌ [BLOCKED STEP - SAFETY RULE VIOLATION]`);
+      console.error(`  ❌ [STEP FAILED - SAFETY RULE VIOLATION]`);
       console.error(`  Reason: ${validation.reason}`);
       blockedCount++;
       continue; // skip this step but continue pipeline
     }
 
-    try {
-      switch (step.action) {
-        case "git": {
-          console.log(`  🔧 git: "${step.instruction}"`);
-          if (!isDryRun) {
-            runGit(step.instruction);
-            console.log("[GIT PUSHED]");
-          } else {
-            console.log("  ⏭️  (skipped - dry run)");
-          }
-          break;
-        }
-
-        case "docs": {
-          console.log(`  📝 Writing file...`);
-          if (!isDryRun) {
-            runDocs(step.instruction);
-          } else {
-            console.log("  ⏭️  (skipped - dry run)");
-          }
-          break;
-        }
-
-        case "fs": {
-          console.log(`  📂 File system operation...`);
-          if (!isDryRun) {
-            runFs(step.instruction);
-          } else {
-            console.log("  ⏭️  (skipped - dry run)");
-          }
-          break;
-        }
-
-        default:
-          console.warn(`  ⚠️  Unknown action "${step.action}" — skipping`);
-      }
-    } catch (err) {
-      console.error(`  ❌ Step failed: ${err.message}`);
-      // Continue execution — do NOT stop the pipeline
+    const executed = await executeStep(step);
+    if (executed === true) {
+      successCount++;
+      console.log("[STEP SUCCESS]");
+    } else if (executed === false) {
+      failCount++;
+      // error already logged by executeStep
     }
+    // executed === null means dry-run or skipped — no count
 
-    // Log step executed for non-dry-run or just planned for dry-run
-    if (!isDryRun) {
-      console.log("[STEP EXECUTED]");
-    }
+    // Continue execution — do NOT stop the pipeline
   }
 
   // ── 3. Summary ────────────────────────────────────────────────
@@ -327,19 +298,58 @@ async function run() {
   } else {
     console.log("[COMPLETE]");
   }
-  const gitCount =
-    plan.steps?.filter((s) => s.action === "git" && !isDryRun).length || 0;
-  const docsCount =
-    plan.steps?.filter((s) => s.action === "docs" && !isDryRun).length || 0;
-  const fsCount =
-    plan.steps?.filter((s) => s.action === "fs" && !isDryRun).length || 0;
-  console.log(`  Git pushes:    ${gitCount}`);
-  console.log(`  Files written: ${docsCount}`);
-  console.log(`  FS operations: ${fsCount}`);
+  console.log(`  ✅ Success:      ${successCount}`);
+  console.log(`  ❌ Failed:       ${failCount}`);
   if (blockedCount > 0) {
     console.log(`  ⛔ Blocked:      ${blockedCount} step(s) rejected by safety policy`);
   }
   console.log("=".repeat(60));
+}
+
+/**
+ * Execute a single validated step.
+ *
+ * Returns:
+ *   true  — step completed successfully
+ *   false — step failed (error caught and logged)
+ *   null  — step was skipped (dry-run or unknown action)
+ */
+async function executeStep(step) {
+  if (isDryRun) {
+    console.log("  ⏭️  (skipped - dry run)");
+    return null;
+  }
+
+  try {
+    switch (step.action) {
+      case "git": {
+        console.log(`  🔧 git: "${step.instruction}"`);
+        runGit(step.instruction);
+        console.log("[GIT PUSHED]");
+        return true;
+      }
+
+      case "docs": {
+        console.log(`  📝 Writing file...`);
+        runDocs(step.instruction);
+        return true;
+      }
+
+      case "fs": {
+        console.log(`  📂 File system operation...`);
+        runFs(step.instruction);
+        return true;
+      }
+
+      default:
+        console.warn(`  ⚠️  Unknown action "${step.action}" — skipping`);
+        return null;
+    }
+  } catch (err) {
+    console.error(`  ❌ [STEP FAILED - GIT ERROR]`);
+    console.error(`  ${err.message}`);
+    return false;
+  }
 }
 
 run().catch((err) => {
