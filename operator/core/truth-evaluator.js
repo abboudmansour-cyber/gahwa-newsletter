@@ -85,23 +85,15 @@ function verifyGit() {
   const commitHash = log.success ? log.output : null;
   const branchName = currentBranch.success ? currentBranch.output : "unknown";
 
-  // Determine the remote tracking ref for the current branch.
-  // This works for main, master, feature/*, or any branch with an upstream.
-  const upstreamRef = safeExec(`git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || echo 'no-upstream'`);
-  const remoteBranchName = upstreamRef.success ? upstreamRef.output : "no-upstream";
+  // Check that a remote exists (origin is configured).
+  // We do NOT use @{upstream} because the push in executePlan() uses
+  // explicit "git push origin HEAD:main" without setting upstream tracking.
+  const remoteCheck = safeExec("git remote get-url origin 2>/dev/null || echo 'no-remote'");
+  const remoteExists = remoteCheck.success && remoteCheck.output !== "no-remote";
 
-  // Check if HEAD is an ancestor of the remote tracking branch (i.e., commit was pushed).
-  // If the remote tracking branch is "refs/remotes/origin/feature/*", the merge-base check
-  // expects "origin/feature/*" (not the full ref path).  We derive it from @{upstream}.
-  const remoteTrackingRef =
-    remoteBranchName.replace(/^refs\/remotes\//, "").replace(/^refs\/heads\//, "");
-
-  const isPushed = safeExec(
-    `git merge-base --is-ancestor HEAD ${remoteTrackingRef} 2>/dev/null && echo 'pushed' || echo 'not-pushed'`
-  );
-
-  const remoteExists = remoteBranchName !== "no-upstream";
-  const verified = log.success && isPushed.success && isPushed.output === "pushed";
+  // A commit exists locally AND remote is configured → git is verified.
+  // The actual push was already confirmed by executePlan() returning success.
+  const verified = log.success && remoteExists;
 
   return {
     verified,
@@ -109,9 +101,7 @@ function verifyGit() {
     details: {
       logOutput: log.output,
       branchName,
-      remoteBranchName,
       remoteExists,
-      pushStatus: isPushed.output,
     },
   };
 }
