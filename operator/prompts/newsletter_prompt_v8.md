@@ -1,6 +1,6 @@
-# GAHWA Newsletter Prompt — v1.1 (Baseline)
+# GAHWA Newsletter Prompt — v1.0 (Baseline)
 
-> **Prompt Version:** v1.1
+> **Prompt Version:** v1.0
 > **Last Modified:** 2026-05-07
 > **Change Log:**
 > - v1.0 — Baseline: Original prompt with GCC-specific, data-driven newsletter generation
@@ -122,24 +122,3 @@ This version includes the following adjustments to address recurring weakness:
 - Remove generic AI filler phrases.
 - Use direct, data-driven language with concrete examples.
 - Shorten sentences, remove redundancies, use active voice throughout..
-
----
-## v9 Prompt Evolution
-
-**Evolved on:** 2026-05-07T22:42:19.676Z
-**Triggered by:** "generic AI filler language detected" detected across 3 consecutive runs
-
-### Targeted Improvement
-This version includes the following adjustments to address recurring weakness:
-
-- Remove generic AI filler phrases.
-- Use direct, data-driven language with concrete examples.
-- Shorten sentences, remove redundancies, use active voice throughout..
-
----
-### Optimization — vv1.1 (content_bias_tuning)
-
-> Applied: 2026-05-07T22:42:19.678Z
-> Trigger: Recurring content bias tuning
-
-OPTIMIZATION: Eliminate all generic AI filler phrases ('delve', 'navigate', 'landscape', 'evolving', 'robust'). Use only direct, declarative sentences.
