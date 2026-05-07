@@ -1,0 +1,46 @@
+{
+  "date": "2026-05-07",
+  "title": "GCC Morning Brief",
+  "sections": [
+    {
+      "headline": "GCC stock markets mixed as oil prices dip 2.3%",
+      "summary": "GCC bourses saw mixed trading on Wednesday, with Saudi Arabia's Tadawul down 0.8% and Abu Dhabi's ADX falling 0.5%, while Dubai's DFM edged up 0.3%. Brent crude declined 2.3% to $74.10 per barrel amid demand concerns and a stronger dollar.",
+      "insight": "The divergence reflects ongoing volatility in energy markets, with Gulf equities remaining sensitive to oil price movements despite diversification efforts."
+    },
+    {
+      "headline": "Saudi non-oil PMI rises to 58.2 in April",
+      "summary": "Saudi Arabia's Purchasing Managers' Index (PMI) for non-oil private sector rose to 58.2 in April from 57.5 in March, indicating robust expansion. New orders and output grew at their fastest pace in six months, driven by strong domestic demand and export growth.",
+      "insight": "The sustained PMI above 50 signals continued momentum in Vision 2030 sectors, supporting GDP growth forecasts of 4.5% for 2026."
+    },
+    {
+      "headline": "UAE non-oil GDP expands 4.2% in Q1",
+      "summary": "The UAE's non-oil GDP grew 4.2% year-on-year in Q1 2026, driven by tourism, real estate, and financial services. Dubai's tourism sector saw a 12% increase in visitor arrivals, while Abu Dhabi's industrial output rose 6.8%.",
+      "insight": "The UAE's diversification strategy is paying off, with non-oil sectors now contributing over 70% to GDP, reducing reliance on hydrocarbons."
+    },
+    {
+      "headline": "Regional fintech funding surges 34% to $1.2B in Q1",
+      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, a 34% increase year-on-year, led by Saudi Arabia's Tabby ($150 million) and UAE's Zbooni ($80 million). Digital payments and BNPL sectors attracted the most capital.",
+      "insight": "The surge in fintech investment underscores the region's push toward a cashless economy, with regulatory support from central banks driving innovation."
+    },
+    {
+      "headline": "Saudi Arabia launches $50 billion green hydrogen project",
+      "summary": "Saudi Arabia announced a $50 billion green hydrogen project in NEOM, expected to produce 1.2 million tonnes annually by 2030. The project will be powered by 20 GW of solar and wind energy, positioning the Kingdom as a global leader in clean energy.",
+      "insight": "This mega-project aligns with Saudi Arabia's goal to become a top hydrogen exporter, leveraging its renewable energy potential to attract foreign investment."
+    },
+    {
+      "headline": "Qatar's LNG expansion boosts GDP growth to 5.1%",
+      "summary": "Qatar's GDP grew 5.1% year-on-year in Q1 2026, driven by a 15% increase in LNG output following the completion of the North Field East expansion. Exports to Asia rose 20%, with China and India as key buyers.",
+      "insight": "Qatar's LNG capacity expansion cements its position as a dominant global supplier, supporting fiscal surplus and economic diversification efforts."
+    },
+    {
+      "headline": "UAE announces 10-year golden visa for AI specialists",
+      "summary": "The UAE launched a 10-year golden visa program for AI and data science professionals, aiming to attract 10,000 experts by 2027. The initiative includes fast-track residency and business setup incentives.",
+      "insight": "This targeted visa program enhances the UAE's competitive edge in the global AI race, supporting its strategy to become a top technology hub."
+    },
+    {
+      "headline": "GCC inflation remains stable at 2.3% in April",
+      "summary": "GCC inflation held steady at 2.3% year-on-year in April, with food prices rising 1.8% and housing costs up 2.5%. Core inflation excluding energy and food was 1.9%, reflecting moderate price pressures.",
+      "insight": "Stable inflation supports central banks' ability to maintain accommodative monetary policies, encouraging consumer spending and investment."
+    }
+  ]
+}

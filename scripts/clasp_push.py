@@ -14,11 +14,16 @@ Prerequisites:
 import subprocess
 import sys
 import os
+from pathlib import Path
 
 
 def main():
-    repo_root = "/opt/gahwa"
+    # ── Dynamic Project Root Detection ─────────────────────────────────
+    # Works whether called from scripts/ or project root
+    script_dir = Path(__file__).resolve().parent  # scripts/
+    repo_root = script_dir.parent                 # gahwa-newsletter/
     os.chdir(repo_root)
+    print(f"📍 Project root: {repo_root}")
 
     print("Running clasp push...")
     result = subprocess.run(

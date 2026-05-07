@@ -1,0 +1,55 @@
+{
+  "date": "2025-04-10",
+  "title": "GCC Morning Brief",
+  "sections": [
+    {
+      "headline": "GCC Markets Open Higher on Oil Stability",
+      "summary": "Major GCC indices opened in positive territory as oil prices held steady above $85 per barrel, boosting investor confidence across the region.",
+      "source": "Reuters"
+    },
+    {
+      "headline": "Saudi Arabia Announces New Tourism Visa Reforms",
+      "summary": "The Saudi Ministry of Tourism unveiled streamlined visa procedures for 50+ nationalities, aiming to attract 150 million annual visits by 2030.",
+      "source": "Saudi Press Agency"
+    },
+    {
+      "headline": "UAE Central Bank Holds Interest Rates Steady",
+      "summary": "The UAE Central Bank maintained its base rate at 4.40%, aligning with the Federal Reserve's pause, to support economic growth amid global uncertainty.",
+      "source": "Gulf News"
+    },
+    {
+      "headline": "Qatar Energy Signs Long-Term LNG Deal with Germany",
+      "summary": "QatarEnergy inked a 20-year agreement to supply 2 million tonnes of LNG annually to German utility companies, strengthening energy ties.",
+      "source": "Bloomberg"
+    },
+    {
+      "headline": "Kuwait's Non-Oil GDP Grows 3.2% in Q1",
+      "summary": "Kuwait's non-oil sector expanded 3.2% year-on-year in the first quarter, driven by construction and financial services, according to official data.",
+      "source": "Kuwait News Agency"
+    },
+    {
+      "headline": "Oman Launches Green Hydrogen Tender Round 2",
+      "summary": "Oman's Ministry of Energy and Minerals opened bids for four new green hydrogen projects, targeting 1 million tonnes annual production by 2030.",
+      "source": "Times of Oman"
+    },
+    {
+      "headline": "Bahrain Fintech Ecosystem Attracts $50M in VC Funding",
+      "summary": "Bahrain's fintech startups raised $50 million in Q1 2025, a 40% increase year-on-year, driven by regulatory sandbox initiatives.",
+      "source": "Bahrain Economic Development Board"
+    }
+  ],
+  "market_summary": {
+    "saudi_tadawul": "+0.45%",
+    "dubai_dfm": "+0.32%",
+    "abu_dhabi_adx": "+0.28%",
+    "qatar_exchange": "+0.51%",
+    "kuwait_premier": "+0.19%",
+    "oman_msm": "+0.11%",
+    "bahrain_bse": "+0.08%"
+  },
+  "key_events": [
+    "OPEC+ monthly meeting scheduled for April 15",
+    "Saudi GDP data release for Q1 2025 due next week",
+    "UAE announces new foreign direct investment law"
+  ]
+}

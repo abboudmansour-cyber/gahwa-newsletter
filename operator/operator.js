@@ -1,358 +1,316 @@
-import { askDeepSeek } from "./deepseek.js";
-import { runGit } from "./github.js";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { execSync } from "child_process";
+import dotenv from "dotenv";
+import { askDeepSeek } from "./deepseek.js";
+import { evaluateNewsletter } from "./evaluator.js";
+import { saveRun } from "./memory.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SCHEDULE_FILE = path.join(__dirname, "schedule.json");
+dotenv.config({ path: path.resolve(path.dirname(new URL(import.meta.url).pathname), ".env") });
 
-// ── Ensure all git commands execute in the repository root ─────
-process.chdir("/Users/AM/Documents/gahwa-newsletter");
+const ROOT = "/Users/AM/Documents/gahwa-newsletter";
+process.chdir(ROOT);
 
-// ── CLI flag parsing ────────────────────────────────────────────
-const args = process.argv.slice(2);
-const task = args.find((a) => !a.startsWith("--")) || "";
-const isDryRun = args.includes("--dry-run");
-const isSchedule = args.includes("--schedule");
+// -----------------------------
+// JOB DEFINITIONS
+// -----------------------------
+const JOBS = {
+  "daily-newsletter": "Generate today's GCC Morning Brief newsletter in structured JSON format and publish it.",
+  "test-run": "Run a minimal test newsletter pipeline.",
+};
 
-// ── CRITICAL FILE PATTERNS (blocklist for safety) ──────────────
-const BLOCKED_PATH_PATTERNS = ["../", "~", "/etc", "/system"];
-const CRITICAL_FILES = [
-  "package.json",
-  ".env",
-  ".git/config",
-  path.join(__dirname, "schedule.json"),
-  path.join(__dirname, "operator.js"),
-  path.join(__dirname, "deepseek.js"),
-  path.join(__dirname, "github.js"),
-];
-
-// ── VALIDATION LAYER ────────────────────────────────────────────
-
-/**
- * Validate a file path against safety rules.
- * Returns { valid: boolean, reason?: string }
- */
-function validatePath(filePath) {
-  const absPath = path.resolve(filePath);
-
-  // Check for blocked patterns
-  for (const pattern of BLOCKED_PATH_PATTERNS) {
-    if (absPath.includes(pattern)) {
-      return {
-        valid: false,
-        reason: `Path contains blocked pattern "${pattern}"`,
-      };
-    }
-  }
-
-  // Check for critical files
-  for (const critical of CRITICAL_FILES) {
-    const resolvedCritical = path.resolve(critical);
-    if (absPath === resolvedCritical) {
-      return {
-        valid: false,
-        reason: `Blocked: overwriting critical file "${critical}"`,
-      };
-    }
-  }
-
-  return { valid: true };
+// -----------------------------
+// UTIL: LOGGING
+// -----------------------------
+function log(msg) {
+  console.log(`\n${msg}`);
 }
 
-/**
- * Validate a single step before execution.
- * Returns { valid: boolean, reason?: string }
- */
-function validateStep(step) {
-  const instruction = step.instruction || "";
-  const lines = instruction.split("\n");
-
-  // Extract file path from fs/docs steps
-  let targetPath = null;
-
-  if (step.action === "docs" || step.action === "fs") {
-    const createLine = lines.find((l) => l.trim().startsWith("CREATE:"));
-    const patchLine = lines.find((l) => l.trim().startsWith("PATCH:"));
-    const appendLine = lines.find((l) => l.trim().startsWith("APPEND:"));
-    const deleteLine = lines.find((l) => l.trim().startsWith("DELETE:"));
-    const fileLine = lines.find((l) => l.trim().startsWith("FILE:"));
-
-    targetPath =
-      (createLine && createLine.replace("CREATE:", "").trim()) ||
-      (patchLine && patchLine.replace("PATCH:", "").trim()) ||
-      (appendLine && appendLine.replace("APPEND:", "").trim()) ||
-      (deleteLine && deleteLine.replace("DELETE:", "").trim()) ||
-      (fileLine && fileLine.replace("FILE:", "").trim());
-
-    // Block DELETE unless explicitly confirmed safe
-    if (deleteLine) {
-      return {
-        valid: false,
-        reason: "DELETE actions are blocked by safety policy",
-      };
-    }
-  }
-
-  if (targetPath) {
-    return validatePath(targetPath);
-  }
-
-  return { valid: true };
-}
-
-// ── ACTION EXECUTORS ────────────────────────────────────────────
-
-function runDocs(instruction) {
-  const lines = instruction.split("\n");
-  const fileLine = lines.find((l) => l.trim().startsWith("FILE:"));
-  if (!fileLine) {
-    console.warn("  ⚠️  docs step missing FILE: line — skipping");
-    return;
-  }
-  const filePath = fileLine.replace("FILE:", "").trim();
-  const contentStart = instruction.indexOf("---");
-  const content =
-    contentStart !== -1
-      ? instruction.slice(contentStart + 3).trim()
-      : instruction;
-
-  const absPath = path.resolve(filePath);
-  fs.mkdirSync(path.dirname(absPath), { recursive: true });
-  fs.writeFileSync(absPath, content, "utf-8");
-  console.log("[FILE MODIFIED]");
-}
-
-function runFs(instruction) {
-  const lines = instruction.split("\n");
-  const createLine = lines.find((l) => l.trim().startsWith("CREATE:"));
-  const patchLine = lines.find((l) => l.trim().startsWith("PATCH:"));
-  const deleteLine = lines.find((l) => l.trim().startsWith("DELETE:"));
-  const appendLine = lines.find((l) => l.trim().startsWith("APPEND:"));
-
-  let targetPath = null;
-  let op = null;
-
-  if (createLine) {
-    op = "create";
-    targetPath = createLine.replace("CREATE:", "").trim();
-  } else if (patchLine) {
-    op = "patch";
-    targetPath = patchLine.replace("PATCH:", "").trim();
-  } else if (appendLine) {
-    op = "append";
-    targetPath = appendLine.replace("APPEND:", "").trim();
-  } else if (deleteLine) {
-    op = "delete";
-    targetPath = deleteLine.replace("DELETE:", "").trim();
-  }
-
-  if (!targetPath) {
-    const fileLine = lines.find((l) => l.trim().startsWith("FILE:"));
-    if (fileLine) {
-      const fp = fileLine.replace("FILE:", "").trim();
-      const contentStart = instruction.indexOf("---");
-      const content =
-        contentStart !== -1
-          ? instruction.slice(contentStart + 3).trim()
-          : instruction;
-      const absPath = path.resolve(fp);
-      fs.mkdirSync(path.dirname(absPath), { recursive: true });
-      fs.writeFileSync(absPath, content, "utf-8");
-      console.log("[FILE MODIFIED]");
-      return;
-    }
-    console.warn(
-      "  ⚠️  fs step missing CREATE:/PATCH:/DELETE:/APPEND: or FILE: line — skipping"
-    );
-    return;
-  }
-
-  const absPath = path.resolve(targetPath);
-  const contentStart = instruction.indexOf("---");
-
-  switch (op) {
-    case "create": {
-      const content =
-        contentStart !== -1
-          ? instruction.slice(contentStart + 3).trim()
-          : "";
-      fs.mkdirSync(path.dirname(absPath), { recursive: true });
-      fs.writeFileSync(absPath, content, "utf-8");
-      console.log("[FILE MODIFIED]");
-      break;
-    }
-    case "patch": {
-      if (!fs.existsSync(absPath)) {
-        console.warn(`  ⚠️  File not found for PATCH: ${absPath}`);
-        return;
-      }
-      const content =
-        contentStart !== -1
-          ? instruction.slice(contentStart + 3).trim()
-          : "";
-      fs.writeFileSync(absPath, content, "utf-8");
-      console.log("[FILE MODIFIED]");
-      break;
-    }
-    case "append": {
-      const content =
-        contentStart !== -1
-          ? instruction.slice(contentStart + 3).trim()
-          : "";
-      fs.mkdirSync(path.dirname(absPath), { recursive: true });
-      fs.appendFileSync(absPath, "\n" + content, "utf-8");
-      console.log("[FILE MODIFIED]");
-      break;
-    }
-    case "delete": {
-      // DELETE is blocked by validation — should never reach here
-      console.warn(`  ⚠️  DELETE blocked by safety policy: ${absPath}`);
-      break;
-    }
-  }
-}
-
-// ── MAIN RUNNER ─────────────────────────────────────────────────
-
-async function run() {
-  // ── SCHEDULE MODE: write to schedule.json, do not execute ──
-  if (isSchedule) {
-    const jobs = [];
-    if (fs.existsSync(SCHEDULE_FILE)) {
-      try {
-        const existing = JSON.parse(fs.readFileSync(SCHEDULE_FILE, "utf-8"));
-        if (Array.isArray(existing)) jobs.push(...existing);
-      } catch {
-        // start fresh
-      }
-    }
-    jobs.push({
-      task,
-      timestamp: new Date().toISOString(),
-      status: "pending",
-    });
-    fs.mkdirSync(path.dirname(SCHEDULE_FILE), { recursive: true });
-    fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(jobs, null, 2), "utf-8");
-    console.log(`\n📅 [SCHEDULED]`);
-    console.log(`  Task:  ${task}`);
-    console.log(`  File:  ${SCHEDULE_FILE}`);
-    console.log(`  Jobs:  ${jobs.length} total`);
-    return;
-  }
-
-  console.log("\n" + "=".repeat(60));
-  console.log("🚀 TASK:", task);
-  if (isDryRun) console.log("[DRY RUN MODE - NO CHANGES MADE]");
-  console.log("=".repeat(60));
-
-  // ── 1. Generate plan ──────────────────────────────────────────
-  console.log("\n⏳ Generating plan from DeepSeek...");
-  const plan = await askDeepSeek(task);
-  console.log("\n[PLAN RECEIVED]");
-  console.log(`  Goal:    ${plan.goal || "(not set)"}`);
-  console.log(`  Steps:   ${plan.steps?.length || 0}`);
-  plan.steps?.forEach((s, i) => {
-    const instr = (s.instruction || "").slice(0, 80);
-    console.log(
-      `    ${i + 1}. [${s.action}] ${instr}${(s.instruction || "").length > 80 ? "…" : ""}`
-    );
-  });
-  console.log("─".repeat(60));
-
-  // ── 2. Validate & execute all steps ─────────────────────────
-  let blockedCount = 0;
-  let successCount = 0;
-  let failCount = 0;
-
-  for (const step of plan.steps || []) {
-    console.log(`\n▶️  STEP: [${step.action}]`);
-
-    // Safety validation
-    const validation = validateStep(step);
-    if (!validation.valid) {
-      console.error(`  ❌ [STEP FAILED - SAFETY RULE VIOLATION]`);
-      console.error(`  Reason: ${validation.reason}`);
-      blockedCount++;
-      continue; // skip this step but continue pipeline
-    }
-
-    const executed = await executeStep(step);
-    if (executed === true) {
-      successCount++;
-      console.log("[STEP SUCCESS]");
-    } else if (executed === false) {
-      failCount++;
-      // error already logged by executeStep
-    }
-    // executed === null means dry-run or skipped — no count
-
-    // Continue execution — do NOT stop the pipeline
-  }
-
-  // ── 3. Summary ────────────────────────────────────────────────
-  console.log("\n" + "=".repeat(60));
-  if (isDryRun) {
-    console.log("[DRY RUN COMPLETE - NO CHANGES MADE]");
-  } else {
-    console.log("[COMPLETE]");
-  }
-  console.log(`  ✅ Success:      ${successCount}`);
-  console.log(`  ❌ Failed:       ${failCount}`);
-  if (blockedCount > 0) {
-    console.log(`  ⛔ Blocked:      ${blockedCount} step(s) rejected by safety policy`);
-  }
-  console.log("=".repeat(60));
-}
-
-/**
- * Execute a single validated step.
- *
- * Returns:
- *   true  — step completed successfully
- *   false — step failed (error caught and logged)
- *   null  — step was skipped (dry-run or unknown action)
- */
-async function executeStep(step) {
-  if (isDryRun) {
-    console.log("  ⏭️  (skipped - dry run)");
-    return null;
-  }
-
+// -----------------------------
+// EXECUTE GIT SAFE
+// -----------------------------
+function runGit(command) {
   try {
-    switch (step.action) {
-      case "git": {
-        console.log(`  🔧 git: "${step.instruction}"`);
-        runGit(step.instruction);
-        console.log("[GIT PUSHED]");
-        return true;
-      }
-
-      case "docs": {
-        console.log(`  📝 Writing file...`);
-        runDocs(step.instruction);
-        return true;
-      }
-
-      case "fs": {
-        console.log(`  📂 File system operation...`);
-        runFs(step.instruction);
-        return true;
-      }
-
-      default:
-        console.warn(`  ⚠️  Unknown action "${step.action}" — skipping`);
-        return null;
-    }
+    execSync(command, { stdio: "inherit" });
+    return true;
   } catch (err) {
-    console.error(`  ❌ [STEP FAILED - GIT ERROR]`);
-    console.error(`  ${err.message}`);
+    console.log(`❌ [GIT ERROR] ${err.message}`);
     return false;
   }
 }
 
-run().catch((err) => {
-  console.error("\n❌ FATAL:", err.message);
-  process.exit(1);
-});
+// -----------------------------
+// SAFE PATH CHECK
+// -----------------------------
+function isPathSafe(targetPath) {
+  const resolved = path.resolve(ROOT, targetPath);
+
+  // Block any path traversal attempts
+  if (targetPath.includes("..")) {
+    console.log(`❌ [BLOCKED PATH] Path traversal detected: ${targetPath}`);
+    return false;
+  }
+
+  // Ensure path is inside project directory
+  if (!resolved.startsWith(ROOT)) {
+    console.log(`❌ [BLOCKED PATH] Path outside project root: ${targetPath}`);
+    return false;
+  }
+
+  return true;
+}
+
+// -----------------------------
+// PARSE DOCS INSTRUCTION
+// -----------------------------
+// Expected format:
+//   FILE: <relative-path>
+//   ---
+//   <file-content>
+// Returns { path: string, content: string } or null on failure.
+function parseDocsInstruction(instruction) {
+  if (!instruction || typeof instruction !== "string") {
+    console.log("❌ [PARSE ERROR] Instruction is missing or not a string");
+    return null;
+  }
+
+  const lines = instruction.split("\n");
+  const fileLine = lines.find((line) => line.startsWith("FILE:"));
+
+  if (!fileLine) {
+    console.log(`❌ [PARSE ERROR] No "FILE:" line found in instruction`);
+    console.log(`  Raw instruction (first 200 chars): ${instruction.slice(0, 200)}`);
+    return null;
+  }
+
+  const filePath = fileLine.replace(/^FILE:\s*/, "").trim();
+  if (!filePath) {
+    console.log(`❌ [PARSE ERROR] Empty file path after "FILE:"`);
+    return null;
+  }
+
+  // Find where content starts (after "---" separator following FILE: line)
+  const fileLineIndex = lines.indexOf(fileLine);
+  const separatorIndex = lines.findIndex((line, i) => i > fileLineIndex && line.trim() === "---");
+  if (separatorIndex === -1) {
+    console.log(`❌ [PARSE ERROR] No "---" separator found after FILE: line`);
+    return null;
+  }
+
+  const contentLines = lines.slice(separatorIndex + 1);
+  const content = contentLines.join("\n");
+
+  if (!content.trim()) {
+    console.log(`⚠️ [PARSE WARNING] Empty content for file: ${filePath}`);
+  }
+
+  return { path: filePath, content };
+}
+
+// -----------------------------
+// EXECUTE FILE OPS
+// -----------------------------
+function writeFile(filePath, content) {
+  try {
+    // Ensure parent directory exists
+    const dir = path.dirname(filePath);
+    fs.mkdirSync(dir, { recursive: true });
+
+    fs.writeFileSync(filePath, content, "utf-8");
+    console.log(`[FILE CREATED] ${filePath}`);
+    return true;
+  } catch (err) {
+    console.log(`❌ [FILE ERROR] ${err.message}`);
+    return false;
+  }
+}
+
+// -----------------------------
+// DEEPSEEK PLAN GENERATION
+// -----------------------------
+async function generatePlan(task) {
+  return await askDeepSeek(`
+You are an execution planner for an AI newsletter system.
+
+Return ONLY JSON:
+{
+  "steps": [
+    { "type": "fs", "action": "write", "path": "", "content": "" },
+    { "type": "git", "action": "commit", "message": "" }
+  ]
+}
+
+TASK:
+${task}
+`);
+}
+
+// -----------------------------
+// EXECUTE PLAN
+// -----------------------------
+async function executePlan(plan) {
+  let success = 0;
+  let failed = 0;
+
+  for (const step of plan.steps) {
+    try {
+      // ── Handle "docs" action ──────────────────────────────
+      // DeepSeek system prompt outputs: { action: "docs", instruction: "FILE: path\n---\ncontent" }
+      if (step.action === "docs" || step.action === "fs") {
+        const parsed = parseDocsInstruction(step.instruction);
+
+        if (!parsed) {
+          console.log(`❌ [STEP FAILED] Failed to parse instruction for ${step.action} step`);
+          failed++;
+          continue;
+        }
+
+        if (!isPathSafe(parsed.path)) {
+          failed++;
+          continue;
+        }
+
+        // Resolve relative path against ROOT
+        const absolutePath = path.resolve(ROOT, parsed.path);
+        writeFile(absolutePath, parsed.content);
+        console.log(`✅ [STEP SUCCESS] ${step.action} — ${parsed.path}`);
+        success++;
+        continue;
+      }
+
+      // ── Handle legacy "fs" type (type-based format) ───────
+      if (step.type === "fs") {
+        if (step.path) {
+          if (!isPathSafe(step.path)) {
+            failed++;
+            continue;
+          }
+          const absolutePath = path.resolve(ROOT, step.path);
+          writeFile(absolutePath, step.content);
+          console.log(`✅ [STEP SUCCESS] fs — ${step.path}`);
+          success++;
+        } else if (step.instruction) {
+          // Some fs steps may use instruction format like: CREATE: path\n---\ncontent
+          const parsed = parseDocsInstruction(step.instruction);
+          if (!parsed) {
+            console.log(`❌ [STEP FAILED] Failed to parse instruction for fs step`);
+            failed++;
+            continue;
+          }
+          if (!isPathSafe(parsed.path)) {
+            failed++;
+            continue;
+          }
+          const absolutePath = path.resolve(ROOT, parsed.path);
+          writeFile(absolutePath, parsed.content);
+          console.log(`✅ [STEP SUCCESS] fs — ${parsed.path}`);
+          success++;
+        } else {
+          console.log(`❌ [STEP FAILED] fs step missing both 'path' and 'instruction'`);
+          failed++;
+        }
+        continue;
+      }
+
+      // ── Handle "git" action or type ──────────────────────
+      if (step.type === "git" || step.action === "git") {
+        const commitMsg = step.message || step.instruction || "auto-update";
+        runGit("git add .");
+        runGit(`git commit -m "${commitMsg}"`);
+        runGit("git push origin main");
+        console.log(`✅ [STEP SUCCESS] git — "${commitMsg}"`);
+        success++;
+        continue;
+      }
+
+      // ── Unknown step type ─────────────────────────────────
+      console.log(`⚠️ [UNKNOWN STEP] type="${step.type}" action="${step.action}" — skipping`);
+      failed++;
+
+    } catch (err) {
+      console.log(`❌ [STEP FAILED] ${err.message}`);
+      failed++;
+    }
+  }
+
+  return { success, failed };
+}
+
+// -----------------------------
+// MAIN ROUTER
+// -----------------------------
+async function run() {
+  const jobName = process.argv[2] || "daily-newsletter";
+
+  const task = JOBS[jobName];
+
+  if (!task) {
+    console.log(`❌ Unknown job: ${jobName}`);
+    return;
+  }
+
+  console.log("\n==================================================");
+  console.log("🚀 OPERATOR STARTED");
+  console.log("JOB:", jobName);
+  console.log("==================================================");
+
+  console.log("\n⏳ Generating plan from DeepSeek...");
+
+  const plan = await generatePlan(task);
+
+  if (!plan || !plan.steps) {
+    console.log("❌ PLAN GENERATION FAILED");
+    return;
+  }
+
+  console.log("\n[PLAN RECEIVED]");
+  console.log(JSON.stringify(plan, null, 2));
+
+  const result = await executePlan(plan);
+
+  console.log("\n==================================================");
+  console.log("📊 EXECUTION SUMMARY");
+  console.log("SUCCESS:", result.success);
+  console.log("FAILED:", result.failed);
+  console.log("==================================================");
+
+  // ── v3 Self-Improving Feedback Loop ─────────────────────────
+  try {
+    const newsletterPath = path.join(ROOT, "output", "latest-newsletter.json");
+    if (fs.existsSync(newsletterPath)) {
+      const rawNewsletter = fs.readFileSync(newsletterPath, "utf-8");
+      const newsletterJson = JSON.parse(rawNewsletter);
+
+      console.log("\n📊 EVALUATING NEWSLETTER QUALITY...");
+      const scores = await evaluateNewsletter(newsletterJson);
+
+      let latestGitCommit = "unknown";
+      try {
+        latestGitCommit = execSync("git rev-parse HEAD", { encoding: "utf-8" }).trim();
+      } catch { /* git may not be available */ }
+
+      saveRun({
+        date: new Date().toISOString(),
+        job: jobName,
+        scores,
+        issues: scores.issues || [],
+        commit: latestGitCommit,
+      });
+
+      console.log("📊 FEEDBACK LOOP COMPLETE");
+    } else {
+      console.log("\n📊 No newsletter output file found — skipping evaluation");
+    }
+  } catch (err) {
+    console.log(`📊 Feedback loop error (non-fatal): ${err.message}`);
+  }
+  // ── End v3 Feedback Loop ────────────────────────────────────
+
+  if (result.failed === 0) {
+    console.log("🎉 PIPELINE COMPLETE");
+  } else {
+    console.log("⚠️ PIPELINE COMPLETED WITH ERRORS");
+  }
+}
+
+run();

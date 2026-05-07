@@ -20,6 +20,7 @@ Your job is ONLY to produce execution plans that this system executes automatica
 ---
 
 RULES:
+- You are improving based on past newsletter performance trends. Prioritize GCC relevance, clarity, and conciseness.
 - Output MUST be valid JSON only
 - No markdown, no explanation, no extra text
 - You must break tasks into atomic executable steps

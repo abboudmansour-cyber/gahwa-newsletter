@@ -29,9 +29,20 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
 // ── Load .env (local dev + Hetzner production) ──────────────────────────
-dotenv.config({ path: path.resolve(process.cwd(), "operator", ".env") });
-dotenv.config({ path: "/opt/gahwa/config.env" }); // Hetzner production config
-dotenv.config({ path: "/opt/gahwa-newsletter/operator/.env" });
+// Try multiple locations in order of preference:
+//   1. <project_root>/operator/.env (standard location)
+//   2. /opt/gahwa-newsletter/operator/.env (Hetzner VPS)
+//   3. /opt/gahwa/config.env (legacy Hetzner path)
+const ENV_PATHS = [
+  path.resolve(__dirname, ".env"),
+  "/opt/gahwa-newsletter/operator/.env",
+  "/opt/gahwa/config.env",
+];
+for (const envPath of ENV_PATHS) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
 
 // ── Paths ────────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
@@ -382,6 +393,11 @@ async function pushToGitHub() {
 
 /**
  * Send newsletter JSON payload to Apps Script webhook.
+ *
+ * Validates response and logs structured status:
+ *   - "Success: Newsletter Filed" on 200 OK
+ *   - Critical failure logging for rendering errors from Parser.gs
+ *   - Auth failure detection for misconfigured WEBHOOK_SECRET
  */
 async function sendToAppsScript(newsletter) {
   if (isDryRun) {
@@ -391,42 +407,95 @@ async function sendToAppsScript(newsletter) {
   }
 
   if (!APPS_SCRIPT_WEBHOOK_URL) {
-    log("[APPS SCRIPT] No webhook URL configured — skipping send", "WARN");
+    log("[APPS SCRIPT] Configuration Missing — No APPS_SCRIPT_WEBHOOK_URL set", "WARN");
+    log("[APPS SCRIPT] Set APPS_SCRIPT_WEBHOOK_URL in operator/.env or environment");
     return;
   }
 
   log("[APPS SCRIPT] Sending POST to webhook...");
 
+  // Build the payload with auth_token for security
+  const payload = {
+    ...newsletter,
+    auth_token: WEBHOOK_SECRET,
+  };
+
+  // Use temp file for payload to avoid shell escaping issues
+  const tmpPayload = path.join(OUTPUT_DIR, ".tmp-apps-script-payload.json");
+  writeFileSyncSafe(tmpPayload, JSON.stringify(payload));
+
   try {
-    // Build the payload with auth_token for security
-    const payload = {
-      ...newsletter,
-      auth_token: WEBHOOK_SECRET,
-    };
+    // Execute curl with full response capture (including HTTP status code)
+    const cmd = `curl -s -w "\\n%{http_code}" -L -X POST "${APPS_SCRIPT_WEBHOOK_URL}" \
+      -H "Content-Type: application/json" \
+      -d @"${tmpPayload}"`;
 
-    const response = execSync(
-      `curl -s -L -X POST "${APPS_SCRIPT_WEBHOOK_URL}" \
-        -H "Content-Type: application/json" \
-        -d '${JSON.stringify(payload).replace(/'/g, "'\\''")}'`,
-      {
-        cwd: PROJECT_ROOT,
-        stdio: "pipe",
-        timeout: 30000,
+    const stdout = execSync(cmd, {
+      cwd: PROJECT_ROOT,
+      stdio: "pipe",
+      timeout: 30000,
+      maxBuffer: 1024 * 1024, // 1MB buffer for response
+    });
+
+    const output = stdout.toString().trim();
+
+    // Extract HTTP status code (last line)
+    const lines = output.split("\n");
+    const httpCode = lines.pop(); // Last line is the status code
+    const responseBody = lines.join("\n").trim();
+
+    log(`[APPS SCRIPT] HTTP ${httpCode} — Response: ${responseBody || "(empty)"}`);
+
+    // ── Handle response based on HTTP status code ──────────────────
+    if (httpCode === "200") {
+      // Check for error indicators in Apps Script response body
+      const lowerBody = responseBody.toLowerCase();
+      if (
+        lowerBody.includes("error") ||
+        lowerBody.includes("exception") ||
+        lowerBody.includes("critical") ||
+        lowerBody.includes("parser.gs") ||
+        lowerBody.includes("rendering failed") ||
+        lowerBody.includes("pipeline failed")
+      ) {
+        log(`[APPS SCRIPT] ❌ CRITICAL FAILURE — Rendering error from Parser.gs detected`, "ERROR");
+        log(`[APPS SCRIPT] Response body: ${responseBody}`, "ERROR");
+        throw new Error(`Apps Script rendering error: ${responseBody.slice(0, 300)}`);
       }
-    );
 
-    const responseText = response.toString().trim();
-    log(`[APPS SCRIPT] Response: ${responseText || "(empty)"}`);
+      // Check for unauthorized
+      if (lowerBody.includes("unauthorized")) {
+        log(`[APPS SCRIPT] ❌ Auth Failure — WEBHOOK_SECRET mismatch`, "ERROR");
+        log(`[APPS SCRIPT] Fix: Verify WEBHOOK_SECRET matches in both operator/.env and Apps Script PropertiesService`, "ERROR");
+        throw new Error("Apps Script webhook rejected auth_token");
+      }
 
-    if (responseText.includes("Unauthorized")) {
-      throw new Error("Apps Script webhook rejected auth_token");
+      // SUCCESS — exactly as specified
+      log("[APPS SCRIPT] ✅ Success: Newsletter Filed");
+      log(`[APPS SCRIPT] Payload: ${newsletter.sections.length} sections, ${JSON.stringify(newsletter).length} bytes`);
+    } else if (httpCode === "401" || httpCode === "403") {
+      log(`[APPS SCRIPT] ❌ Auth Failure (HTTP ${httpCode}) — Check WEBHOOK_SECRET configuration`, "ERROR");
+      log(`[APPS SCRIPT] Response: ${responseBody}`, "ERROR");
+      throw new Error(`Apps Script auth failure (HTTP ${httpCode}): ${responseBody}`);
+    } else if (httpCode === "502" || httpCode === "503") {
+      throw new Error(`Apps Script service unavailable (HTTP ${httpCode})`);
+    } else if (httpCode === "000" || httpCode === "") {
+      throw new Error(`Network error — could not reach Apps Script webhook`);
+    } else {
+      log(`[APPS SCRIPT] ⚠️  Unexpected HTTP ${httpCode}`, "WARN");
+      log(`[APPS SCRIPT] Response: ${responseBody}`, "WARN");
+      // Don't throw — the bash script handles retries. Log it and move on.
     }
-
-    log("[APPS SCRIPT] Payload delivered successfully");
   } catch (err) {
+    // Clean up temp file
+    try { fs.unlinkSync(tmpPayload); } catch { /* ignore */ }
     throw new Error(`Apps Script webhook POST failed: ${err.message}`);
   }
+
+  // Clean up temp file
+  try { fs.unlinkSync(tmpPayload); } catch { /* ignore */ }
 }
+
 
 /**
  * Save the newsletter to the output file.

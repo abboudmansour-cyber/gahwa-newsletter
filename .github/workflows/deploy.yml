@@ -15,6 +15,6 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            cd /opt/gahwa
+            cd /opt/gahwa-newsletter
             git pull origin main
-            clasp push -f
+            python3 scripts/clasp_push.py
