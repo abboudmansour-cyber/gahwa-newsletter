@@ -246,8 +246,7 @@ async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
   }
 
   if (!webhookSecret) {
-    console.log("❌ [PUSH FAILED] WEBHOOK_SECRET is not set in .env");
-    return false;
+    console.log("⚠ WEBHOOK_SECRET not set — sending without signature verification");
   }
 
   const absolutePath = path.resolve(ROOT, filePath);

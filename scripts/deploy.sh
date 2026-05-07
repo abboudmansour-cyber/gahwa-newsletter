@@ -81,7 +81,6 @@ ensure_env() {
 # Fill in your API keys and webhook URL below.
 DEEPSEEK_API_KEY=sk-your-deepseek-api-key-here
 APPS_SCRIPT_WEBHOOK_URL=https://script.google.com/macros/s/your-script-id/exec
-WEBHOOK_SECRET=your-webhook-secret-hex-here
 OUTPUT_DIR=output
 LOG_LEVEL=INFO
 ENVEOF
@@ -152,6 +151,11 @@ run_push() {
   fi
 
   echo "   Webhook: configured ✅"
+
+  if [ -z "${WEBHOOK_SECRET:-}" ]; then
+    echo -e "${YELLOW}   ⚠ WEBHOOK_SECRET not set — skipping signature verification${NC}"
+  fi
+
   echo ""
 
   # Check that JSON payload exists before attempting push

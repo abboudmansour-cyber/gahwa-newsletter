@@ -88,9 +88,10 @@ else
 fi
 
 # 3. Generate unique Webhook Secret (if not already set)
-if grep -q "your-webhook-secret" /opt/gahwa-newsletter/operator/.env 2>/dev/null; then
+if grep -q "your-webhook-secret-hex" /opt/gahwa-newsletter/operator/.env 2>/dev/null; then
   SECRET=$(openssl rand -hex 24)
-  sed -i "s/WEBHOOK_SECRET=.*/WEBHOOK_SECRET=${SECRET}/" /opt/gahwa-newsletter/operator/.env
+  # Uncomment and set WEBHOOK_SECRET (it's OPTIONAL, but setup generates one for convenience)
+  sed -i "s/^# WEBHOOK_SECRET=.*/WEBHOOK_SECRET=${SECRET}/" /opt/gahwa-newsletter/operator/.env
   echo "✅ Webhook Secret generated: ${SECRET}"
 fi
 

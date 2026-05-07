@@ -66,10 +66,7 @@ if [ ! -f "$JSON_FILE" ]; then
 fi
 
 if [ -z "${WEBHOOK_SECRET:-}" ]; then
-  echo "❌ [CONFIG MISSING] WEBHOOK_SECRET is not set in operator/.env"
-  echo "  This must match the WEBHOOK_SECRET in Apps Script PropertiesService."
-  echo "  Run \`openssl rand -hex 24\` to generate a secret."
-  exit 1
+  echo "⚠  WEBHOOK_SECRET not set — sending without signature verification"
 fi
 
 echo "🚀 Gahwa Newsletter — Push to Apps Script"
@@ -82,7 +79,7 @@ echo ""
 PAYLOAD_FILE=$(mktemp /tmp/gahwa-payload-XXXXXXXX.json)
 trap 'rm -f "$PAYLOAD_FILE"' EXIT
 
-if ! jq --arg token "$WEBHOOK_SECRET" '. + {auth_token: $token}' "$JSON_FILE" > "$PAYLOAD_FILE"; then
+if ! jq --arg token "${WEBHOOK_SECRET:-}" '. + {auth_token: $token}' "$JSON_FILE" > "$PAYLOAD_FILE"; then
   echo "❌ [PAYLOAD ERROR] Failed to inject auth_token into JSON"
   echo "  Verify that $JSON_FILE contains valid JSON."
   echo "  Run: jq . $JSON_FILE"

@@ -3,34 +3,39 @@
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "headline": "GCC markets mixed as oil prices dip 2.3%",
-      "summary": "GCC stock markets showed mixed performance on Wednesday, with Saudi Arabia's Tadawul falling 0.8% and Dubai's DFM gaining 0.5%, as Brent crude slipped to $82.10 per barrel amid demand concerns.",
-      "insight": "The divergence reflects ongoing investor caution tied to oil price volatility, though UAE markets remain supported by strong real estate and tourism inflows."
+      "headline": "GCC markets open mixed amid oil price volatility",
+      "summary": "GCC stock markets opened mixed on Thursday, with Saudi Arabia's Tadawul down 0.3% and Dubai's DFM up 0.5%, as Brent crude hovered near $78 per barrel.",
+      "insight": "Divergent performance reflects ongoing uncertainty in global oil markets, but regional fundamentals remain supported by strong fiscal buffers and diversification efforts."
     },
     {
-      "headline": "Saudi non-oil PMI hits 58.2 in April",
-      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index rose to 58.2 in April from 57.8 in March, marking the 38th consecutive month of expansion, led by new orders and output growth.",
-      "insight": "Sustained PMI readings above 55 underscore robust private sector momentum, reinforcing the resilience of Vision 2030-driven diversification away from hydrocarbons."
+      "headline": "Saudi non-oil PMI rises to 58.2 in April",
+      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index (PMI) rose to 58.2 in April from 57.8 in March, indicating robust expansion in the non-oil private sector.",
+      "insight": "Sustained PMI readings above 55 underscore the resilience of Saudi non-oil activity, driven by strong domestic demand and government spending under Vision 2030."
     },
     {
-      "headline": "UAE GDP growth revised up to 5.1% for 2026",
-      "summary": "The UAE central bank revised its 2026 GDP growth forecast upward to 5.1% from 4.8%, citing strong performance in tourism, logistics, and financial services, with non-oil GDP expected to expand 5.6%.",
-      "insight": "The upward revision signals deepening economic diversification and positions the UAE as a regional growth leader, attracting foreign capital and talent."
+      "headline": "UAE GDP growth forecast at 4.1% for 2026",
+      "summary": "The UAE's GDP is projected to grow 4.1% in 2026, according to the latest IMF forecast, supported by tourism, real estate, and financial services.",
+      "insight": "The UAE's diversified economy continues to outperform regional peers, with non-oil sectors contributing over 70% of GDP growth this year."
     },
     {
-      "headline": "Fintech funding in GCC surges 34% to $1.2B in Q1",
-      "summary": "Fintech investment in the GCC reached $1.2 billion in Q1 2026, up 34% year-on-year, led by Saudi Arabia's $450 million and the UAE's $380 million, with digital payments and BNPL dominating deal flow.",
-      "insight": "The surge reflects regulatory tailwinds and rising digital adoption, positioning the GCC as a top global fintech hub, though scaling remains a challenge for late-stage startups."
+      "headline": "Regional fintech funding hits $1.2bn in Q1 2026",
+      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, a 35% increase year-on-year, led by Saudi Arabia and the UAE.",
+      "insight": "The surge in fintech investment reflects growing digital adoption and supportive regulatory frameworks, positioning the GCC as a global fintech hub."
     },
     {
-      "headline": "Saudi Aramco maintains 12.4 mbpd capacity target",
-      "summary": "Saudi Aramco confirmed it will keep its maximum sustainable capacity at 12.4 million barrels per day, despite OPEC+ production cuts, as it focuses on gas expansion and downstream investments.",
-      "insight": "The capacity hold signals strategic patience, balancing market share preservation with long-term demand uncertainty and the Kingdom's shift toward gas and petrochemicals."
+      "headline": "Saudi Aramco maintains dividend at $31bn for Q1",
+      "summary": "Saudi Aramco reported Q1 2026 net income of $27.5 billion and maintained its dividend at $31 billion, despite lower oil production.",
+      "insight": "Aramco's steady dividend underscores its cash flow resilience and commitment to shareholder returns, even as OPEC+ output cuts persist."
     },
     {
-      "headline": "Dubai real estate transactions hit $12.5B in April",
-      "summary": "Dubai recorded $12.5 billion in real estate transactions in April 2026, up 18% year-on-year, driven by off-plan sales in Expo City and luxury villa demand in Palm Jumeirah.",
-      "insight": "Sustained double-digit growth underscores Dubai's appeal as a safe-haven for global capital, though rising supply could moderate price gains in mid-tier segments."
+      "headline": "Dubai real estate transactions surge 22% in April",
+      "summary": "Dubai recorded 12,500 real estate transactions in April 2026, up 22% year-on-year, with total value exceeding AED 38 billion.",
+      "insight": "Continued strong demand from foreign investors and high-net-worth individuals is driving Dubai's property market, supported by visa reforms and economic stability."
+    },
+    {
+      "headline": "Qatar LNG exports rise 8% in Q1 2026",
+      "summary": "Qatar's liquefied natural gas (LNG) exports increased 8% year-on-year in Q1 2026, reaching 21 million tonnes, as global demand for cleaner energy grows.",
+      "insight": "Qatar's expansion of LNG capacity positions it to capture a larger share of the global gas market, especially as Europe diversifies away from Russian supplies."
     }
   ]
 }
