@@ -616,7 +616,7 @@ async function executePlan(plan, pipelineRunId) {
         const commitMsg = step.instruction || "auto-update";
         runGit("git add .");
         runGit(`git commit -m "${commitMsg}"`);
-        runGit("git push origin main");
+        runGit("git push origin HEAD:main");
         console.log(`✅ [STEP SUCCESS] git — "${commitMsg}"`);
         success++;
         continue;

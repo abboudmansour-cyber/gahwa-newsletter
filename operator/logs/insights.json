@@ -1,5 +1,5 @@
 {
-  "runId": "daily-newsletter-2026-05-07-1778193558310",
+  "runId": "daily-newsletter-2026-05-07-1778193663056",
   "date": "2026-05-07",
   "insights": [
     {
@@ -20,8 +20,8 @@
         "MACRO"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:39:20.005Z",
-      "_confirmedCount": 2
+      "_lastUpdated": "2026-05-07T22:41:04.961Z",
+      "_confirmedCount": 3
     },
     {
       "hypothesis": "GCC capital markets and fiscal indicators show sector rotation away from hydrocarbon-dependent assets toward diversified economic drivers, suggesting the post-oil economic model is gaining structural momentum.",
@@ -41,8 +41,8 @@
         "MARKET"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:39:20.005Z",
-      "_confirmedCount": 2
+      "_lastUpdated": "2026-05-07T22:41:04.961Z",
+      "_confirmedCount": 3
     },
     {
       "hypothesis": "GCC states are actively diversifying strategic partnerships beyond traditional Western alliances — new trade corridors and diplomatic engagements signal a multipolar alignment strategy that prioritizes economic sovereignty over historical geopolitical dependencies.",
@@ -61,8 +61,8 @@
         "MACRO"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:39:20.005Z",
-      "_confirmedCount": 2
+      "_lastUpdated": "2026-05-07T22:41:04.961Z",
+      "_confirmedCount": 3
     },
     {
       "hypothesis": "GCC capital markets are undergoing institutional deepening — increased IPO activity and institutional capital flows signal a structural shift from retail-dominated to institutionally-driven markets, improving price discovery and liquidity depth.",
@@ -81,8 +81,8 @@
         "MACRO"
       ],
       "generatedAt": "2026-05-07T22:20:51.444Z",
-      "_lastUpdated": "2026-05-07T22:39:20.005Z",
-      "_confirmedCount": 2
+      "_lastUpdated": "2026-05-07T22:41:04.961Z",
+      "_confirmedCount": 3
     }
   ]
 }
