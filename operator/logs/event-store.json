@@ -34,5 +34,27 @@
         "isReplay": false
       }
     }
+  },
+  {
+    "eventId": "8c2681a0-9d44-4c94-8477-836fff147727",
+    "timestamp": "2026-05-07T22:21:11.315Z",
+    "runId": "daily-newsletter-2026-05-07-1778192471312",
+    "type": "FEEDBACK_RECORDED",
+    "data": {
+      "file": null,
+      "commit": null,
+      "deliveryId": null,
+      "error": null,
+      "metadata": {
+        "overall": 8,
+        "gccRelevance": 10,
+        "clarity": 2,
+        "marketDepth": 8,
+        "weaknessTags": [
+          "too generic AI content",
+          "generic AI filler language detected"
+        ]
+      }
+    }
   }
 ]

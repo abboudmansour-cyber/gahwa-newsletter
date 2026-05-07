@@ -1,5 +1,5 @@
 {
-  "runId": "daily-newsletter-2026-05-07-1778192451443",
+  "runId": "daily-newsletter-2026-05-07-1778192510920",
   "date": "2026-05-07",
   "insights": [
     {
@@ -10,16 +10,17 @@
         "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment.",
         "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty."
       ],
-      "confidence": 0.76,
+      "confidence": 0.82,
       "type": "GEO_STRATEGY",
-      "status": "EMERGING",
+      "status": "CONFIRMED",
       "signalCount": 4,
       "patternName": "Sovereign Digital Independence",
       "derivedFrom": [
         "AI",
         "MACRO"
       ],
-      "generatedAt": "2026-05-07T22:20:51.444Z"
+      "generatedAt": "2026-05-07T22:20:51.444Z",
+      "_lastUpdated": "2026-05-07T22:21:50.923Z"
     },
     {
       "hypothesis": "GCC capital markets and fiscal indicators show sector rotation away from hydrocarbon-dependent assets toward diversified economic drivers, suggesting the post-oil economic model is gaining structural momentum.",
@@ -29,16 +30,17 @@
         "GCC banking sector shows robust NIM expansion as higher-for-longer rate environment boosts lending income — SNB, QNB, FAB report strong quarterly metrics.",
         "Saudi Aramco shares stabilize around SAR 28.50 as sustained dividend yield of 6.2% attracts institutional flows despite moderate oil price environment."
       ],
-      "confidence": 0.76,
+      "confidence": 0.82,
       "type": "MACRO_TREND",
-      "status": "EMERGING",
+      "status": "CONFIRMED",
       "signalCount": 4,
       "patternName": "Non-Oil Economic Diversification Momentum",
       "derivedFrom": [
         "MACRO",
         "MARKET"
       ],
-      "generatedAt": "2026-05-07T22:20:51.444Z"
+      "generatedAt": "2026-05-07T22:20:51.444Z",
+      "_lastUpdated": "2026-05-07T22:21:50.923Z"
     },
     {
       "hypothesis": "GCC states are actively diversifying strategic partnerships beyond traditional Western alliances — new trade corridors and diplomatic engagements signal a multipolar alignment strategy that prioritizes economic sovereignty over historical geopolitical dependencies.",
@@ -47,16 +49,17 @@
         "GCC-China trade volumes exceed $350B annually with yuan-denominated oil contracts gaining traction, signaling de-dollarization momentum in energy trade.",
         "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment."
       ],
-      "confidence": 0.76,
+      "confidence": 0.82,
       "type": "GEO_STRATEGY",
-      "status": "EMERGING",
+      "status": "CONFIRMED",
       "signalCount": 3,
       "patternName": "GCC Geopolitical Realignment",
       "derivedFrom": [
         "GEO",
         "MACRO"
       ],
-      "generatedAt": "2026-05-07T22:20:51.444Z"
+      "generatedAt": "2026-05-07T22:20:51.444Z",
+      "_lastUpdated": "2026-05-07T22:21:50.923Z"
     },
     {
       "hypothesis": "GCC capital markets are undergoing institutional deepening — increased IPO activity and institutional capital flows signal a structural shift from retail-dominated to institutionally-driven markets, improving price discovery and liquidity depth.",
@@ -65,16 +68,17 @@
         "Saudi Aramco shares stabilize around SAR 28.50 as sustained dividend yield of 6.2% attracts institutional flows despite moderate oil price environment.",
         "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment."
       ],
-      "confidence": 0.76,
+      "confidence": 0.82,
       "type": "MARKET_SHIFT",
-      "status": "EMERGING",
+      "status": "CONFIRMED",
       "signalCount": 3,
       "patternName": "GCC Capital Markets Deepening",
       "derivedFrom": [
         "MARKET",
         "MACRO"
       ],
-      "generatedAt": "2026-05-07T22:20:51.444Z"
+      "generatedAt": "2026-05-07T22:20:51.444Z",
+      "_lastUpdated": "2026-05-07T22:21:50.923Z"
     }
   ]
 }
