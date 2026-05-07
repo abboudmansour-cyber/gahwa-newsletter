@@ -6,8 +6,6 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-console.log("DEEPSEEK KEY LOADED:", !!process.env.DEEPSEEK_API_KEY);
-
 const API_KEY = process.env.DEEPSEEK_API_KEY;
 const API_URL = "https://api.deepseek.com/v1/chat/completions";
 const MODEL = "deepseek-chat";
