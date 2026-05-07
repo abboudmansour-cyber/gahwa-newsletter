@@ -3,34 +3,39 @@
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "headline": "GCC markets mixed as oil prices hover near $82",
-      "summary": "GCC equity markets saw mixed trading on Wednesday, with Saudi Arabia's Tadawul All Share Index edging up 0.3% while Dubai's DFM fell 0.5%. Brent crude traded at $82.10 per barrel, down 1.2% on demand concerns from China.",
-      "insight": "Oil price volatility continues to drive short-term market swings across the region, but diversified economies like Saudi Arabia are showing relative resilience."
+      "headline": "GCC markets mixed as oil prices dip below $75",
+      "summary": "GCC equity markets showed mixed performance on Wednesday, with Saudi Arabia's Tadawul All Share Index falling 0.3% while Dubai's DFM rose 0.5%. Brent crude slipped to $74.80 per barrel, down 1.2% on demand concerns.",
+      "insight": "The divergence reflects ongoing investor caution amid oil price volatility, but Dubai's gain suggests selective buying in real estate and tourism stocks."
     },
     {
       "headline": "Saudi non-oil PMI hits 58.2 in April, fastest in 8 months",
-      "summary": "Saudi Arabia's Purchasing Managers' Index for non-oil private sector rose to 58.2 in April from 57.0 in March, marking the strongest expansion since August 2025. New orders and output surged, supported by robust domestic demand.",
-      "insight": "The sustained PMI strength above 50 signals accelerating non-oil growth, underpinning Vision 2030 targets and reducing reliance on hydrocarbon revenues."
+      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index (PMI) surged to 58.2 in April 2026 from 56.8 in March, marking the strongest expansion since August 2025. New orders and output grew sharply, supported by robust domestic demand.",
+      "insight": "The PMI reading above 55 signals sustained momentum in Vision 2030 sectors, reinforcing expectations of 4.8% non-oil GDP growth for 2026."
     },
     {
       "headline": "UAE announces $10bn AI investment fund with global partners",
-      "summary": "The UAE launched a $10 billion artificial intelligence investment fund in partnership with global tech firms, aiming to position Abu Dhabi as a leading AI hub. The fund will focus on infrastructure, data centers, and AI startups.",
-      "insight": "This strategic move reinforces the UAE's ambition to diversify beyond oil and attract top-tier technology talent and capital, potentially reshaping the regional tech landscape."
+      "summary": "The UAE government launched a $10 billion artificial intelligence investment fund in partnership with Microsoft and BlackRock, targeting AI infrastructure and startups. The fund aims to deploy capital across GCC and global markets by Q4 2026.",
+      "insight": "This positions the UAE as a leading AI hub in the region, potentially attracting $30bn in co-investment and accelerating digital transformation across sectors."
     },
     {
-      "headline": "GCC fintech funding surges 35% to $1.8bn in Q1 2026",
-      "summary": "Fintech startups across the GCC raised $1.8 billion in Q1 2026, a 35% increase year-on-year, led by Saudi Arabia and UAE. Key deals included a $400 million round for a Riyadh-based digital payments firm.",
-      "insight": "The fintech boom reflects strong investor appetite for digital financial services in a region with high smartphone penetration and supportive regulatory frameworks."
+      "headline": "GCC fintech funding reaches $1.2bn in Q1 2026, up 35% YoY",
+      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, a 35% increase year-on-year, led by Saudi Arabia's $400 million round for a digital payments firm and UAE's $300 million for a neobank. Total deal count rose to 78.",
+      "insight": "The surge underscores strong investor appetite for digital financial services, with regulatory sandboxes in Saudi and UAE driving innovation and scaling."
     },
     {
-      "headline": "Saudi Aramco maintains $31bn quarterly dividend despite profit dip",
-      "summary": "Saudi Aramco reported a 7% decline in Q1 2026 net profit to $27.5 billion due to lower crude prices, but kept its dividend at $31 billion. The payout supports the Saudi government's budget amid Vision 2030 spending.",
-      "insight": "Aramco's commitment to high dividends underscores its role as a fiscal anchor for Saudi Arabia, though sustained low oil prices could pressure future distributions."
+      "headline": "Saudi Aramco reports $28bn Q1 profit, maintains $31bn dividend",
+      "summary": "Saudi Aramco posted a net profit of $28 billion for Q1 2026, down 8% from a year ago due to lower oil prices, but maintained its $31 billion dividend payout. Production averaged 9.2 million barrels per day.",
+      "insight": "The steady dividend reinforces Aramco's role as a cash cow for the Saudi budget, though lower profits highlight the urgency of economic diversification under Vision 2030."
     },
     {
       "headline": "QatarEnergy signs 15-year LNG deal with Germany's RWE",
-      "summary": "QatarEnergy inked a 15-year liquefied natural gas supply agreement with German utility RWE, starting in 2027. The deal covers 2 million tonnes per year, boosting Qatar's share in European energy markets.",
-      "insight": "This long-term contract solidifies Qatar's position as a key LNG supplier to Europe amid the continent's push to diversify away from Russian gas."
+      "summary": "QatarEnergy inked a 15-year liquefied natural gas supply agreement with German utility RWE, delivering 2 million tonnes per annum starting 2027. The deal is valued at approximately $10 billion at current spot prices.",
+      "insight": "This strengthens Qatar's position as Europe's key LNG supplier amid energy security concerns, with long-term contracts providing revenue stability."
+    },
+    {
+      "headline": "Dubai real estate transactions hit $12bn in April, record high",
+      "summary": "Dubai's real estate market recorded $12 billion in transactions in April 2026, a 22% increase year-on-year, driven by luxury villa sales and off-plan projects. Average prices rose 8% in prime areas.",
+      "insight": "The record activity suggests sustained demand from foreign investors and high-net-worth individuals, though affordability concerns may temper growth in mid-market segments."
     }
   ]
 }
