@@ -1,0 +1,48 @@
+{
+  "date": "2025-04-10",
+  "title": "GCC Morning Brief",
+  "sections": [
+    {
+      "heading": "Market Overview",
+      "content": "GCC markets opened mixed today. Saudi Tadawul edged up 0.3% on petrochemical gains, while Dubai Financial Market slipped 0.1% amid profit-taking. Abu Dhabi remained flat. Oil prices held near $85/bbl, supporting regional sentiment."
+    },
+    {
+      "heading": "Top Stories",
+      "items": [
+        {
+          "title": "Saudi PIF Launches New Tourism Fund",
+          "summary": "The Public Investment Fund announced a $5 billion fund to develop luxury resorts along the Red Sea coast, aiming to attract 150 million visitors by 2030."
+        },
+        {
+          "title": "UAE Non-Oil GDP Growth Accelerates",
+          "summary": "UAE's non-oil GDP grew 5.2% YoY in Q1 2025, driven by tourism, real estate, and financial services, according to central bank data."
+        },
+        {
+          "title": "Qatar Energy Signs LNG Deal with Germany",
+          "summary": "QatarEnergy inked a 15-year agreement to supply 2 million tonnes of LNG annually to German utility RWE, starting 2026."
+        }
+      ]
+    },
+    {
+      "heading": "Currency & Commodities",
+      "content": "The Saudi riyal and UAE dirham remained pegged to the USD. Gold edged up to $2,380/oz. Brent crude traded at $85.20/bbl, up 0.4% on Middle East supply concerns."
+    },
+    {
+      "heading": "Deals & Movers",
+      "items": [
+        {
+          "title": "ADNOC Drilling Wins $1.2B Contract",
+          "summary": "ADNOC Drilling secured a $1.2 billion contract for offshore drilling services in Abu Dhabi's Zakum field."
+        },
+        {
+          "title": "Kuwait's NBK Reports Record Profit",
+          "summary": "National Bank of Kuwait posted a record net profit of $1.8 billion for 2024, up 12% YoY, driven by higher net interest income."
+        }
+      ]
+    },
+    {
+      "heading": "Outlook",
+      "content": "Markets are expected to remain range-bound today as investors await US inflation data. GCC fiscal spending and reform momentum continue to support medium-term growth."
+    }
+  ]
+}
