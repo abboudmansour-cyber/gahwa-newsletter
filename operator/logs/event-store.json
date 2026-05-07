@@ -1,0 +1,38 @@
+[
+  {
+    "eventId": "a49daf82-cb1d-4af1-b0a0-31de5a93bc65",
+    "timestamp": "2026-05-07T21:02:09.935Z",
+    "runId": "daily-newsletter-2026-05-07-1778187729935",
+    "type": "PIPELINE_START",
+    "data": {
+      "file": null,
+      "commit": null,
+      "deliveryId": null,
+      "error": null,
+      "metadata": {
+        "job": "daily-newsletter",
+        "date": "2026-05-07",
+        "mode": "NORMAL",
+        "isReplay": false
+      }
+    }
+  },
+  {
+    "eventId": "fb833413-e0df-4b33-a3fc-20576c5811aa",
+    "timestamp": "2026-05-07T21:04:53.273Z",
+    "runId": "daily-newsletter-2026-05-07-1778187893272",
+    "type": "PIPELINE_START",
+    "data": {
+      "file": null,
+      "commit": null,
+      "deliveryId": null,
+      "error": null,
+      "metadata": {
+        "job": "daily-newsletter",
+        "date": "2026-05-07",
+        "mode": "NORMAL",
+        "isReplay": false
+      }
+    }
+  }
+]

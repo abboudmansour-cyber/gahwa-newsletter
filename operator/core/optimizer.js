@@ -612,8 +612,12 @@ export async function runOptimization(options = {}) {
   // ── Step 7: Build and log optimization entry ─────────────────────────
   const finalPromptInfo = getCurrentPromptVersionInfo();
   const logEntry = {
-    runId: `opt-${Date.now()}`,
+    // ── SINGLE IDENTITY: This is a log entry identifier, not an execution identity.
+    // Previously generated a Date.now() based runId that could not be traced back
+    // to the pipeline. Now uses a static label since this is purely for log tracking.
+    runId: "optimizer-cycle",
     timestamp: new Date().toISOString(),
+
     metrics: {
       truthScore: calculateTruthScore(getTruthLog()),
       qualityScore: qualityTrend.avgScore,

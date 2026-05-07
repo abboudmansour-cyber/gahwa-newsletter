@@ -1,0 +1,131 @@
+{
+  "tests": [
+    {
+      "testName": "DeepSeek Timeout",
+      "scenario": "DeepSeek plan generation times out after 30s",
+      "expectedBehavior": "PIPELINE_FAILED emitted, pipeline marked FAILED, no newsletter generated",
+      "actualBehavior": "Pipeline status=FAILED, failedAt=START, reason=PLAN_GENERATION_TIMEOUT, incompleteExecution=true",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-8rw2k",
+      "timestamp": "2026-05-07T21:54:58.427Z"
+    },
+    {
+      "testName": "DeepSeek Invalid JSON",
+      "scenario": "DeepSeek returns non-JSON or malformed JSON after retry",
+      "expectedBehavior": "PIPELINE_FAILED emitted, no newsletter generated, pipeline marked FAILED",
+      "actualBehavior": "Pipeline status=FAILED, reason=DeepSeek failed to return valid JSON after retry",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-lmk0i",
+      "timestamp": "2026-05-07T21:54:58.428Z"
+    },
+    {
+      "testName": "DeepSeek Network Failure",
+      "scenario": "Network error (ECONNREFUSED, ENOTFOUND, etc.) connecting to DeepSeek API",
+      "expectedBehavior": "PIPELINE_FAILED emitted, pipeline marked FAILED, disk state also FAILED",
+      "actualBehavior": "Pipeline: {\"status\":\"FAILED\",\"incompleteExecution\":true}, Disk: {\"status\":\"FAILED\",\"incompleteExecution\":true}",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-84gzc",
+      "timestamp": "2026-05-07T21:54:58.429Z"
+    },
+    {
+      "testName": "Webhook HTTP 404",
+      "scenario": "Apps Script webhook returns HTTP 404",
+      "expectedBehavior": "Delivery marked FAILED, retry behavior consistent, no SUCCESS state",
+      "actualBehavior": "Pipeline status=FAILED, stage=START, incompleteExecution=true",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-l124l",
+      "timestamp": "2026-05-07T21:54:58.431Z"
+    },
+    {
+      "testName": "Webhook Malformed Response (HTML on 200)",
+      "scenario": "Apps Script returns HTTP 200 with HTML error page body",
+      "expectedBehavior": "Response validation detects HTML error, delivery marked FAILED, retry skipped (deployment issue)",
+      "actualBehavior": "Classification accuracy: true ([]), Pipeline handling: pipelineCorrect=true",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-0u548",
+      "timestamp": "2026-05-07T21:54:58.433Z"
+    },
+    {
+      "testName": "Webhook Missing doPost",
+      "scenario": "Apps Script deployed without doPost handler",
+      "expectedBehavior": "MISSING_DOPOST classified, delivery marked FAILED, no retry (deployment issue)",
+      "actualBehavior": "Classification=MISSING_DOPOST, Pipeline status=FAILED",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-2wsn8",
+      "timestamp": "2026-05-07T21:54:58.434Z"
+    },
+    {
+      "testName": "Git Commit Failure",
+      "scenario": "git commit fails (dirty tree, merge conflict, hook rejection)",
+      "expectedBehavior": "Pipeline stops at GIT stage, PIPELINE_FAILED emitted, no WEBHOOK execution",
+      "actualBehavior": "Pipeline status=FAILED, failedAt=GIT, failedReason=GIT_COMMIT_FAILED, isComplete=false",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-17s8j",
+      "timestamp": "2026-05-07T21:54:58.437Z"
+    },
+    {
+      "testName": "Git Push Rejection",
+      "scenario": "git push rejected (non-fast-forward, permission denied)",
+      "expectedBehavior": "Pipeline stops at GIT stage, PIPELINE_FAILED emitted, no WEBHOOK execution",
+      "actualBehavior": "Pipeline status=FAILED, failedReason=GIT_PUSH_REJECTED, incompleteExecution=true",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-ccznz",
+      "timestamp": "2026-05-07T21:54:58.441Z"
+    },
+    {
+      "testName": "Missing AGENT_BATCH_COMPLETE",
+      "scenario": "editor-agent never completes, no AGENT_BATCH_COMPLETE emitted",
+      "expectedBehavior": "verifyAgentCompletion returns false, pipeline detects stall, fails safely",
+      "actualBehavior": "Agents: macro=complete, gcc=complete, risk=complete, editor=pending, verifyAgentCompletion=false",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-sw12l",
+      "timestamp": "2026-05-07T21:54:58.445Z"
+    },
+    {
+      "testName": "Stalled Agent Execution (Barrier Timeout)",
+      "scenario": "macro completes, gcc and risk agents stall indefinitely",
+      "expectedBehavior": "Barrier times out after 5min, returns false, pipeline detects stall and fails safely — no infinite loop",
+      "actualBehavior": "barrierResult=false, agents: macro=complete, gcc=pending, risk=pending",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-hkapo",
+      "timestamp": "2026-05-07T21:54:58.648Z"
+    },
+    {
+      "testName": "Corrupted pipeline-state.json",
+      "scenario": "pipeline-state.json contains invalid JSON (truncated/malformed)",
+      "expectedBehavior": "System detects invalid state, logs warning, does not continue blindly. Starts fresh with clean state.",
+      "actualBehavior": "recoveryResult=null, newState status=RUNNING, runId=chaos-2026-05-07-zovw0, stage=START",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-dvu2a",
+      "timestamp": "2026-05-07T21:54:58.650Z"
+    },
+    {
+      "testName": "Corrupted agent-state.json",
+      "scenario": "agent-state.json contains valid JSON but missing fields (partial run state)",
+      "expectedBehavior": "loadAgentState fills defaults for missing agents. System can reinitialize cleanly.",
+      "actualBehavior": "defaultsApplied=true, freshState={\"runId\":\"chaos-2026-05-07-buv9i\",\"macro\":\"pending\",\"gcc\":\"pending\",\"risk\":\"pending\",\"editor\":\"pending\"}",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-nr25z",
+      "timestamp": "2026-05-07T21:54:58.650Z"
+    },
+    {
+      "testName": "Corrupted runtime/state.json (orphaned lock)",
+      "scenario": "runtime/state.json has orphaned activeRunId + stale recovery flag",
+      "expectedBehavior": "acquireLock rejects new runs while orphaned lock exists. releaseLock clears state. System recovers via explicit unlock.",
+      "actualBehavior": "state.activeRunId=orphaned-run-that-no-longer-exists, lockAcquired=false, lockAfterRelease=true",
+      "status": "PASS",
+      "runId": "chaos-2026-05-07-i0gvv",
+      "timestamp": "2026-05-07T21:54:58.653Z"
+    }
+  ],
+  "summary": {
+    "totalTests": 13,
+    "passed": 13,
+    "failed": 0,
+    "resilienceScore": 10,
+    "weakestFailureMode": "none (all passed)",
+    "criticalWeaknesses": [],
+    "durationMs": 235,
+    "completedAt": "2026-05-07T21:54:58.654Z"
+  }
+}

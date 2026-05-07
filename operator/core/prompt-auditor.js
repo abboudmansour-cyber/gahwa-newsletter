@@ -29,6 +29,11 @@ import { fileURLToPath } from "url";
 import { checkCompleteness, FAILURE_CLASSIFICATIONS, wasRunComplete } from "./prompt-completeness-checker.js";
 import { mapPromptSpec, createManualSpec } from "./prompt-spec-mapper.js";
 
+// SINGLE SOURCE OF TRUTH: Use the shared generateRunId from logger.js.
+// No module shall create its own identity generation logic.
+import { generateRunId } from "./logger.js";
+
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUDIT_FILE = path.join(__dirname, "..", "logs", "prompt-execution-audit.json");
 const MAX_AUDIT_ENTRIES = 200;
@@ -458,16 +463,5 @@ After implementing, the completeness score must reach 100/100.
   return prompt;
 }
 
-/**
- * Generate a run ID for tracking.
- * Format: YYYY-MM-DD-XXXXX
- */
-function generateRunId(promptName) {
-  const date = new Date().toISOString().slice(0, 10);
-  const rand = Math.random().toString(36).substring(2, 7);
-  const slug = promptName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .slice(0, 20);
-  return `${date}-${rand}-${slug}`;
-}
+// ── generateRunId is imported from logger.js (single source of truth) ──
+

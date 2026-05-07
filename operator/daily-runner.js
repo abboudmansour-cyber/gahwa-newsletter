@@ -32,6 +32,9 @@ import crypto from "crypto";
 import { validateEnvironment, logWebhookStatus } from "./core/validate-env.js";
 import { evaluateTruth, calculateHealthScore, isSystemUnstable } from "./core/truth-evaluator.js";
 
+// ── 🛡 PRODUCTION GUARD MODE (Protective Layer — Additive Only) ─────────────
+import { checkConfigIntegrity, printGuardReport } from "./core/production-guard.js";
+
 // ── Bootstrap execution context (MUST be called before ANY other logic) ─────
 ensureExecutionContext();
 
@@ -55,6 +58,14 @@ for (const envPath of ENV_PATHS) {
 validateEnvironment();
 logWebhookStatus();
 
+// ── 🛡 GUARD 1: Config integrity check on startup ───────────────────────────
+// This runs before any pipeline logic, as an additive protective layer.
+const configResult = checkConfigIntegrity();
+if (!configResult.passed) {
+  log(`🛑 [PRODUCTION-GUARD] Startup blocked: ${configResult.failures.length} config issue(s)`, "ERROR");
+  configResult.failures.forEach(f => log(`   ❌ ${f.field}: ${f.message}`, "ERROR"));
+  process.exit(1);
+}
 
 // ── Paths ────────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);

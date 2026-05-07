@@ -14,6 +14,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+import { emitEvent } from "./event-emitter.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RECOVERY_INDEX = path.join(__dirname, "..", "logs", "recovery-index.json");
@@ -103,6 +104,23 @@ export function appendRecoveryEntry({ runId, date, job, status, reason, commit }
   entries.push(entry);
   writeIndex(entries);
   console.log(`[RECOVERY] Indexed: ${runId} — ${status} (${reason})`);
+
+  // ── EVENT: Recovery indexed ──────────────────────────────────────────
+  emitEvent({
+    type: "RECOVERY_EVENT",
+    runId: entry.runId,
+    data: {
+      file: "",
+      metadata: {
+        action: "RECOVERY_INDEXED",
+        runId: entry.runId,
+        status: entry.status,
+        reason: entry.reason,
+        job: entry.job,
+        date: entry.date,
+      },
+    },
+  });
 }
 
 /**
@@ -180,6 +198,20 @@ export function markAsReplayed(runId) {
   entries[idx] = entries[idx];
   writeIndex(entries);
   console.log(`[RECOVERY] ✅ Run ${runId} marked as RECOVERED`);
+
+  // ── EVENT: Recovery successful ────────────────────────────────────────
+  emitEvent({
+    type: "RECOVERY_EVENT",
+    runId,
+    data: {
+      file: "",
+      metadata: {
+        action: "RECOVERY_SUCCESS",
+        runId,
+        previousStatus: entries[idx].statusBeforeRecovery || "FAILED",
+      },
+    },
+  });
 }
 
 /**

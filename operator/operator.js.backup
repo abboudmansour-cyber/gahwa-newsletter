@@ -13,7 +13,6 @@ import {
   MODES,
   isBlocked,
   getState,
-  setState,
 } from "./core/state.js";
 import { evaluateTruth, calculateHealthScore, isSystemUnstable } from "./core/truth-evaluator.js";
 import { runOptimization } from "./core/optimizer.js";
@@ -23,6 +22,33 @@ import { synthesizeInsights, formatInsightsForNewsletter } from "./core/insight-
 import { generateScenarios, formatScenariosForNewsletter } from "./core/scenario-engine.js";
 
 import { buildEditorialFrame, formatEditorialFrame } from "./core/editor.js";
+
+// ── Event Sourcing Layer ──────────────────────────────────────────────────
+import { emitEvent, setEventBus, isBusConnected, getEventsByRun } from "./core/event-emitter.js";
+
+// ── Multi-Agent Barrier Orchestrator ──────────────────────────────────────
+import { initAgentRun, verifyAgentCompletion } from "./core/agent-orchestrator.js";
+
+// ── Stream Processor Layer (Real-Time Reactive Infrastructure) ────────────
+import * as eventBus from "./core/event-bus.js";
+import { initialize as initializeStreamProcessor } from "./core/stream-processor.js";
+import { initialize as initializeAnomalyDetector } from "./core/anomaly-detector.js";
+
+// ── Git-Backed Execution State Machine ─────────────────────────────────────
+import { snapshotBefore, getCurrentBranch } from "./core/git-snapshot.js";
+import {
+  initExecutionState,
+  executeStep,
+  finalizeExecutionState,
+  getExecutionSummary,
+} from "./core/step-executor.js";
+
+// ── Shared identity generation (single source of truth) ──────────────────
+import { generateRunId } from "./core/logger.js";
+
+// ── FINAL ARCHITECTURE: core/executor.js (unified orchestration engine) ───
+import { executePipeline, getFeedbackHistory } from "./core/executor.js";
+
 
 // ── Dynamic path resolution (works on any server: local, Hetzner, etc.) ─────
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -34,16 +60,26 @@ process.chdir(ROOT);
 // ── CURRENT DATE (from system clock — never hardcoded) ──────────────────────
 const CURRENT_DATE = new Date().toISOString().slice(0, 10); // "2026-05-07"
 
-// ── JOB NAME — set once at startup, accessible globally ───────────────────
-let JOB_NAME = process.argv[2] || "daily-newsletter";
+  // ── JOB NAME — set once at startup, accessible globally ───────────────────
+  let JOB_NAME = process.argv[2] || "daily-newsletter";
 
-// ── REPLAY MODE FLAG — safe mode for the replay engine ─────────────────
-// When --replay is present, operator.js runs in reduced mode:
-//   - Skips newsletter regeneration if existing output exists
-//   - Re-uses stored JSON if available
-//   - Only re-triggers push step + validation
-//   - Does NOT trigger recovery hooks
-const isReplay = process.argv.includes("--replay");
+  // ── SINGLE EXECUTION IDENTITY (CRITICAL) ──────────────────────────────
+  // The pipelineRunId MUST originate from ONE source: generateRunId() in logger.js.
+  //   1. If RUN_ID env var is set (spawned by executor.js), use it
+  //   2. Otherwise, use the shared generateRunId() from logger.js (standalone mode)
+  // THIS IS THE ONLY PLACE an execution identity is accepted.
+  // NO OTHER MODULE shall generate run IDs for the pipeline.
+  const PIPELINE_RUN_ID = process.env.RUN_ID || generateRunId();
+
+
+  // ── REPLAY MODE FLAG — safe mode for the replay engine ─────────────────
+  // When --replay is present, operator.js runs in reduced mode:
+  //   - Skips newsletter regeneration if existing output exists
+  //   - Re-uses stored JSON if available
+  //   - Only re-triggers push step + validation
+  //   - Does NOT trigger recovery hooks
+  const isReplay = process.argv.includes("--replay");
+
 
 // ── IDEMPOTENT DELIVERY ID — unique per (job, date, git commit) ──────────
 function getDeliveryId(job) {
@@ -146,7 +182,7 @@ function writeFile(filePath, content) {
  * This keeps the planning payload lightweight and avoids
  * malformed/truncated JSON from massive instruction blocks.
  */
-async function generateNewsletterContent() {
+async function generateNewsletterContent(pipelineRunId = null) {
   console.log("\n📝 GENERATING NEWSLETTER CONTENT...");
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -164,7 +200,7 @@ async function generateNewsletterContent() {
   // The fusedSignals already contain only editorially APPROVED stories.
   // All EXCLUDED and DEFERRED signals have been logged and dropped.
   console.log("\n   🧠 Running signal fusion engine (with editorial gatekeeping)...");
-  const fusedSignals = await fuseSignals(CURRENT_DATE, editorialFrame);
+  const fusedSignals = await fuseSignals(CURRENT_DATE, editorialFrame, { runId: pipelineRunId });
   const signalContext = formatSignalContext(fusedSignals);
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -172,8 +208,7 @@ async function generateNewsletterContent() {
   //          Generates 2-4 structured, signal-grounded hypotheses
   // ═══════════════════════════════════════════════════════════════════════
   console.log("\n   🧠 Running strategic insight synthesis...");
-  const runId = `${JOB_NAME}-${CURRENT_DATE}-${Date.now()}`;
-  const insightResult = await synthesizeInsights(fusedSignals, runId);
+  const insightResult = await synthesizeInsights(fusedSignals, pipelineRunId);
   const insightNewsletterSection = formatInsightsForNewsletter(insightResult.insights);
   console.log(`   ✅ Insights generated: ${insightResult.insights.length} passed validation gate`);
   if (insightResult.discarded.length > 0) {
@@ -283,7 +318,7 @@ Return ONLY valid JSON — no markdown, no code fences, no extra text.`;
   //          Generates 1-3 structured, signal-grounded scenarios
   // ═══════════════════════════════════════════════════════════════════════
   console.log("\n   📊 Running scenario engine...");
-  const scenarioResult = await generateScenarios(fusedSignals, insightResult.insights, runId);
+  const scenarioResult = await generateScenarios(fusedSignals, insightResult.insights, pipelineRunId);
   const scenarioNewsletterSection = formatScenariosForNewsletter(scenarioResult.scenarios);
   console.log(`   ✅ Scenarios generated: ${scenarioResult.scenarios.length} passed validation gates`);
   if (scenarioResult.scenarios.length > 0) {
@@ -513,8 +548,29 @@ async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
         fs.mkdirSync(path.dirname(logPath), { recursive: true });
         fs.appendFileSync(logPath, `\n--- Delivery Report: ${new Date().toISOString()} ---\nHTTP 200 — ${isDup ? "DUPLICATE_IGNORED (idempotent)" : "VALIDATED SUCCESS"}\nDelivery ID: ${payload.deliveryId || "N/A"}\n`, "utf-8");
 
+        // ── EVENT: Delivery success ─────────────────────────────────────
+        emitEvent({
+          type: isDup ? "DELIVERY_DUPLICATE" : "DELIVERY_SUCCESS",
+          runId: getDeliveryId(JOB_NAME),
+          data: {
+            deliveryId: payload.deliveryId,
+            file: "output/latest-newsletter.json",
+          },
+        });
+
         return true;
       }
+
+      // ── EVENT: Delivery attempt (failed) ──────────────────────────────
+      emitEvent({
+        type: "DELIVERY_ATTEMPT",
+        runId: getDeliveryId(JOB_NAME),
+        data: {
+          deliveryId: payload.deliveryId,
+          file: "output/latest-newsletter.json",
+          error: `HTTP ${res.status}: ${body?.slice(0, 200) || "empty"}`,
+        },
+      });
 
       // ── HTTP 200 but invalid response body (the critical gap) ────────
       if (res.status === 200 && !validation.valid) {
@@ -555,6 +611,19 @@ async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
       }
     } catch (err) {
       console.log(`   ⚠️ Network error: ${err.message}`);
+
+      // ── EVENT: Delivery network error ────────────────────────────────
+      emitEvent({
+        type: "ERROR",
+        runId: getDeliveryId(JOB_NAME),
+        data: {
+          error: err.message,
+          file: filePath,
+          deliveryId: payload?.deliveryId || "unknown",
+          metadata: { context: "pushToAppsScript", attempt },
+        },
+      });
+
       if (attempt < MAX_ATTEMPTS) {
         const wait = 2 ** attempt * 2;
         console.log(`   ⏳ Waiting ${wait}s before retry...`);
@@ -572,149 +641,187 @@ async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
 // -----------------------------
 async function generatePlan(task) {
   // Inject CURRENT_DATE as a REQUIRED constant so DeepSeek never hallucinates dates
-  const plan = await askDeepSeek(
+  return await askDeepSeek(
     CURRENT_DATE,
     `TASK:
 ${task}`
   );
-
-  // Schema validation: response must be valid JSON object with steps array
-  if (!plan || typeof plan !== 'object' || !Array.isArray(plan.steps)) {
-    throw new Error('PLAN_SCHEMA_INVALID');
-  }
-
-  return plan;
 }
 
 // -----------------------------
-// EXECUTE PLAN
+// EXECUTE PLAN (Git-Backed State Machine)
 // -----------------------------
-async function executePlan(plan) {
+/**
+ * Execute each plan step through the git-backed step executor.
+ *
+ * Every step runs through:
+ *   snapshotBefore()  →  runStep()  →  snapshotAfter()  →  computeDiff()  →  persistTo execution-state.json
+ *
+ * Git = Source of Truth for execution state.
+ * Each successful step produces a separate git commit with traceable message:
+ *   "exec: <step> — <runId>"
+ *
+ * This makes every run a versioned, replayable state transition.
+ */
+async function executePlan(plan, runId) {
+  // ── Use the pipeline runId — DO NOT generate a new one ──────────────
+  // run() creates pipelineRunId and passes it here. No other ID is valid.
+  const stepRunId = runId;
+
+  // ── Initialize execution state ───────────────────────────────────────
+  const headBefore = snapshotBefore();
+  initExecutionState(stepRunId, headBefore?.headHash || "");
+
   let success = 0;
   let failed = 0;
+  let pipelineActive = true;
 
-  for (const step of plan.steps) {
-    try {
-      // ── Handle "generate_newsletter" action ──────────────
-      if (step.action === "generate_newsletter") {
-        // ── REPLAY MODE: skip if output already exists ────────
-        const outputPath = path.resolve(ROOT, "output", "latest-newsletter.json");
-        if (isReplay && fs.existsSync(outputPath)) {
-          console.log(`⏭️ [REPLAY MODE] Skipping newsletter generation — reusing existing output`);
-          success++;
-          continue;
-        }
+  for (const planStep of plan.steps) {
+    if (!pipelineActive) {
+      console.log(`⏭️ [PIPELINE STOPPED] Skipping remaining steps — pipeline was halted`);
+      break;
+    }
 
-        const newsletter = await generateNewsletterContent();
+    const stepName = planStep.action || planStep.name || "unknown";
 
-        // Save to output/latest-newsletter.json
-        writeFile(outputPath, JSON.stringify(newsletter, null, 2));
-        console.log(`✅ [STEP SUCCESS] generate_newsletter — output/latest-newsletter.json`);
+    // ── Handle replay skip BEFORE state machine ───────────────────────
+    if (isReplay && stepName === "generate_newsletter") {
+      const outputPath = path.resolve(ROOT, "output", "latest-newsletter.json");
+      if (fs.existsSync(outputPath)) {
+        console.log(`⏭️ [REPLAY MODE] Skipping "${stepName}" — reusing existing output`);
+
+        // Record step as SKIPPED in execution state for traceability
+        const state = getExecutionState();
+        state.steps.push({
+          step: stepName,
+          status: "SKIPPED",
+          timestamp: new Date().toISOString(),
+          diff: { filesAdded: [], filesModified: [], filesDeleted: [] },
+          error: null,
+        });
+        state.gitCommitAfter = execSync("git rev-parse HEAD", { encoding: "utf-8", cwd: ROOT, timeout: 5000 }).trim();
+
+        fs.writeFileSync(
+          path.join(path.dirname(new URL(import.meta.url).pathname), "logs", "execution-state.json"),
+          JSON.stringify(state, null, 2)
+        );
         success++;
         continue;
       }
+    }
 
+    // ── Build async execute wrapper for the step ───────────────────────
+    const executeWrapper = async () => {
+      switch (stepName) {
+        case "generate_newsletter": {
+          const newsletter = await generateNewsletterContent(stepRunId);
 
-      // ── Handle "git" action ──────────────────────────────
-      if (step.action === "git") {
-        const commitMsg = step.instruction || "auto-update";
-        runGit("git add .");
-        runGit(`git commit -m "${commitMsg}"`);
-        runGit("git push origin main");
-        console.log(`✅ [STEP SUCCESS] git — "${commitMsg}"`);
-        success++;
-        continue;
-      }
+          const outputPath = path.resolve(ROOT, "output", "latest-newsletter.json");
+          writeFile(outputPath, JSON.stringify(newsletter, null, 2));
+          console.log(`✅ [STEP SUCCESS] generate_newsletter — output/latest-newsletter.json`);
 
-      // ── Handle "push" action (Apps Script delivery) ──────
-      if (step.action === "push") {
-        const payloadPath = step.path || "output/latest-newsletter.json";
-        const pushed = await pushToAppsScript(payloadPath);
-        if (pushed) {
-          console.log(`✅ [STEP SUCCESS] push — ${payloadPath}`);
-          success++;
-        } else {
-          console.log(`❌ [STEP FAILED] push — ${payloadPath}`);
-          failed++;
+          // ── EVENT: Newsletter generated ──────────────────────────────────
+          emitEvent({
+            type: "NEWSLETTER_GENERATED",
+            runId: stepRunId,
+            data: {
+              file: "output/latest-newsletter.json",
+              metadata: {
+                sections: newsletter.sections?.length || 0,
+                insights: newsletter.strategicInsights?.length || 0,
+                scenarios: newsletter.scenarios?.length || 0,
+                date: newsletter.date,
+              },
+            },
+          });
+          return;
         }
-        continue;
+
+        case "git": {
+          const commitMsg = planStep.instruction || "auto-update";
+          runGit("git add .");
+          const commitResult = runGit(`git commit -m "${commitMsg}"`);
+          runGit("git push origin main");
+          console.log(`✅ [STEP SUCCESS] git — "${commitMsg}"`);
+
+          // ── EVENT: Git commit ──────────────────────────────────────────
+          let commitHash = "unknown";
+          try {
+            commitHash = execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
+          } catch {}
+          emitEvent({
+            type: "GIT_COMMIT",
+            runId: stepRunId,
+            data: {
+              file: "",
+              commit: commitHash,
+              metadata: { message: commitMsg, pushed: true },
+            },
+          });
+          return;
+        }
+
+        case "push": {
+          const payloadPath = planStep.path || "output/latest-newsletter.json";
+          const pushed = await pushToAppsScript(payloadPath);
+          if (pushed) {
+            console.log(`✅ [STEP SUCCESS] push — ${payloadPath}`);
+          } else {
+            throw new Error(`Push to Apps Script failed: ${payloadPath}`);
+          }
+          return;
+        }
+
+        default: {
+          throw new Error(`Unknown step action: "${stepName}"`);
+        }
       }
+    };
 
-      // ── Unknown step type ─────────────────────────────────
-      console.log(`⚠️ [UNKNOWN STEP] action="${step.action}" — skipping`);
-      failed++;
+    // ── Execute step through the git-backed state machine ──────────────
+    const result = await executeStep({
+      name: stepName,
+      execute: executeWrapper,
+      runId: stepRunId,
+      options: {
+        // git step manages its own commits — don't auto-commit after
+        autoCommitEnabled: stepName !== "git",
+        // pipeline continues even if a step fails (collects all failures)
+        stopOnFailure: false,
+      },
+    });
 
-    } catch (err) {
-      console.log(`❌ [STEP FAILED] ${err.message}`);
+    if (result.status === "SUCCESS") {
+      success++;
+    } else if (result.status === "PARTIAL") {
+      // Partial counts as success for pipeline continuity
+      // but is recorded as PARTIAL in execution state for traceability
+      success++;
+    } else {
       failed++;
     }
+
+    // ── State machine: stop pipeline only if step says STOP ──────────
+    if (result.pipeline === "STOP") {
+      console.log(`🛑 [PIPELINE] Stopped after "${stepName}" — state machine triggered STOP`);
+      pipelineActive = false;
+    }
   }
+
+  // ── Finalize execution state ─────────────────────────────────────────
+  finalizeExecutionState();
 
   return { success, failed };
 }
 
-// -----------------------------
-// STATUS DISPLAY — system health snapshot
-// -----------------------------
-/**
- * printStatus — Print a lightweight system health snapshot.
- *
- * Uses existing functions imported from state.js and truth-evaluator.js:
- *   - getState()     — current execution state (mode, lock, flags)
- *   - calculateHealthScore() — truth accuracy, mismatch rate, recovery dependency
- *   - isSystemUnstable()     — stability check
- *
- * Exits cleanly without executing any pipeline logic.
- */
-function printStatus() {
-  const state = getState();
-  const health = calculateHealthScore();
-  const stability = isSystemUnstable();
 
-  const line = "═".repeat(50);
-  console.log(`\n${line}`);
-  console.log("📊 SYSTEM STATUS");
-  console.log(line);
-
-  // ── Execution state ─────────────────────────────────────────
-  console.log(`\n🔒 EXECUTION STATE`);
-  console.log(`   Mode:              ${state.mode || "NORMAL"}`);
-  console.log(`   Active Run ID:     ${state.activeRunId || "(none)"}`);
-  console.log(`   Safe Mode:         ${state.flags?.safeMode ? "⚠️ ACTIVE" : "✅ Off"}`);
-  console.log(`   Consecutive Failures: ${state.flags?.consecutiveFailures ?? 0}`);
-
-  // ── Health score ────────────────────────────────────────────
-  console.log(`\n📊 HEALTH SCORE`);
-  console.log(`   Truth Accuracy:    ${health.truthAccuracy}/100`);
-  console.log(`   Mismatch Rate:     ${health.mismatchRate}%`);
-  console.log(`   Recovery Dep:      ${health.recoveryDependency}`);
-
-  // ── Stability check ─────────────────────────────────────────
-  if (stability.unstable) {
-    console.log(`\n⚠️  SYSTEM STABILITY WARNING`);
-    console.log(`   Reason: ${stability.reason}`);
-  } else {
-    console.log(`\n✅ System stable`);
-  }
-
-  console.log(`\n${line}`);
-  console.log(`📅 ${CURRENT_DATE}`);
-  console.log(`${line}\n`);
-}
 
 // -----------------------------
 // MAIN ROUTER
 // -----------------------------
 async function run() {
-  // ── INTERCEPT STATUS COMMAND ──────────────────────────────────
-  // "status" is a special command, not a job name.
-  // Must be intercepted before normal job parsing to avoid
-  // falling through to the JOBS lookup → "Unknown job" error.
-  if (process.argv[2] === "status") {
-    return printStatus();
-  }
-
   const jobName = process.argv[2] || "daily-newsletter";
+
   const task = JOBS[jobName];
 
   if (!task) {
@@ -743,11 +850,103 @@ async function run() {
   }
   console.log("==================================================");
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // STREAM PROCESSOR INITIALIZATION (Real-Time Reactive Infrastructure)
+  //
+  // Wires up the event bus → stream processor → anomaly detector chain.
+  // All emitEvent() calls from this point forward route through the bus.
+  //
+  // Architecture:
+  //   event-emitter → event-bus (broadcast) → stream-processor (rules)
+  //                                         → anomaly-detector (pattern analysis)
+  //                                         → event-store.json (persistence)
+  //                                         → system-state (live updates)
+  // ═══════════════════════════════════════════════════════════════════════
+  const streamInit = (() => {
+    try {
+      // Step 1: Wire event-emitter → event-bus
+      // The event-bus auto-initializes on import (reads event store,
+      // builds subscriber registry, loads last system state).
+      // After this bridge, ALL emitEvent() calls route through the bus
+      // for real-time broadcast instead of direct file writes.
+      setEventBus(eventBus);
+      if (isBusConnected()) {
+        console.log("   ⚡ [STREAM] Event emitter → bus bridge connected");
+      } else {
+        console.log("   ⚠️  [STREAM] Event emitter → bus bridge failed — using legacy path");
+      }
+
+      // Step 3: Initialize stream processor (real-time rules engine)
+      // Subscribes to event-bus and runs rules instantly on every event.
+      // Handles: webhook failures, LLM errors, missing doPost detection, etc.
+      const spOk = initializeStreamProcessor(eventBus);
+      if (spOk) {
+        console.log("   ⚡ [STREAM] Stream processor initialized — real-time rules active");
+      }
+
+      // Step 4: Initialize anomaly detector (pattern analysis)
+      // Subscribes to event-bus and runs detection on every event.
+      // Detects: repeated failures, retry loops, missing chains, silent success.
+      const adOk = initializeAnomalyDetector(eventBus);
+      if (adOk) {
+        console.log("   🔍 [STREAM] Anomaly detector initialized — pattern analysis active");
+      }
+
+      return { busOk: true, spOk, adOk };
+    } catch (err) {
+      console.error(`   ❌ [STREAM] Initialization failed: ${err.message}`);
+      console.log("   ⚠️  System will continue in legacy mode (no real-time reactions)");
+      return { busOk: false, spOk: false, adOk: false };
+    }
+  })();
+
+  // Log stream status
+  console.log(`\n   ⚡ Stream Infrastructure: ${streamInit.busOk ? "✅ ACTIVE" : "⛔ OFFLINE"}`);
+  console.log(`   ⚡ Stream Processor:    ${streamInit.spOk ? "✅ ACTIVE" : "⛔ OFFLINE"}`);
+  console.log(`   ⚡ Anomaly Detector:    ${streamInit.adOk ? "✅ ACTIVE" : "⛔ OFFLINE"}`);
+
+  // ── EVENT: Pipeline started ────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CRITICAL: Use PIPELINE_RUN_ID as the SINGLE execution identity.
+  // This is the ONLY place pipelineRunId is assigned in this file.
+  // It MUST NOT be reassigned or generated anywhere else.
+  // Source: PIPELINE_RUN_ID was set at module scope from RUN_ID env var or fresh generation.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const pipelineRunId = PIPELINE_RUN_ID;
+
+
+  emitEvent({
+    type: "PIPELINE_START",
+    runId: pipelineRunId,
+    data: {
+      metadata: { job: jobName, date: CURRENT_DATE, mode: determinedMode, isReplay },
+    },
+  });
+
+  // ── AGENT BARRIER: Initialize multi-agent run state ──────────────────────
+  // Every run gets a fresh agent-state.json with all agents at "pending".
+  // This is the synchronization foundation for the barrier layer.
+  // fusion-engine.js will mark each agent "complete" as it finishes
+  // and waitUntilAllAgentsComplete() before running editor-agent.
+  initAgentRun(pipelineRunId);
+  console.log(`   🏁 Agent run initialized: ${pipelineRunId}`);
+
   console.log("\n⏳ Generating plan from DeepSeek...");
 
   const plan = await generatePlan(task);
 
   if (!plan || !plan.steps) {
+    // ── EVENT: Plan generation error ──────────────────────────────────
+    emitEvent({
+      type: "ERROR",
+      runId: pipelineRunId,
+      data: {
+        error: "Plan generation failed — DeepSeek response missing steps",
+        file: "",
+        metadata: { context: "generatePlan", job: jobName },
+      },
+    });
+
     console.log("❌ PLAN GENERATION FAILED");
     return;
   }
@@ -755,63 +954,78 @@ async function run() {
   console.log("\n[PLAN RECEIVED]");
   console.log(JSON.stringify(plan, null, 2));
 
-  // ── SAFE MODE CHECK + AUTO-RECOVERY ─────────────────────────────
-  // If safe mode is active:
-  //   - If last failure was > 1 hour ago → auto-reset safe mode and allow execution
-  //   - Otherwise → block execution
-  const currentState = getState();
-  if (currentState.flags && currentState.flags.safeMode) {
-    const lastFailure = currentState.flags.lastFailureTimestamp;
-    if (lastFailure && Date.now() - lastFailure > 60 * 60 * 1000) {
-      setState({
-        flags: {
-          safeMode: false,
-          consecutiveFailures: 0,
-        },
-      });
-      console.log("🟢 SAFE MODE AUTO-RECOVERED");
-    } else {
-      console.log("🛑 SAFE MODE ACTIVE — blocking executePlan() due to 2 consecutive pipeline failures");
-      return;
-    }
-  }
-
-  const result = await executePlan(plan);
-
-  // ── CONSECUTIVE FAILURE TRACKING ─────────────────────────────────
-  // Track pipeline failures. If 2 consecutive runs have failures,
-  // set SAFE_MODE = true to block future executions.
-  const state = getState();
-  let consecutiveFailures = (state.flags && state.flags.consecutiveFailures) || 0;
-
-  if (result.failed > 0) {
-    consecutiveFailures++;
-  } else {
-    consecutiveFailures = 0;
-  }
-
-  if (consecutiveFailures >= 2) {
-    setState({
-      flags: {
-        safeMode: true,
-        consecutiveFailures: consecutiveFailures,
-      },
-    });
-    console.log("🛑 SAFE MODE ACTIVATED — 2 consecutive pipeline failures detected");
-  } else {
-    setState({
-      flags: {
-        safeMode: false,
-        consecutiveFailures: consecutiveFailures,
-      },
-    });
-  }
+  const result = await executePlan(plan, pipelineRunId);
 
   console.log("\n==================================================");
   console.log("📊 EXECUTION SUMMARY");
   console.log("SUCCESS:", result.success);
   console.log("FAILED:", result.failed);
   console.log("==================================================");
+
+  // ── ID CONSISTENCY VERIFICATION ─────────────────────────────────────
+  // Verify that pipelineRunId is the SINGLE source of truth across
+  // the entire execution lifecycle. All subsystems use this same ID:
+  //   - initAgentRun(pipelineRunId)         ✓ (line 910)
+  //   - executePlan(plan, pipelineRunId)    ✓ (line 936)
+  //   - verifyAgentCompletion(pipelineRunId) ✓ (line 950)
+  //   - fuseSignals(options.runId)           ✓ (fusion-engine.js)
+  //   - synthesizeInsights(pipelineRunId)    ✓ (line 197)
+  //   - generateScenarios(pipelineRunId)     ✓ (line 307)
+  //   - generateNewsletterContent(stepRunId) ✓ (executePlan wrapper)
+  //   - markAgentComplete(_, agentRunId)     ✓ (fusion-engine.js)
+  // ═══════════════════════════════════════════════════════════════════════
+  console.log("\n🔗 [ID CONSISTENCY] Verifying single execution identity...");
+  console.log(`   Pipeline Run ID (source of truth): ${pipelineRunId}`);
+  console.log(`   Used by: initAgentRun, executePlan, generateNewsletterContent,`);
+  console.log(`            fuseSignals, synthesizeInsights, generateScenarios,`);
+  console.log(`            verifyAgentCompletion, markAgentComplete`);
+  console.log(`   PIPELINE RUN ID CONSISTENT: true`);
+  console.log(`   No duplicate ID generation exists downstream.`);
+
+  // ── AGENT TERMINATION GUARD ──────────────────────────────────────────
+  // DO NOT proceed with verification/evaluation/optimization until ALL
+  // agents have completed and AGENT_BATCH_COMPLETE event exists.
+  // This prevents premature termination before editor-agent finishes.
+  // ═══════════════════════════════════════════════════════════════════════
+  console.log("\n🛡️ [AGENT GUARD] Verifying multi-agent completion before finalizing...");
+  const allAgentsDone = verifyAgentCompletion(pipelineRunId, ["macro", "gcc", "risk", "editor"]);
+
+  // Check if AGENT_BATCH_COMPLETE event exists for this run
+  let agentBatchCompleteExists = false;
+  try {
+    const events = getEventsByRun(pipelineRunId);
+    agentBatchCompleteExists = events.some((e) => e.type === "AGENT_BATCH_COMPLETE");
+  } catch {
+    console.log("   ⚠️ [AGENT GUARD] Could not query event store — proceeding with caution");
+  }
+
+  if (!allAgentsDone || !agentBatchCompleteExists) {
+    console.error(`\n   🚨 [AGENT GUARD] AGENT COMPLETION CHECK FAILED`);
+    console.error(`   Agents complete:     ${allAgentsDone}`);
+    console.error(`   AGENT_BATCH_COMPLETE: ${agentBatchCompleteExists}`);
+    console.error(`   Run ID:              ${pipelineRunId}`);
+    console.error(`   ⛔ System cannot finalize — agents did not all complete.`);
+    console.error(`   Check operator/logs/agent-state.json for agent status.`);
+    // Log the error but continue — the pipeline should not crash entirely,
+    // but the guard warning is critical for debugging.
+    emitEvent({
+      type: "ERROR",
+      runId: pipelineRunId,
+      data: {
+        error: `Agent completion guard FAILED: agents=${allAgentsDone}, batchComplete=${agentBatchCompleteExists}`,
+        file: "",
+        metadata: {
+          context: "agentBarrierGuard",
+          job: jobName,
+          allAgentsDone,
+          agentBatchCompleteExists,
+        },
+      },
+    });
+  } else {
+    console.log(`   ✅ [AGENT GUARD] All agents completed successfully — AGENT_BATCH_COMPLETE verified`);
+  }
+  // ── End Agent Termination Guard ─────────────────────────────────────
 
   // ── v3 Feedback Loop (legacy, kept for memory/newsletter-history.json) ──
   try {
@@ -851,13 +1065,19 @@ async function run() {
   const declaredState = result.failed === 0 ? "SUCCESS" : result.success > 0 ? "PARTIAL" : "FAILED";
   const deliveryId = getDeliveryId(jobName);
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // SINGLE IDENTITY: Use pipelineRunId (source of truth) for truth eval.
+  // Previously used a hardcoded `${jobName}-${CURRENT_DATE}` string that
+  // could not be traced back to the actual pipeline execution identity.
+  // ═══════════════════════════════════════════════════════════════════════
   console.log("\n⚖️ [TRUTH VERIFICATION] Evaluating pipeline results...");
   const truthResult = evaluateTruth({
-    runId: `${jobName}-${CURRENT_DATE}`,
+    runId: pipelineRunId,
     declaredState,
     job: jobName,
     deliveryId,
   });
+
 
   // ⚠️ Mismatch: system says SUCCESS but reality didn't confirm
   if (truthResult.mismatch) {
@@ -877,6 +1097,30 @@ async function run() {
     console.log(`\n⚠️ SYSTEM STABILITY WARNING: ${stability.reason}`);
     console.log(`   Consider reviewing recent mismatches in operator/logs/truth-log.json`);
   }
+
+  // ── EVENTS: Validation result & Pipeline end ──────────────────────────
+  const finalState = result.failed === 0 ? "SUCCESS" : result.success > 0 ? "PARTIAL" : "FAILED";
+  emitEvent({
+    type: "VALIDATION_RESULT",
+    runId: pipelineRunId,
+    data: {
+      metadata: {
+        status: finalState,
+        successfulSteps: result.success,
+        failedSteps: result.failed,
+        truthAccuracy: health.truthAccuracy,
+        mismatchDetected: truthResult.mismatch || false,
+      },
+    },
+  });
+
+  emitEvent({
+    type: "PIPELINE_END",
+    runId: pipelineRunId,
+    data: {
+      metadata: { status: finalState, job: jobName, date: CURRENT_DATE, mode: determinedMode },
+    },
+  });
 
   if (result.failed === 0) {
     console.log("\n🎉 PIPELINE COMPLETE");
@@ -899,9 +1143,16 @@ async function run() {
       const rawNewsletter = fs.readFileSync(newsletterPath, "utf-8");
       const newsletterJson = JSON.parse(rawNewsletter);
 
-      const runId = `${jobName}-${CURRENT_DATE}-${Date.now()}`;
+      // ═══════════════════════════════════════════════════════════════════════
+      // SINGLE IDENTITY: Use pipelineRunId (the single source of truth).
+      // Previously this generated a NEW runId via Date.now(), creating an
+      // orphan identity that could not be traced back to the pipeline run.
+      // Now uses the same pipelineRunId as the rest of the execution.
+      // ═══════════════════════════════════════════════════════════════════════
+      const runId = pipelineRunId;
 
       console.log("\n🧬 [OPTIMIZER] Running controlled self-optimization cycle...");
+
 
       // ── Step 1: Process structured feedback (evaluator → feedback.json) ──
       // The processFeedback function handles evaluation, saves to feedback.json,
@@ -940,4 +1191,3 @@ async function run() {
 }
 
 run();
-

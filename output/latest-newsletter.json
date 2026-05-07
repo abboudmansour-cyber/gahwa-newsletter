@@ -3,39 +3,144 @@
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "headline": "GCC markets mixed as oil prices dip below $75",
-      "summary": "GCC equity markets showed mixed performance on Wednesday, with Saudi Arabia's Tadawul All Share Index falling 0.3% while Dubai's DFM rose 0.5%. Brent crude slipped to $74.80 per barrel, down 1.2% on demand concerns.",
-      "insight": "The divergence reflects ongoing investor caution amid oil price volatility, but Dubai's gain suggests selective buying in real estate and tourism stocks."
+      "headline": "🔎 GCC Intelligence Signals",
+      "summary": "US Federal Reserve holds rates at 4.25-4.50%, with GCC central banks expected to maintain currency peg alignment. Brent crude trades near $78/bbl as OPEC+ extends 2.2M bpd voluntary cuts. GCC banking sector shows robust NIM expansion, with SNB, QNB, FAB reporting strong quarterly metrics. GCC fintech sector deploys AI-driven credit scoring and fraud detection, with digital banking adoption at 65% in KSA and 72% in UAE.",
+      "insight": "The macro environment remains supportive for GCC financials and energy, while AI-driven fintech adoption signals a structural shift in regional banking."
     },
     {
-      "headline": "Saudi non-oil PMI hits 58.2 in April, fastest in 8 months",
-      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index (PMI) surged to 58.2 in April 2026 from 56.8 in March, marking the strongest expansion since August 2025. New orders and output grew sharply, supported by robust domestic demand.",
-      "insight": "The PMI reading above 55 signals sustained momentum in Vision 2030 sectors, reinforcing expectations of 4.8% non-oil GDP growth for 2026."
+      "headline": "Fed Holds Rates Steady; GCC Pegs Stay Aligned",
+      "summary": "The US Federal Reserve held rates at 4.25-4.50%, prompting SAMA, UAE Central Bank, and QCB to maintain their currency pegs. This reinforces the higher-for-longer rate environment, boosting net interest margins for GCC banks.",
+      "insight": "GCC monetary policy remains tightly coupled to the Fed, supporting banking sector profitability and attracting institutional flows."
     },
     {
-      "headline": "UAE announces $10bn AI investment fund with global partners",
-      "summary": "The UAE government launched a $10 billion artificial intelligence investment fund in partnership with Microsoft and BlackRock, targeting AI infrastructure and startups. The fund aims to deploy capital across GCC and global markets by Q4 2026.",
-      "insight": "This positions the UAE as a leading AI hub in the region, potentially attracting $30bn in co-investment and accelerating digital transformation across sectors."
+      "headline": "Brent Crude Near $78 as OPEC+ Maintains Cautious Output",
+      "summary": "Brent crude trades around $78/bbl as OPEC+ extends 2.2M bpd voluntary cuts, balancing market share discipline against global demand uncertainty. Saudi Aramco shares stabilize at SAR 28.50, with a 6.2% dividend yield drawing institutional investors.",
+      "insight": "OPEC+ strategy supports oil prices near current levels, providing fiscal stability for GCC economies amid moderate demand."
     },
     {
-      "headline": "GCC fintech funding reaches $1.2bn in Q1 2026, up 35% YoY",
-      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, a 35% increase year-on-year, led by Saudi Arabia's $400 million round for a digital payments firm and UAE's $300 million for a neobank. Total deal count rose to 78.",
-      "insight": "The surge underscores strong investor appetite for digital financial services, with regulatory sandboxes in Saudi and UAE driving innovation and scaling."
+      "headline": "GCC Banks Post Strong NIM Expansion on Higher Rates",
+      "summary": "GCC banking sector reports robust net interest margin expansion as the higher-for-longer rate environment boosts lending income. SNB, QNB, and FAB all delivered strong quarterly metrics, reflecting healthy loan growth and asset quality.",
+      "insight": "The rate environment continues to benefit GCC banks, reinforcing their position as core holdings for regional equity investors."
     },
     {
-      "headline": "Saudi Aramco reports $28bn Q1 profit, maintains $31bn dividend",
-      "summary": "Saudi Aramco posted a net profit of $28 billion for Q1 2026, down 8% from a year ago due to lower oil prices, but maintained its $31 billion dividend payout. Production averaged 9.2 million barrels per day.",
-      "insight": "The steady dividend reinforces Aramco's role as a cash cow for the Saudi budget, though lower profits highlight the urgency of economic diversification under Vision 2030."
+      "headline": "Saudi Aramco Attracts Institutional Flows with 6.2% Yield",
+      "summary": "Saudi Aramco shares stabilize around SAR 28.50, with a sustained dividend yield of 6.2% attracting institutional flows despite moderate oil prices. This underscores Aramco's role as a key income-generating asset in GCC portfolios.",
+      "insight": "Aramco's dividend yield remains a magnet for institutional capital, supporting market stability and investor confidence."
     },
     {
-      "headline": "QatarEnergy signs 15-year LNG deal with Germany's RWE",
-      "summary": "QatarEnergy inked a 15-year liquefied natural gas supply agreement with German utility RWE, delivering 2 million tonnes per annum starting 2027. The deal is valued at approximately $10 billion at current spot prices.",
-      "insight": "This strengthens Qatar's position as Europe's key LNG supplier amid energy security concerns, with long-term contracts providing revenue stability."
+      "headline": "OPEC+ Extends Cuts; GCC-China Trade Hits $350B",
+      "summary": "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown. GCC-China trade volumes exceed $350B annually, with yuan-denominated oil contracts gaining traction, signaling de-dollarization momentum.",
+      "insight": "GCC states are diversifying trade partnerships, with China emerging as a key economic partner, reducing reliance on Western markets."
     },
     {
-      "headline": "Dubai real estate transactions hit $12bn in April, record high",
-      "summary": "Dubai's real estate market recorded $12 billion in transactions in April 2026, a 22% increase year-on-year, driven by luxury villa sales and off-plan projects. Average prices rose 8% in prime areas.",
-      "insight": "The record activity suggests sustained demand from foreign investors and high-net-worth individuals, though affordability concerns may temper growth in mid-market segments."
+      "headline": "GCC Fintech Booms: AI Credit Scoring, 72% UAE Digital Banking",
+      "summary": "GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale. Digital banking adoption reaches 65% in KSA and 72% in UAE, driven by regulatory support and consumer demand for digital-first services.",
+      "insight": "AI-powered fintech is reshaping GCC banking, with digital adoption rates signaling a permanent shift in consumer behavior."
+    },
+    {
+      "headline": "Saudi Arabia Invests $15B in NEOM AI City and Data Centers",
+      "summary": "Saudi Arabia accelerates NEOM AI City and data center investments with $15B committed to GPU clusters and sovereign AI infrastructure buildout. This aligns with Vision 2030's goal to establish the Kingdom as a global AI hub.",
+      "insight": "Massive sovereign investment in AI infrastructure positions Saudi Arabia as a leader in the regional tech transformation, attracting global tech partnerships."
+    }
+  ],
+  "strategicInsights": [
+    {
+      "hypothesis": "GCC sovereign digital infrastructure push is accelerating — GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale paired with US Federal Reserve holds rates at 4.25-4.50% signals strategic intent to establish digital independence from external technology dependencies.",
+      "confidence": 0.76,
+      "type": "GEO_STRATEGY",
+      "status": "EMERGING",
+      "supportingSignals": [
+        "GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale — digital banking adoption reaches 65% in KSA and 72% in UAE.",
+        "Saudi Arabia accelerates NEOM AI City and data center investments with $15B committed to GPU clusters and sovereign AI infrastructure buildout.",
+        "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment.",
+        "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty."
+      ]
+    },
+    {
+      "hypothesis": "GCC capital markets and fiscal indicators show sector rotation away from hydrocarbon-dependent assets toward diversified economic drivers, suggesting the post-oil economic model is gaining structural momentum.",
+      "confidence": 0.76,
+      "type": "MACRO_TREND",
+      "status": "EMERGING",
+      "supportingSignals": [
+        "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment.",
+        "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty.",
+        "GCC banking sector shows robust NIM expansion as higher-for-longer rate environment boosts lending income — SNB, QNB, FAB report strong quarterly metrics.",
+        "Saudi Aramco shares stabilize around SAR 28.50 as sustained dividend yield of 6.2% attracts institutional flows despite moderate oil price environment."
+      ]
+    },
+    {
+      "hypothesis": "GCC states are actively diversifying strategic partnerships beyond traditional Western alliances — new trade corridors and diplomatic engagements signal a multipolar alignment strategy that prioritizes economic sovereignty over historical geopolitical dependencies.",
+      "confidence": 0.76,
+      "type": "GEO_STRATEGY",
+      "status": "EMERGING",
+      "supportingSignals": [
+        "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown signals.",
+        "GCC-China trade volumes exceed $350B annually with yuan-denominated oil contracts gaining traction, signaling de-dollarization momentum in energy trade.",
+        "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment."
+      ]
+    },
+    {
+      "hypothesis": "GCC capital markets are undergoing institutional deepening — increased IPO activity and institutional capital flows signal a structural shift from retail-dominated to institutionally-driven markets, improving price discovery and liquidity depth.",
+      "confidence": 0.76,
+      "type": "MARKET_SHIFT",
+      "status": "EMERGING",
+      "supportingSignals": [
+        "GCC banking sector shows robust NIM expansion as higher-for-longer rate environment boosts lending income — SNB, QNB, FAB report strong quarterly metrics.",
+        "Saudi Aramco shares stabilize around SAR 28.50 as sustained dividend yield of 6.2% attracts institutional flows despite moderate oil price environment.",
+        "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment."
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario": "GCC states deepen multipolar trade relationships — new corridors and bilateral agreements signal strategic shift away from single-alignment dependency toward diversified economic partnerships",
+      "type": "GEO",
+      "drivers": [
+        "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown signals.",
+        "GCC-China trade volumes exceed $350B annually with yuan-denominated oil contracts gaining traction, signaling de-dollarization momentum in energy trade.",
+        "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty."
+      ],
+      "potentialImpacts": {
+        "RegionalStability": "positive",
+        "Economy": "moderate",
+        "Policy": "evolving"
+      },
+      "probabilityBand": "MEDIUM",
+      "confidence": 0.7,
+      "status": "ACTIVE"
+    },
+    {
+      "scenario": "Oil prices remain elevated due to sustained supply constraints",
+      "type": "MACRO",
+      "drivers": [
+        "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty.",
+        "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown signals."
+      ],
+      "potentialImpacts": {
+        "SaudiEconomy": "positive",
+        "InflationPressure": "moderate",
+        "InvestmentFlows": "increase"
+      },
+      "probabilityBand": "MEDIUM",
+      "confidence": 0.64,
+      "status": "ACTIVE"
+    },
+    {
+      "scenario": "GCC/KSA AI compute infrastructure investment accelerates as sovereign funds compete to establish regional tech dominance — capital deployment pace signals strategic race against global AI leaders",
+      "type": "MARKET",
+      "drivers": [
+        "GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale",
+        "Saudi Arabia accelerates NEOM AI City and data center investments with $15B committed to GPU clusters and sovereign AI infrastructure buildout.",
+        "US Federal Reserve holds rates at 4.25-4.50%"
+      ],
+      "potentialImpacts": {
+        "Economy": "positive",
+        "Tech": "transformative",
+        "Markets": "positive"
+      },
+      "probabilityBand": "MEDIUM",
+      "confidence": 0.64,
+      "status": "ACTIVE"
     }
   ]
 }

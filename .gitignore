@@ -4,3 +4,8 @@ node_modules/
 secrets.json
 .DS_Store
 operator/runtime/state.json
+operator/runtime/
+operator/logs/execution-state.json
+operator/logs/pipeline-state.json
+operator/logs/pipeline-state.json.tmp
+

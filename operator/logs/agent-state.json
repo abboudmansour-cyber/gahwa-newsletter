@@ -1,0 +1,7 @@
+{
+  "runId": "test-run-123",
+  "macro": "complete",
+  "gcc": "complete",
+  "risk": "complete",
+  "editor": "complete"
+}

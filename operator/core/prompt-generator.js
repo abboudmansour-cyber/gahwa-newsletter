@@ -58,7 +58,9 @@ export function generateAtomicPrompt(config = {}) {
   // ── Build sections ────────────────────────────────────────────────────
 
   // 0. HEADER (MANDATORY)
-  const header = `SYSTEM: Gahwa Operator
+  const header = `Follow rules in operator/cline-rules.md before executing.
+
+SYSTEM: Gahwa Operator
 MODE: Atomic Execution
 STRICT MODE: ON
 NO PARTIAL IMPLEMENTATION: TRUE`;
@@ -91,10 +93,7 @@ NO PARTIAL IMPLEMENTATION: TRUE`;
   const contractSection = includeBehaviorContract ? BEHAVIOR_CONTRACT_TEMPLATE : "";
 
   // ── Assemble ──────────────────────────────────────────────────────────
-  let prompt = `SYSTEM: Gahwa Operator
-MODE: Atomic Execution
-STRICT MODE: ON
-NO PARTIAL IMPLEMENTATION: TRUE
+  let prompt = `${header}
 
 # 🎯 1. OBJECTIVE (NO AMBIGUITY)
 ${objectiveSection}
@@ -154,7 +153,9 @@ export function generateRetryAtomicPrompt(missingItems = {}, options = {}) {
   } = missingItems;
 
   if (files.length === 0 && functions.length === 0 && logs.length === 0 && behaviors.length === 0 && brokenHooks.length === 0) {
-    return `SYSTEM: Gahwa Operator
+    return `Follow rules in operator/cline-rules.md before executing.
+
+SYSTEM: Gahwa Operator
 MODE: Atomic Execution
 STRICT MODE: ON
 NO PARTIAL IMPLEMENTATION: TRUE
@@ -169,7 +170,9 @@ RETRY MODE:
   - Verify all artifacts exist after execution`;
   }
 
-  let prompt = `SYSTEM: Gahwa Operator
+  let prompt = `Follow rules in operator/cline-rules.md before executing.
+
+SYSTEM: Gahwa Operator
 MODE: Atomic Execution
 STRICT MODE: ON
 NO PARTIAL IMPLEMENTATION: TRUE

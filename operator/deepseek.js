@@ -11,6 +11,33 @@ const API_URL = "https://api.deepseek.com/v1/chat/completions";
 const MODEL = "deepseek-chat";
 const MAX_RETRIES = 1;
 const MAX_SAFE_RESPONSE_LENGTH = 5000;
+const PLAN_TIMEOUT_MS = 30000; // 30-second hard timeout for plan generation
+
+/**
+ * Fetch with a hard timeout using AbortController.
+ * Throws a clear "PLAN_GENERATION_TIMEOUT" error if the request exceeds timeoutMs.
+ *
+ * @param {string} url - Request URL
+ * @param {object} options - Fetch options
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @returns {Promise<Response>} Fetch response
+ */
+function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .then((res) => {
+      clearTimeout(timeoutId);
+      return res;
+    })
+    .catch((err) => {
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        throw new Error("PLAN_GENERATION_TIMEOUT");
+      }
+      throw err;
+    });
+}
 
 /**
  * Build the system prompt with strict JSON-only enforcement.
@@ -140,7 +167,7 @@ async function callDeepSeek(task, currentDate, fixMode = false) {
     { role: "user", content: fixMode ? buildUserPrompt(task) + FIX_PROMPT_SUFFIX : buildUserPrompt(task) },
   ];
 
-  const res = await fetch(API_URL, {
+  const res = await fetchWithTimeout(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -152,7 +179,7 @@ async function callDeepSeek(task, currentDate, fixMode = false) {
       max_tokens: 1024,
       temperature: 0.1,
     }),
-  });
+  }, PLAN_TIMEOUT_MS);
 
   if (!res.ok) {
     const errorBody = await res.text();
