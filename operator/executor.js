@@ -31,7 +31,18 @@ import {
   logRunEnd,
   logSuccess,
   logFailure,
+  getAllRuns,
 } from "./core/logger.js";
+import { appendRecoveryEntry, getPendingReplayCount } from "./core/recovery.js";
+import { runReplayEngine } from "./core/replay-engine.js";
+import {
+  acquireLock,
+  releaseLock,
+  MODES,
+  printModeBanner,
+  isBlocked,
+} from "./core/state.js";
+import { evaluateTruth, isSystemUnstable } from "./core/truth-evaluator.js";
 
 // ── Bootstrap execution context (MUST be called before ANY other logic) ─────
 ensureExecutionContext();
@@ -56,77 +67,290 @@ const FEEDBACK_FILE = path.join(__dirname, "logs", "feedback.json");
  * @returns {Promise<{success: boolean, message: string, runId: string}>}
  */
 export async function runJob(jobName = "daily-newsletter") {
-  const t0 = Date.now();
+  // ── LOOP ISOLATION: Acquire NORMAL lock ─────────────────────────────
+  // Blocks if replay or recovery is already active (mutual exclusion)
   const runId = generateRunId();
+
+  if (!acquireLock(MODES.NORMAL, runId)) {
+    console.log(`⛔ [EXECUTOR] Cannot acquire NORMAL lock — another mode is active. Aborting.`);
+    return {
+      success: false,
+      runId,
+      message: "Pipeline aborted — execution lock held by another mode (replay/recovery)",
+    };
+  }
+
+  printModeBanner(MODES.NORMAL, `run ${runId}: ${jobName}`);
+
+  const t0 = Date.now();
 
   // Log run start to runs.json
   logRunStart(runId, jobName);
 
-  // Execute with retry
-  const result = await retry(() => spawnOperator(jobName, runId), {
-    retries: 2,
-    delay: 10000,
-  });
+  try {
+    // Execute with retry
+    const result = await retry(() => spawnOperator(jobName, runId), {
+      retries: 2,
+      delay: 10000,
+    });
 
-  const durationMs = Date.now() - t0;
+    const durationMs = Date.now() - t0;
 
-  if (result.success) {
-    // Mark all steps completed on success
-    logRunStep(runId, "deepseek", true);
-    logRunStep(runId, "operator", true);
-    logRunStep(runId, "git", true);
-    logRunStep(runId, "appsScript", true);
-    logRunEnd(runId, "success", durationMs);
+    if (result.success) {
+      // Mark all steps completed on success
+      logRunStep(runId, "deepseek", true);
+      logRunStep(runId, "operator", true);
+      logRunStep(runId, "git", true);
+      logRunStep(runId, "appsScript", true);
+      logRunEnd(runId, "success", durationMs);
 
-    logSuccess(durationMs);
+      logSuccess(durationMs);
 
-    // ── Feedback loop verification ────────────────────────────────────
-    // Read latest feedback entry to confirm evaluator ran in child process
-    try {
-      if (fs.existsSync(FEEDBACK_FILE)) {
-        const rawFeedback = fs.readFileSync(FEEDBACK_FILE, "utf-8");
-        const feedback = JSON.parse(rawFeedback);
-        const lastEntry = feedback[feedback.length - 1];
-        if (lastEntry && lastEntry.runId !== "init") {
-          console.log(`[EXECUTOR] Feedback confirmed — run ${lastEntry.runId}: ` +
-            `overall ${lastEntry.score.overall}/10, weaknesses: ${lastEntry.weaknessTags.join("; ")}`);
+      // ── TRUTH VERIFICATION LAYER ─────────────────────────────────────
+      // After EVERY run, compare declared success vs actual external sources.
+      // Do NOT trust child process exit code alone — verify independently.
+      console.log("\n⚖️ [TRUTH VERIFICATION] Evaluating pipeline results independently...");
+      const truthResult = evaluateTruth({
+        runId,
+        declaredState: "SUCCESS",
+        job: jobName,
+        deliveryId: `${jobName}-${new Date().toISOString().slice(0, 10)}`,
+      });
+
+      // ⚠️ MISMATCH DETECTED: System declared SUCCESS but reality says otherwise
+      if (truthResult.mismatch) {
+        console.log(`\n🛑 [TRUTH] MISMATCH on run ${runId}: system declared success but verification failed`);
+        console.log(`   Verified state: ${truthResult.verifiedState}`);
+        console.log(`   Sources: git=${truthResult.sources.git}, appsScript=${truthResult.sources.appsScript}, email=${truthResult.sources.email}`);
+        console.log(`   Triggering recovery + marking system unstable...`);
+
+        const stability = isSystemUnstable();
+        if (stability.unstable) {
+          console.log(`   ⚠️ System stability warning: ${stability.reason}`);
         }
       }
-    } catch (err) {
-      console.log(`[EXECUTOR] Feedback read skipped: ${err.message}`);
+
+      // ── Feedback loop verification ────────────────────────────────────
+      // Read latest feedback entry to confirm evaluator ran in child process
+      try {
+        if (fs.existsSync(FEEDBACK_FILE)) {
+          const rawFeedback = fs.readFileSync(FEEDBACK_FILE, "utf-8");
+          const feedback = JSON.parse(rawFeedback);
+          const lastEntry = feedback[feedback.length - 1];
+          if (lastEntry && lastEntry.runId !== "init") {
+            console.log(`[EXECUTOR] Feedback confirmed — run ${lastEntry.runId}: ` +
+              `overall ${lastEntry.score.overall}/10, weaknesses: ${lastEntry.weaknessTags.join("; ")}`);
+          }
+        }
+      } catch (err) {
+        console.log(`[EXECUTOR] Feedback read skipped: ${err.message}`);
+      }
+
+      releaseLock();
+      return {
+        success: true,
+        runId,
+        message: `Pipeline completed successfully after ${result.attempts} attempt(s)`,
+      };
     }
 
-    return {
-      success: true,
+    // ── Failure path ─────────────────────────────────────────────────
+    const errorMsg = result.error || "Unknown error";
+    logRunStep(runId, "deepseek", false);
+    logRunStep(runId, "operator", false);
+    logRunEnd(runId, "failed", durationMs, errorMsg);
+    logFailure(errorMsg, jobName);
+
+    // ── TRUTH VERIFICATION LAYER (failure path) ────────────────────────
+    // Confirm the failure is real — not a false positive
+    console.log("\n⚖️ [TRUTH VERIFICATION] Evaluating failed pipeline independently...");
+    const truthResult = evaluateTruth({
       runId,
-      message: `Pipeline completed successfully after ${result.attempts} attempt(s)`,
+      declaredState: "FAILED",
+      job: jobName,
+      deliveryId: `${jobName}-${new Date().toISOString().slice(0, 10)}`,
+    });
+
+    // False negative detection: system says FAILED but sources confirm success
+    if (truthResult.mismatch) {
+      console.log(`\n🔍 [TRUTH] FALSE NEGATIVE detected on run ${runId}: system declared failure but verification succeeded`);
+      console.log(`   Sources: git=${truthResult.sources.git}, appsScript=${truthResult.sources.appsScript}, email=${truthResult.sources.email}`);
+      console.log(`   No recovery needed — pipeline actually succeeded.`);
+    }
+
+    // ── AUTO-RECOVERY: Only trigger in NORMAL mode (not during replay) ──
+    // RECOVERY mode is acquired inside scanAndIndexFailures so that
+    // the recovery scan cannot overlap with itself or other modes.
+    releaseLock();
+    console.log("\n🔍 AUTO-RECOVERY: Scanning for failures...");
+    await scanAndIndexFailures(runId, jobName, errorMsg);
+
+    return {
+      success: false,
+      runId,
+      message: `Pipeline failed after ${result.attempts} attempt(s) — logged. Auto-replay queued.`,
+      error: errorMsg,
+    };
+
+  } catch (err) {
+    // Unhandled error in runJob itself — release lock and finalize
+    const errorMsg = err.message || "Unhandled pipeline error";
+    const durationMs = Date.now() - t0;
+
+    logRunStep(runId, "deepseek", false);
+    logRunStep(runId, "operator", false);
+    logRunEnd(runId, "failed", durationMs, errorMsg);
+    logFailure(errorMsg, jobName);
+
+    releaseLock();
+
+    return {
+      success: false,
+      runId,
+      message: `Pipeline crashed: ${errorMsg}`,
+      error: errorMsg,
     };
   }
-
-
-  // Failure path — always log even on failure
-  const errorMsg = result.error || "Unknown error";
-  logRunStep(runId, "deepseek", false);
-  logRunStep(runId, "operator", false);
-  logRunEnd(runId, "failed", durationMs, errorMsg);
-
-  logFailure(errorMsg, jobName);
-  return {
-    success: false,
-    runId,
-    message: `Pipeline failed after ${result.attempts} attempt(s) — logged.`,
-    error: errorMsg,
-  };
 }
 
 /**
- * Spawn operator.js as a child process.
- * Resolves on exit code 0, rejects on any error or non-zero exit.
+ * scanAndIndexFailures — Post-execution failure scanner
  *
- * @param {string} jobName - Job name to pass as argv
- * @param {string} runId - Run identifier for traceability
- * @returns {Promise<void>}
+ * After every run execution (success or failure), this scans:
+ *   - /logs/runs.json  — for runs with incomplete step summaries
+ *   - /logs/failed.json — for logged failures
+ *   - /logs/success.json — for runs that succeeded but may have silent push issues
+ *
+ * Detects:
+ *   - Missing push confirmation (stepSummary.appsScript === false)
+ *   - Missing deliveryId in payload files
+ *   - Any run where status is "failed"
+ *
+ * Automatically appends findings to recovery-index.json and triggers replay.
+ *
+ * @param {string} currentRunId - The run ID that just completed
+ * @param {string} jobName - The job name
+ * @param {string|null} errorMsg - Error message if failed, null if success
  */
+async function scanAndIndexFailures(currentRunId, jobName, errorMsg = null) {
+  // ── LOOP ISOLATION: Acquire RECOVERY lock ───────────────────────────
+  // Prevents recovery from running during replay or normal execution.
+  // Returns early if another mode is active.
+  if (!acquireLock(MODES.RECOVERY, currentRunId)) {
+    console.log("⛔ [RECOVERY] Cannot acquire RECOVERY lock — another mode is active. Skipping recovery scan.");
+    return;
+  }
+
+  printModeBanner(MODES.RECOVERY, `post-execution scan for run ${currentRunId}`);
+
+  let replayTriggered = false;
+
+  try {
+    const allRuns = getAllRuns();
+    const today = new Date().toISOString().slice(0, 10);
+    let failuresFound = 0;
+
+    // ── 1. Scan runs.json for any failed or incomplete runs ──────────────
+    for (const run of allRuns) {
+      if (run.status === "success" && run.stepSummary?.appsScript === true) continue;
+
+      let status, reason;
+
+      if (run.status === "failed") {
+        status = "FAILED";
+        reason = run.error || "Run failed (unknown cause)";
+      } else if (run.status === "success" && run.stepSummary?.appsScript === false) {
+        status = "MISSING_PUSH";
+        reason = "Newsletter generated, but push to Apps Script failed";
+      } else if (run.status === "running") {
+        status = "PARTIAL";
+        reason = "Run did not complete (partial execution)";
+      } else if (run.stepSummary?.appsScript === false) {
+        status = "PARTIAL";
+        reason = "Apps Script delivery step incomplete";
+      } else {
+        continue;
+      }
+
+      appendRecoveryEntry({
+        runId: run.runId,
+        date: run.timestamp ? run.timestamp.slice(0, 10) : today,
+        job: run.job || jobName,
+        status,
+        reason,
+        commit: run.commit || undefined,
+      });
+      failuresFound++;
+    }
+
+    // ── 2. Scan failed.json for any entries not yet indexed ──────────────
+    try {
+      const failedLog = JSON.parse(
+        fs.readFileSync(path.join(__dirname, "logs", "failed.json"), "utf-8")
+      );
+      if (Array.isArray(failedLog)) {
+        for (const entry of failedLog) {
+          const date = entry.timestamp ? entry.timestamp.slice(0, 10) : today;
+          const runFromLog = allRuns.find(
+            (r) => r.timestamp === entry.timestamp || r.error === entry.error
+          );
+          const indexRunId = runFromLog?.runId || `auto-${date}-${Math.random().toString(36).substring(2, 7)}`;
+
+          appendRecoveryEntry({
+            runId: indexRunId,
+            date,
+            job: entry.context || jobName,
+            status: "FAILED",
+            reason: entry.error || "Logged failure (origin unknown)",
+          });
+          failuresFound++;
+        }
+      }
+    } catch {
+      // failed.json may not exist or be invalid — skip
+    }
+
+    if (failuresFound > 0) {
+      console.log(`\n🔍 AUTO-RECOVERY: ${failuresFound} failure(s) detected and indexed`);
+      console.log(`   Pending replays: ${getPendingReplayCount()}`);
+
+      // ── AUTO-TRIGGER REPLAY ────────────────────────────────────────────
+      // CRITICAL: RECOVERY lock MUST be released BEFORE triggering replay.
+      // runReplayEngine will acquire its own REPLAY lock, and mutual exclusion
+      // prevents overlapping locks. If we hold RECOVERY, replay will deadlock.
+      console.log("🔁 Triggering automatic replay run...");
+
+      // 1. Release RECOVERY lock first (safe — indexing is complete)
+      releaseLock();
+      replayTriggered = true;
+
+      // 2. Now acquire REPLAY lock via runReplayEngine (no deadlock)
+      //    runReplayEngine has its own finally block that safely releases
+      //    the REPLAY lock when done — independent of our lock management.
+      try {
+        const replayResult = await runReplayEngine();
+        console.log(`   Replay complete: ${replayResult.succeeded} succeeded, ${replayResult.failed} failed, ${replayResult.pending} remaining`);
+      } catch (replayErr) {
+        console.log(`   ⚠️ Replay engine error (non-fatal): ${replayErr.message}`);
+      }
+    } else {
+      console.log("\n✅ AUTO-RECOVERY: No failures detected — system is healthy");
+    }
+  } finally {
+    // ── LOOP ISOLATION — Safe lock release ────────────────────────────
+    // If replayTriggered is true:
+    //   - RECOVERY lock was released manually above
+    //   - REPLAY lock is managed by runReplayEngine's own finally
+    //   - We must NOT release anything here to avoid lock theft
+    // If replayTriggered is false:
+    //   - RECOVERY lock is still held and must be released
+    //   - This also covers exception paths during scanning
+    if (!replayTriggered) {
+      releaseLock();
+    }
+  }
+}
+
 function spawnOperator(jobName, runId) {
   return new Promise((resolve, reject) => {
     const child = spawn("node", [OPERATOR_JS, jobName], {

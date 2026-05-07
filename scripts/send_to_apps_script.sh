@@ -58,6 +58,18 @@ if [ -z "$WEBAPP_URL" ]; then
   exit 1
 fi
 
+# Strict validation: reject library URLs — only Web App /exec URLs are valid
+if [[ ! "$WEBAPP_URL" == */macros/s/* ]]; then
+  echo "❌ [INVALID WEBHOOK] URL must be a Web App /exec endpoint:"
+  echo "   Got:      $WEBAPP_URL"
+  echo ""
+  echo "   Expected: https://script.google.com/macros/s/ABC123/exec"
+  echo ""
+  echo "   Library URLs (/macros/library/...) are NOT valid for doPost."
+  exit 1
+fi
+
+
 if [ ! -f "$JSON_FILE" ]; then
   echo "❌ [FILE NOT FOUND] JSON payload missing: $JSON_FILE"
   echo "  Run the generation step first to create the newsletter."
@@ -86,8 +98,14 @@ if ! jq --arg token "${WEBHOOK_SECRET:-}" '. + {auth_token: $token}' "$JSON_FILE
   exit 1
 fi
 
-echo "   Auth:    ✅ token injected"
-echo "   Payload: $(wc -c < "$PAYLOAD_FILE" | tr -d ' ') bytes"
+# ── Inject deliveryId for idempotent delivery ────────────────────────────────
+DELIVERY_ID="${JOB_NAME:-daily-newsletter}-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
+if ! jq --arg did "$DELIVERY_ID" '. + {deliveryId: $did}' "$PAYLOAD_FILE" > "${PAYLOAD_FILE}.tmp"; then
+  echo "⚠  Warning: Could not inject deliveryId"
+else
+  mv "${PAYLOAD_FILE}.tmp" "$PAYLOAD_FILE"
+fi
+echo "   🆔 Delivery ID: $DELIVERY_ID"
 echo ""
 
 # ── Send with retry logic (3-tier, 30s fixed wait) ─────────────────────────
@@ -117,6 +135,15 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
   case "$HTTP_CODE" in
     200)
       echo "   Response: ${RESPONSE_BODY:-"(empty response)"}"
+
+      # DUPLICATE_IGNORED is a valid idempotent response — treat as success
+      if echo "$RESPONSE_BODY" | grep -q "DUPLICATE_IGNORED"; then
+        echo ""
+        echo "⏭️  [DUPLICATE] Already delivered — deliveryId $DELIVERY_ID"
+        echo "✅ [SUCCESS] Newsletter already sent (idempotent guard)"
+        SUCCESS=true
+        break
+      fi
 
       # Check for error indicators in the Apps Script response body
       if echo "$RESPONSE_BODY" | grep -qi "error\|exception\|fail"; then

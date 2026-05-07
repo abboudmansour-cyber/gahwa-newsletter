@@ -1,0 +1,295 @@
+[
+  {
+    "runId": "init-2026-05-07",
+    "promptName": "system-initialization",
+    "timestamp": "2026-05-07T19:47:00.000Z",
+    "status": "COMPLETE",
+    "executionScore": 100,
+    "failureClassification": "FULL_SUCCESS",
+    "expectedDeliverables": [],
+    "detectedFiles": [],
+    "missingItems": {
+      "files": [],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "foundItems": {
+      "files": [],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "skippedSteps": [],
+    "blockedNextPrompt": false,
+    "retryPromptGenerated": false,
+    "retryPrompt": null
+  },
+  {
+    "runId": "2026-05-07-pgftq-test-check",
+    "promptName": "test-check",
+    "timestamp": "2026-05-07T20:00:31.530Z",
+    "specTimestamp": "2026-05-07T20:00:31.519Z",
+    "status": "COMPLETE",
+    "executionScore": 100,
+    "failureClassification": "FULL_SUCCESS",
+    "expectedDeliverables": [
+      {
+        "type": "file",
+        "name": "operator/core/prompt-format-enforcer.js",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "operator/audit-runner.js",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "docs/atomic_prompt_template.md",
+        "found": true
+      }
+    ],
+    "detectedFiles": [
+      "operator/core/prompt-format-enforcer.js",
+      "operator/audit-runner.js",
+      "docs/atomic_prompt_template.md"
+    ],
+    "missingItems": {
+      "files": [],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "foundItems": {
+      "files": [
+        "operator/core/prompt-format-enforcer.js",
+        "operator/audit-runner.js",
+        "docs/atomic_prompt_template.md"
+      ],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "skippedSteps": [],
+    "blockedNextPrompt": false,
+    "retryPromptGenerated": false,
+    "retryPrompt": null
+  },
+  {
+    "runId": "2026-05-07-valiy-full-test",
+    "promptName": "full-test",
+    "timestamp": "2026-05-07T20:00:38.929Z",
+    "specTimestamp": "2026-05-07T20:00:35.814Z",
+    "status": "COMPLETE",
+    "executionScore": 100,
+    "failureClassification": "FULL_SUCCESS",
+    "expectedDeliverables": [
+      {
+        "type": "file",
+        "name": "operator/core/prompt-format-enforcer.js",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "operator/core/prompt-generator.js",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "operator/audit-runner.js",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "docs/atomic_prompt_template.md",
+        "found": true
+      },
+      {
+        "type": "function",
+        "name": "enforcePromptFormat",
+        "found": true
+      },
+      {
+        "type": "function",
+        "name": "generateAtomicPrompt",
+        "found": true
+      }
+    ],
+    "detectedFiles": [
+      "operator/core/prompt-format-enforcer.js",
+      "operator/core/prompt-generator.js",
+      "operator/audit-runner.js",
+      "docs/atomic_prompt_template.md"
+    ],
+    "missingItems": {
+      "files": [],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "foundItems": {
+      "files": [
+        "operator/core/prompt-format-enforcer.js",
+        "operator/core/prompt-generator.js",
+        "operator/audit-runner.js",
+        "docs/atomic_prompt_template.md"
+      ],
+      "functions": [
+        "enforcePromptFormat",
+        "generateAtomicPrompt"
+      ],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "skippedSteps": [],
+    "blockedNextPrompt": false,
+    "retryPromptGenerated": false,
+    "retryPrompt": null
+  },
+  {
+    "runId": "2026-05-07-1wife-pipeline-test",
+    "promptName": "pipeline-test",
+    "timestamp": "2026-05-07T20:00:59.412Z",
+    "specTimestamp": "2026-05-07T20:00:59.410Z",
+    "status": "COMPLETE",
+    "executionScore": 100,
+    "failureClassification": "FULL_SUCCESS",
+    "expectedDeliverables": [
+      {
+        "type": "file",
+        "name": "operator/core/prompt-format-enforcer.js",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "operator/audit-runner.js",
+        "found": true
+      }
+    ],
+    "detectedFiles": [
+      "operator/core/prompt-format-enforcer.js",
+      "operator/audit-runner.js"
+    ],
+    "missingItems": {
+      "files": [],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "foundItems": {
+      "files": [
+        "operator/core/prompt-format-enforcer.js",
+        "operator/audit-runner.js"
+      ],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": []
+    },
+    "skippedSteps": [],
+    "blockedNextPrompt": false,
+    "retryPromptGenerated": false,
+    "retryPrompt": null
+  },
+  {
+    "runId": "2026-05-07-7rbba-v2-0-upgrade",
+    "promptName": "v2.0-upgrade",
+    "timestamp": "2026-05-07T20:11:27.811Z",
+    "specTimestamp": "2026-05-07T20:11:22.757Z",
+    "status": "COMPLETE",
+    "executionScore": 100,
+    "failureClassification": "FULL_SUCCESS",
+    "expectedDeliverables": [
+      {
+        "type": "file",
+        "name": "operator/core/traceability-matcher.js",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "operator/logs/execution-map.json",
+        "found": true
+      },
+      {
+        "type": "file",
+        "name": "docs/atomic_prompt_template.md",
+        "found": true
+      },
+      {
+        "type": "function",
+        "name": "buildTraceabilityMap",
+        "found": true
+      },
+      {
+        "type": "function",
+        "name": "mapFeatureToFile",
+        "found": true
+      },
+      {
+        "type": "function",
+        "name": "enforcePromptFormat",
+        "found": true
+      },
+      {
+        "type": "function",
+        "name": "generateAtomicPrompt",
+        "found": true
+      },
+      {
+        "type": "hook",
+        "name": "operator/core/traceability-matcher.js exports buildTraceabilityMap",
+        "found": true
+      },
+      {
+        "type": "hook",
+        "name": "operator/core/traceability-matcher.js exports verifyExecutorReachability",
+        "found": true
+      }
+    ],
+    "detectedFiles": [
+      "operator/core/traceability-matcher.js",
+      "operator/logs/execution-map.json",
+      "docs/atomic_prompt_template.md"
+    ],
+    "missingItems": {
+      "files": [],
+      "functions": [],
+      "logs": [],
+      "directories": [],
+      "behaviors": [],
+      "brokenHooks": []
+    },
+    "foundItems": {
+      "files": [
+        "operator/core/traceability-matcher.js",
+        "operator/logs/execution-map.json",
+        "docs/atomic_prompt_template.md"
+      ],
+      "functions": [
+        "buildTraceabilityMap",
+        "mapFeatureToFile",
+        "enforcePromptFormat",
+        "generateAtomicPrompt"
+      ],
+      "logs": [],
+      "directories": [],
+      "behaviors": [],
+      "hooks": [
+        "operator/core/traceability-matcher.js exports buildTraceabilityMap",
+        "operator/core/traceability-matcher.js exports verifyExecutorReachability"
+      ]
+    },
+    "skippedSteps": [],
+    "blockedNextPrompt": false,
+    "retryPromptGenerated": false,
+    "retryPrompt": null
+  }
+]

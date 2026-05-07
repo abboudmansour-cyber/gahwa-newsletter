@@ -63,7 +63,16 @@
 
 ---
 
-## 2026-05-07 (Later)
+## 2026-05-07 (Idempotent Delivery Layer)
+
+### Added
+- **Idempotent Delivery Layer — production-grade duplicate protection**
+  - `deliveryId` generation: `${job}-${date}-${gitCommitHash}` in `operator.js`, `daily-runner.js`, and `send_to_apps_script.sh`
+  - All webhook payloads now include `deliveryId` for dedup tracking
+  - Apps Script `Code.gs`: `isDuplicate()` guard at top of `doPost()` + `markDelivered()` after successful Gmail send
+  - `classifyAppsScriptError()` in `operator.js` and `daily-runner.js` treats `"DUPLICATE_IGNORED"` as valid success (returns `null`)
+  - `send_to_apps_script.sh`: HTTP 200 handler checks for `DUPLICATE_IGNORED` — treated as success
+  - Delivery log records both `VALIDATED SUCCESS` and `DUPLICATE_IGNORED (idempotent)` statuses
 
 ### Changed
 - **Deployment model migrated from SSH to event-driven webhook**
@@ -82,3 +91,114 @@
 - SSH key configuration steps from CI workflow
 - `known_hosts` management from CI
 - `HETZNER_SSH_KEY`, `HETZNER_HOST`, `HETZNER_USER` GitHub Secrets dependency
+
+---
+
+## 2026-05-07 (Auto-Recovery Layer)
+
+### Added
+- **`operator/logs/recovery-index.json` — Recovery Index**
+  - Structured log of all failed/missing runs with: runId, date, job, status (FAILED/PARTIAL/MISSING_PUSH), reason, replayEligible flag, replayAttemptCount
+  - Dedup by runId to prevent duplicate entries
+  - Auto-trim to last 500 entries
+
+- **`operator/core/recovery.js` — Recovery Index Manager**
+  - `appendRecoveryEntry()` — indexes a failed run with dedup protection
+  - `getEligibleReplays()` — filters replayEligible: true entries for processing
+  - `incrementReplayAttempt()` — tracks attempt count; auto-disables at > 2 (replay loop guard)
+  - `markAsReplayed()` / `markFailedReplay()` — lifecycle state transitions (RECOVERED / FAILED_PERMANENT)
+  - `getPendingReplayCount()` — quick health check of pending recovery queue
+  - `dedupIndex()` — cleanup utility for manual maintenance
+
+- **`operator/core/replay-engine.js` — Automatic Replay Engine**
+  - Reads recovery-index.json, filters replayEligible entries, rebuilds execution context (job, date, commit)
+  - Spawns operator.js with `--replay` flag for each eligible run (up to 5 per cycle)
+  - 2-minute timeout guard per replay to prevent runaway processes
+  - Runs `ensureExecutionContext()` for deterministic path resolution
+  - `enqueueReplay()` — one-call function to index + trigger immediate replay
+  - Standalone entry point: `node core/replay-engine.js`
+
+- **`operator/operator.js` — Safe Replay Mode (`--replay` flag)**
+  - `const isReplay = process.argv.includes("--replay")` at module scope
+  - Replay mode skips newsletter `generate_newsletter` step if `output/latest-newsletter.json` already exists
+  - Re-uses stored JSON; only re-triggers push + validation steps
+  - Visible "🔄 REPLAY MODE ACTIVE" banner in execution header
+
+- **`operator/executor.js` — Post-Execution Failure Scanner**
+  - `scanAndIndexFailures()` — runs after every failed execution
+  - Scans `/logs/runs.json` for: failed runs, partial executions (missing step), and silent push failures (MISSING_PUSH detection)
+  - Scans `/logs/failed.json` for any logged failures not yet indexed
+  - Automatically calls `runReplayEngine()` after indexing failures
+
+### Changed
+- **Failures now self-recover**: every failed run is indexed in recovery-index.json, and the replay engine fires automatically within the same process
+- **Replay loop guard prevents infinite retry**: max 2 replay attempts per failed run, then marked FAILED_PERMANENT
+- **Delivery safety preserved**: replay mode uses idempotent deliveryId system — same (job, date, commit) = DUPLICATE_IGNORED at Apps Script layer
+
+### System State (Post Auto-Recovery)
+- deterministic execution ✔
+- validated webhook ✔
+- semantic response validation ✔
+- idempotent delivery ✔
+- automatic failure recovery ✔
+
+---
+
+## 2026-05-07 (Loop Isolation — Final Hardening)
+
+### Added
+- **`operator/core/state.js` — Global Execution State Lock**
+  - Mutual exclusion: only ONE execution mode can run at a time (NORMAL / REPLAY / RECOVERY)
+  - `acquireLock(mode, runId)` — acquires lock with mode-specific flags; refuses if any mode is active
+  - `releaseLock()` — resets state to NORMAL; called in `finally` blocks for leak-safety
+  - `isBlocked(mode)` / `isOperationBlocked(operation)` — fine-grained guard checks for entry points
+  - `printModeBanner(mode)` — prints 🧠 NORMAL / 🔁 REPLAY / 🛠 RECOVERY at start of every run
+  - `setState(partial)` — deep merge helper for runtime state updates
+  - Persisted to `operator/runtime/state.json` (gitignored runtime artifact)
+
+- **`operator/runtime/state.json` — Persistent State Artifact**
+  - Schema: `{ mode, activeRunId, flags: { recoveryRunning, replayRunning } }`
+  - Default: `{ mode: "NORMAL", activeRunId: "", flags: { recoveryRunning: false, replayRunning: false } }`
+  - Auto-created by `ensureRuntimeDir()` on first read
+
+### Changed
+- **`operator/operator.js` — Mode banner + replay guard**
+  - Imports `printModeBanner`, `MODES` from `./core/state.js`
+  - Prints 🧠 MODE: NORMAL or 🔁 MODE: REPLAY banner on every run
+  - Clear log: "⛔ Recovery hooks disabled — replay will not trigger recovery" in replay mode
+  - Recovery hooks only triggered in NORMAL mode (replay → operator.js bypasses executor.js)
+
+- **`operator/executor.js` — Lock acquisition + isolated recovery**
+  - `runJob()` acquires NORMAL lock before spawning operator.js; releases on success
+  - On failure: releases NORMAL lock BEFORE calling `scanAndIndexFailures()`
+  - `scanAndIndexFailures()` acquires RECOVERY lock (mutual exclusion from replay/normal)
+  - Critical deadlock fix: releases RECOVERY lock BEFORE calling `runReplayEngine()`
+  - Uses `replayTriggered` flag to prevent lock theft in `finally` block
+  - NORMAL lock release in failure path prevents cascading lock contention
+
+- **`operator/core/replay-engine.js` — Lock acquisition in `runReplayEngine()`**
+  - Acquires REPLAY lock at start; released in `finally` block
+  - `printModeBanner(MODES.REPLAY, ...)` for observability
+  - Blocked completely if another mode (NORMAL/RECOVERY) is holding the lock
+
+### Strict Constraints Enforced
+- ⛔ replay cannot trigger recovery (mode === REPLAY → operator.js disables recovery hooks)
+- ⛔ recovery cannot trigger replay (RECOVERY lock released before REPLAY lock acquired)
+- ⛔ normal execution is isolated (NORMAL lock prevents overlap with replay/recovery)
+- ⛔ no recursive execution chains (mutual exclusion + replayTriggered flag)
+- ⛔ deadlock prevention (explicit release of prior lock before acquiring next mode)
+
+### Validated
+- All 4 files pass `node -c` syntax validation
+- All entry points (executor.js → state.js, replay-engine.js → state.js, operator.js → state.js)
+- Lock lifecycle: acquire → work → release (enforced via try/finally)
+- Lock transition: NORMAL → (failure) → RECOVERY → release → REPLAY → release
+
+### System State (Post Loop Isolation)
+- deterministic execution ✔
+- validated webhook ✔
+- semantic response validation ✔
+- idempotent delivery ✔
+- automatic failure recovery ✔
+- loop isolation safety ✔
+- no recursive reinforcement loops ✔

@@ -1,4 +1,11 @@
-# GAHWA Newsletter Prompt — v1
+# GAHWA Newsletter Prompt — v1.0 (Baseline)
+
+> **Prompt Version:** v1.0
+> **Last Modified:** 2026-05-07
+> **Change Log:**
+> - v1.0 — Baseline: Original prompt with GCC-specific, data-driven newsletter generation
+
+---
 
 ## Core Instruction
 

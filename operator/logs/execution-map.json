@@ -1,0 +1,1239 @@
+{
+  "builtAt": "2026-05-07T20:11:14.587Z",
+  "projectRoot": "/Users/AM/Documents/gahwa-newsletter",
+  "totalFeatures": 10,
+  "totalFiles": 44,
+  "totalFunctions": 339,
+  "executorReachable": 68,
+  "unreachableFunctions": [
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "classifyAppsScriptError"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "executePlan"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "extractJSON"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "generateNewsletterContent"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "generatePlan"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "getDeliveryId"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "isPathSafe"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "log"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "pushToAppsScript"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "run"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "runGit"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "validateAppsScriptResponse"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/operator.js",
+      "function": "writeFile"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/core/editorial-strategist.js",
+      "function": "buildRationale"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/core/editorial-strategist.js",
+      "function": "buildRejectionReason"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/core/editorial-strategist.js",
+      "function": "enforceCategoryBalance"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/core/editorial-strategist.js",
+      "function": "evaluateSignal"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/core/editorial-strategist.js",
+      "function": "getMaxPerCategory"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/core/editorial-strategist.js",
+      "function": "logEditorialDecision"
+    },
+    {
+      "feature": "newsletter-generation",
+      "file": "operator/core/editorial-strategist.js",
+      "function": "logRejectedStory"
+    }
+  ],
+  "features": {
+    "newsletter-generation": {
+      "files": [
+        {
+          "file": "operator/operator.js",
+          "exists": true,
+          "functions": [
+            "classifyAppsScriptError",
+            "executePlan",
+            "extractJSON",
+            "generateNewsletterContent",
+            "generatePlan",
+            "getDeliveryId",
+            "isPathSafe",
+            "log",
+            "pushToAppsScript",
+            "run",
+            "runGit",
+            "validateAppsScriptResponse",
+            "writeFile"
+          ]
+        },
+        {
+          "file": "operator/core/editorial-strategist.js",
+          "exists": true,
+          "functions": [
+            "buildRationale",
+            "buildRejectionReason",
+            "enforceCategoryBalance",
+            "evaluateSignal",
+            "getMaxPerCategory",
+            "logEditorialDecision",
+            "logRejectedStory",
+            "runEditorialReview",
+            "scoreEconomicImpact",
+            "scoreNoiseLevel",
+            "scoreRelevanceToGCC",
+            "scoreSignalStrength"
+          ]
+        },
+        {
+          "file": "operator/core/fusion-engine.js",
+          "exists": true,
+          "functions": [
+            "buildIntelligenceBrief",
+            "calculateFusionScore",
+            "clusterSignals",
+            "formatSignalContext",
+            "fuseSignals",
+            "generateStoryAngles"
+          ]
+        },
+        {
+          "file": "operator/core/insight-synthesizer.js",
+          "exists": true,
+          "functions": [
+            "calculateConfidence",
+            "formatInsightsForNewsletter",
+            "getActiveInsights",
+            "getEditorialHistory",
+            "getInsightStore",
+            "getPastInsights",
+            "hasHighGCCRelevance",
+            "hasTimeBoundEvidence",
+            "readInsightStore",
+            "synthesizeInsights",
+            "updateInsightStatus",
+            "writeInsightStore"
+          ]
+        },
+        {
+          "file": "operator/core/scenario-engine.js",
+          "exists": true,
+          "functions": [
+            "calculateScenarioConfidence",
+            "determineProbabilityBand",
+            "formatScenariosForNewsletter",
+            "generateScenarios",
+            "getActiveInsights",
+            "getActiveScenarios",
+            "getPastScenarios",
+            "getScenarioStats",
+            "getScenarioStore",
+            "hasClearCausalChain",
+            "hasMinimumImpactDimensions",
+            "readScenarioStore",
+            "updateScenarioStatus",
+            "writeScenarioStore"
+          ]
+        },
+        {
+          "file": "operator/deepseek.js",
+          "exists": true,
+          "functions": [
+            "askDeepSeek",
+            "buildSystemPrompt",
+            "buildUserPrompt",
+            "callDeepSeek",
+            "callDeepSeekForContent",
+            "checkResponseSize",
+            "extractJSON",
+            "tryParse"
+          ]
+        }
+      ],
+      "totalFiles": 6,
+      "existingFiles": 6,
+      "missingFiles": 0
+    },
+    "signal-processing": {
+      "files": [
+        {
+          "file": "operator/core/signal-normalizer.js",
+          "exists": true,
+          "functions": [
+            "applySignalWeight",
+            "normalizeSignals",
+            "passesGCCFilter",
+            "validateSignal"
+          ]
+        },
+        {
+          "file": "operator/core/signals/macro.js",
+          "exists": true,
+          "functions": [
+            "generateMacroSignals",
+            "getSeasonalAdjustments"
+          ]
+        },
+        {
+          "file": "operator/core/signals/markets.js",
+          "exists": true,
+          "functions": [
+            "generateMarketSignals",
+            "getSeasonalAdjustments"
+          ]
+        },
+        {
+          "file": "operator/core/signals/geopolitics.js",
+          "exists": true,
+          "functions": [
+            "generateGeopoliticalSignals",
+            "getSeasonalAdjustments"
+          ]
+        },
+        {
+          "file": "operator/core/signals/ai_tech.js",
+          "exists": true,
+          "functions": [
+            "generateAITechSignals",
+            "getSeasonalAdjustments"
+          ]
+        }
+      ],
+      "totalFiles": 5,
+      "existingFiles": 5,
+      "missingFiles": 0
+    },
+    "execution-pipeline": {
+      "files": [
+        {
+          "file": "operator/executor.js",
+          "exists": true,
+          "functions": [
+            "runJob",
+            "scanAndIndexFailures",
+            "spawnOperator"
+          ]
+        },
+        {
+          "file": "operator/core/runtime.js",
+          "exists": true,
+          "functions": [
+            "ensureExecutionContext",
+            "getRoot",
+            "resolveRoot"
+          ]
+        },
+        {
+          "file": "operator/core/retry.js",
+          "exists": true,
+          "functions": [
+            "retry",
+            "sleep"
+          ]
+        },
+        {
+          "file": "operator/core/state.js",
+          "exists": true,
+          "functions": [
+            "MODES",
+            "acquireLock",
+            "deepMerge",
+            "ensureRuntimeDir",
+            "getState",
+            "isBlocked",
+            "isOperationBlocked",
+            "printModeBanner",
+            "readState",
+            "releaseLock",
+            "setState",
+            "writeState"
+          ]
+        },
+        {
+          "file": "operator/core/lock.js",
+          "exists": true,
+          "functions": [
+            "acquireLock",
+            "isLocked",
+            "releaseLock"
+          ]
+        },
+        {
+          "file": "operator/core/logger.js",
+          "exists": true,
+          "functions": [
+            "appendLog",
+            "formatDuration",
+            "generateRunId",
+            "getAllRuns",
+            "getRun",
+            "logCounts",
+            "logFailure",
+            "logRun",
+            "logRunEnd",
+            "logRunStart",
+            "logRunStep",
+            "logSuccess",
+            "readLog"
+          ]
+        }
+      ],
+      "totalFiles": 6,
+      "existingFiles": 6,
+      "missingFiles": 0
+    },
+    "prompt-validation": {
+      "files": [
+        {
+          "file": "operator/core/prompt-format-enforcer.js",
+          "exists": true,
+          "functions": [
+            "calculateFormatScore",
+            "detectArtifacts",
+            "detectRules",
+            "detectSections",
+            "enforceOrThrow",
+            "enforcePromptFormat",
+            "extractListAfterHeader",
+            "formatSectionName",
+            "getEnforcerVersion",
+            "getRequiredSections",
+            "printEnforcerReport"
+          ]
+        },
+        {
+          "file": "operator/core/prompt-spec-mapper.js",
+          "exists": true,
+          "functions": [
+            "createEmptySpec",
+            "createManualSpec",
+            "deduplicateBehaviors",
+            "extractExpectedBehaviors",
+            "extractExpectedDirectories",
+            "extractExpectedFiles",
+            "extractExpectedFunctions",
+            "extractExpectedLogs",
+            "isLikelyFilePath",
+            "isLikelyFunctionName",
+            "mapMultiPromptSpec",
+            "mapPromptFromArgv",
+            "mapPromptFromFile",
+            "mapPromptSpec"
+          ]
+        },
+        {
+          "file": "operator/core/prompt-completeness-checker.js",
+          "exists": true,
+          "functions": [
+            "FAILURE_CLASSIFICATIONS",
+            "calculateExecutionScore",
+            "checkBlockEvidence",
+            "checkBrokenHooks",
+            "checkCompleteness",
+            "checkDeliveryEvidence",
+            "checkGitEvidence",
+            "checkManualCompleteness",
+            "checkMissingBehaviors",
+            "checkMissingDirectories",
+            "checkMissingFiles",
+            "checkMissingFunctions",
+            "checkMissingLogs",
+            "classifyFailure",
+            "createEmptyReport",
+            "determineSkippedSteps",
+            "findDetectedFiles",
+            "generateWarnings",
+            "parseAndCheck",
+            "printReport",
+            "resolvePath",
+            "wasRunComplete"
+          ]
+        },
+        {
+          "file": "operator/core/prompt-auditor.js",
+          "exists": true,
+          "functions": [
+            "appendAuditEntry",
+            "clearAuditLog",
+            "completeRun",
+            "generateRetryPrompt",
+            "generateRunId",
+            "getAuditLog",
+            "getLastRun",
+            "getRecentRuns",
+            "isLastRunComplete",
+            "readAuditFile",
+            "runAudited",
+            "startRun",
+            "updateAuditEntry"
+          ]
+        },
+        {
+          "file": "operator/core/prompt-generator.js",
+          "exists": true,
+          "functions": [
+            "formatArtifacts",
+            "formatCompleteness",
+            "formatObjective",
+            "formatRules",
+            "formatTasks",
+            "formatValidation",
+            "fromManualSpec",
+            "generateAtomicPrompt",
+            "generateRetryAtomicPrompt",
+            "getGeneratorVersion",
+            "validateGeneratorConfig"
+          ]
+        },
+        {
+          "file": "operator/core/diff-guard.js",
+          "exists": true,
+          "functions": [
+            "buildFileTree",
+            "buildFileTreeFromFS",
+            "compareSnapshots",
+            "createSnapshot",
+            "deduplicateFuncs",
+            "detectFunctionChanges",
+            "getFileHash",
+            "getFilesAdded",
+            "getFilesChanged",
+            "getFilesDeleted",
+            "getFilesUntouched",
+            "gitCommand",
+            "guardExecution",
+            "normalizePath",
+            "printDiffReport"
+          ]
+        },
+        {
+          "file": "operator/core/traceability-matcher.js",
+          "exists": true,
+          "functions": [
+            "analyzeExecutorReachability",
+            "buildTraceabilityMap",
+            "calculateTraceabilityScore",
+            "extractExportedFunctions",
+            "functionName",
+            "getExecutorImportChain",
+            "getFeatureNameForFile",
+            "getKnownFeatures",
+            "getTraceabilityMap",
+            "mapFeatureToFile",
+            "printTraceabilityReport",
+            "verifyExecutorReachability"
+          ]
+        },
+        {
+          "file": "operator/core/validator.js",
+          "exists": true,
+          "functions": [
+            "cliValidate",
+            "fullPipeline",
+            "validateExecution"
+          ]
+        },
+        {
+          "file": "operator/audit-runner.js",
+          "exists": true,
+          "functions": [
+            "extractFlag",
+            "extractValue",
+            "getRetryPrompt",
+            "loadModules",
+            "main",
+            "printStatus",
+            "printUsage",
+            "runCheck",
+            "runDiff",
+            "runEnforce",
+            "runFullAudit",
+            "runGenerate",
+            "runPipeline",
+            "runTraceability",
+            "viewLast",
+            "viewLog"
+          ]
+        }
+      ],
+      "totalFiles": 9,
+      "existingFiles": 9,
+      "missingFiles": 0
+    },
+    "recovery-replay": {
+      "files": [
+        {
+          "file": "operator/core/recovery.js",
+          "exists": true,
+          "functions": [
+            "appendRecoveryEntry",
+            "dedupIndex",
+            "getAllEntries",
+            "getEligibleReplays",
+            "getEntry",
+            "getGitCommit",
+            "getPendingReplayCount",
+            "incrementReplayAttempt",
+            "markAsReplayed",
+            "markFailedReplay",
+            "readIndex",
+            "writeIndex"
+          ]
+        },
+        {
+          "file": "operator/core/replay-engine.js",
+          "exists": true,
+          "functions": [
+            "enqueueReplay",
+            "main",
+            "runReplayEngine",
+            "spawnReplayWithTimeout"
+          ]
+        },
+        {
+          "file": "operator/core/truth-evaluator.js",
+          "exists": true,
+          "functions": [
+            "appendToTruthLog",
+            "calculateHealthScore",
+            "evaluateTruth",
+            "getAllTruthEntries",
+            "getMismatchEntries",
+            "getRecentMismatchCount",
+            "getRecentTruthEntries",
+            "getTruthEntry",
+            "isSystemUnstable",
+            "readJson",
+            "safeExec",
+            "verifyAppsScript",
+            "verifyEmail",
+            "verifyGit",
+            "writeJson"
+          ]
+        }
+      ],
+      "totalFiles": 3,
+      "existingFiles": 3,
+      "missingFiles": 0
+    },
+    "evaluation-feedback": {
+      "files": [
+        {
+          "file": "operator/core/evaluator.js",
+          "exists": true,
+          "functions": [
+            "clampScore",
+            "countKeywordHits",
+            "countRepeatedBigrams",
+            "evaluateNewsletter",
+            "extractFlatText",
+            "generateSuggestions",
+            "getDefaultScores",
+            "hasMacroContent"
+          ]
+        },
+        {
+          "file": "operator/core/feedback.js",
+          "exists": true,
+          "functions": [
+            "buildFeedbackEntry",
+            "buildImprovementHint",
+            "buildPreRunImprovementHint",
+            "checkPromptEvolution",
+            "evolvePromptForWeakness",
+            "findPersistentWeaknesses",
+            "getCurrentPromptVersion",
+            "getFeedbackHistory",
+            "getLatestFeedback",
+            "processFeedback",
+            "readJson",
+            "writeJson"
+          ]
+        },
+        {
+          "file": "operator/core/optimizer.js",
+          "exists": true,
+          "functions": [
+            "appendOptimizationLog",
+            "applyOptimization",
+            "calculateConfidence",
+            "calculateQualityTrend",
+            "calculateRecentGccScore",
+            "calculateTruthScore",
+            "countWeaknessOccurrences",
+            "evaluateLastOptimization",
+            "formatVersion",
+            "getCurrentPromptVersion",
+            "getCurrentPromptVersionInfo",
+            "getFeedbackHistory",
+            "getOptimizationLog",
+            "getOptimizationLogEntries",
+            "getTruthLog",
+            "identifyTargetWeakness",
+            "parseVersion",
+            "readJson",
+            "resetOptimizerState",
+            "revertOptimization",
+            "runOptimization",
+            "writeJson"
+          ]
+        },
+        {
+          "file": "operator/evaluator.js",
+          "exists": true,
+          "functions": [
+            "clampScore",
+            "evaluateNewsletter"
+          ]
+        }
+      ],
+      "totalFiles": 4,
+      "existingFiles": 4,
+      "missingFiles": 0
+    },
+    "scheduling": {
+      "files": [
+        {
+          "file": "operator/scheduler.js",
+          "exists": true,
+          "functions": [
+            "run"
+          ]
+        },
+        {
+          "file": "operator/daily-runner.js",
+          "exists": true,
+          "functions": [
+            "alreadyRanToday",
+            "appendToFileSync",
+            "classifyAppsScriptError",
+            "extractNewsletterFromPlan",
+            "generateNewsletter",
+            "getDeliveryId",
+            "log",
+            "main",
+            "markTodayComplete",
+            "pushToGitHub",
+            "runOperatorFallback",
+            "saveNewsletter",
+            "sendToAppsScript",
+            "todayDate",
+            "validateAppsScriptResponse",
+            "validateNewsletterSchema",
+            "writeFileSyncSafe"
+          ]
+        },
+        {
+          "file": "operator/schedule.json",
+          "exists": true,
+          "functions": []
+        }
+      ],
+      "totalFiles": 3,
+      "existingFiles": 3,
+      "missingFiles": 0
+    },
+    "deployment": {
+      "files": [
+        {
+          "file": "scripts/deploy.sh",
+          "exists": true,
+          "functions": []
+        },
+        {
+          "file": "scripts/clasp_push.py",
+          "exists": true,
+          "functions": []
+        },
+        {
+          "file": "scripts/setup_hetzner.sh",
+          "exists": true,
+          "functions": []
+        },
+        {
+          "file": ".github/workflows/deploy.yml",
+          "exists": true,
+          "functions": []
+        }
+      ],
+      "totalFiles": 4,
+      "existingFiles": 4,
+      "missingFiles": 0
+    },
+    "webhook-server": {
+      "files": [
+        {
+          "file": "operator/server.js",
+          "exists": true,
+          "functions": [
+            "gitPull",
+            "json",
+            "main",
+            "parseBody",
+            "start",
+            "tsLog",
+            "validatePayload"
+          ]
+        },
+        {
+          "file": "operator/core/security.js",
+          "exists": true,
+          "functions": [
+            "configure",
+            "verifyRequest"
+          ]
+        }
+      ],
+      "totalFiles": 2,
+      "existingFiles": 2,
+      "missingFiles": 0
+    },
+    "memory-persistence": {
+      "files": [
+        {
+          "file": "operator/memory.js",
+          "exists": true,
+          "functions": [
+            "readHistory",
+            "saveRun",
+            "writeHistory"
+          ]
+        },
+        {
+          "file": "operator/core/editor.js",
+          "exists": true,
+          "functions": [
+            "buildEditorialFrame",
+            "formatEditorialFrame",
+            "getDayOfWeekContext",
+            "getSeasonalBoost"
+          ]
+        }
+      ],
+      "totalFiles": 2,
+      "existingFiles": 2,
+      "missingFiles": 0
+    }
+  },
+  "executorAnalysis": {
+    "totalFunctions": 339,
+    "reachableCount": 68,
+    "unreachableCount": 271,
+    "reachable": [
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/executor.js",
+        "function": "runJob"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/runtime.js",
+        "function": "ensureExecutionContext"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/runtime.js",
+        "function": "getRoot"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/runtime.js",
+        "function": "resolveRoot"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/retry.js",
+        "function": "retry"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/retry.js",
+        "function": "sleep"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "MODES"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "acquireLock"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "deepMerge"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "ensureRuntimeDir"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "getState"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "isBlocked"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "isOperationBlocked"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "printModeBanner"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "readState"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "releaseLock"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "setState"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/state.js",
+        "function": "writeState"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "appendLog"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "formatDuration"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "generateRunId"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "getAllRuns"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "getRun"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "logCounts"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "logFailure"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "logRun"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "logRunEnd"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "logRunStart"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "logRunStep"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "logSuccess"
+      },
+      {
+        "feature": "execution-pipeline",
+        "file": "operator/core/logger.js",
+        "function": "readLog"
+      },
+      {
+        "feature": "prompt-validation",
+        "file": "operator/audit-runner.js",
+        "function": "main"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "appendRecoveryEntry"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "dedupIndex"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "getAllEntries"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "getEligibleReplays"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "getEntry"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "getGitCommit"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "getPendingReplayCount"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "incrementReplayAttempt"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "markAsReplayed"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "markFailedReplay"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "readIndex"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/recovery.js",
+        "function": "writeIndex"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/replay-engine.js",
+        "function": "enqueueReplay"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/replay-engine.js",
+        "function": "main"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/replay-engine.js",
+        "function": "runReplayEngine"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/replay-engine.js",
+        "function": "spawnReplayWithTimeout"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "appendToTruthLog"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "calculateHealthScore"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "evaluateTruth"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "getAllTruthEntries"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "getMismatchEntries"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "getRecentMismatchCount"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "getRecentTruthEntries"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "getTruthEntry"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "isSystemUnstable"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "readJson"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "safeExec"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "verifyAppsScript"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "verifyEmail"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "verifyGit"
+      },
+      {
+        "feature": "recovery-replay",
+        "file": "operator/core/truth-evaluator.js",
+        "function": "writeJson"
+      },
+      {
+        "feature": "evaluation-feedback",
+        "file": "operator/evaluator.js",
+        "function": "clampScore"
+      },
+      {
+        "feature": "evaluation-feedback",
+        "file": "operator/evaluator.js",
+        "function": "evaluateNewsletter"
+      },
+      {
+        "feature": "scheduling",
+        "file": "operator/daily-runner.js",
+        "function": "main"
+      },
+      {
+        "feature": "webhook-server",
+        "file": "operator/server.js",
+        "function": "main"
+      },
+      {
+        "feature": "webhook-server",
+        "file": "operator/server.js",
+        "function": "start"
+      }
+    ],
+    "unreachable": [
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "classifyAppsScriptError"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "executePlan"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "extractJSON"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "generateNewsletterContent"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "generatePlan"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "getDeliveryId"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "isPathSafe"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "log"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "pushToAppsScript"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "run"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "runGit"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "validateAppsScriptResponse"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/operator.js",
+        "function": "writeFile"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/core/editorial-strategist.js",
+        "function": "buildRationale"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/core/editorial-strategist.js",
+        "function": "buildRejectionReason"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/core/editorial-strategist.js",
+        "function": "enforceCategoryBalance"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/core/editorial-strategist.js",
+        "function": "evaluateSignal"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/core/editorial-strategist.js",
+        "function": "getMaxPerCategory"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/core/editorial-strategist.js",
+        "function": "logEditorialDecision"
+      },
+      {
+        "feature": "newsletter-generation",
+        "file": "operator/core/editorial-strategist.js",
+        "function": "logRejectedStory"
+      }
+    ]
+  },
+  "summary": {
+    "totalFeatures": 10,
+    "totalMappedFiles": 44,
+    "totalExportedFunctions": 339,
+    "executorReachableFunctions": 68,
+    "unreachableFunctions": 20,
+    "missingFiles": 0,
+    "score": 84,
+    "contractSatisfied": false
+  }
+}

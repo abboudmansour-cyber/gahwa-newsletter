@@ -27,8 +27,9 @@
 // ║  doPost(e)  — Receives JSON payloads from send_to_apps_script.sh     ║
 // ║  doGet(e)   — Health check endpoint                                  ║
 // ║                                                                      ║
-// ║  Expects: { auth_token: "...", ...newsletter_fields }                ║
-// ║  Returns:  JSON with { status: "ok"|"error", ... }                  ║
+// ║  Expects: { deliveryId, auth_token, ...newsletter_fields }           ║
+// ║  Returns:  JSON with { status: "ok"|"error", ... }                   ║
+// ║  Dedup:    "DUPLICATE_IGNORED" if deliveryId already processed       ║
 // ╚══════════════════════════════════════════════════════════════════════╝
 
 // ════════════════════════════════════════════════════════════════════════
@@ -293,6 +294,7 @@ function runScoutStep4() {
   log('INFO', '══ STEP 4: HTML + EMAIL ══');
   var props = PropertiesService.getScriptProperties();
 
+
   if (!validatePipelineState(['PART1_DOC_ID', 'PARTS27_DOC_ID'])) {
     sendNotification('⛔ Scout Step 4 FAILED', 'Pipeline state missing docs. Run resetPipeline().');
     return;
@@ -343,6 +345,11 @@ function runScoutStep4() {
     );
     GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, gahwaSubject, '', { htmlBody: emailHtml });
     log('INFO', 'Gahwa email sent: ' + gahwaSubject);
+    // ── TRUTH VERIFICATION: track last sent email deliveryId ────────────
+    var sentDeliveryId = 'scout-internal-' + new Date().toISOString().slice(0, 10);
+    props.setProperty('lastEmailSent', sentDeliveryId);
+    log('INFO', '📝 lastEmailSent updated: ' + sentDeliveryId);
+
 
     // ── Beehiiv posting — DISABLED (Enterprise plan required) ────────────
     // Auth confirmed working. Key is valid. Plan blocks POST /posts endpoint.
@@ -440,34 +447,106 @@ function resetPipeline() {
 }
 
 // ════════════════════════════════════════════════════════════════════════
+// IDEMPOTENT DELIVERY — DEDUP by deliveryId
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * Check if a deliveryId has already been processed (idempotency guard).
+ * Uses ScriptProperties as a lightweight KV store — no external DB needed.
+ *
+ * @param {string} deliveryId - Unique delivery identifier (job-date-commit)
+ * @return {boolean} true if this deliveryId was already marked DELIVERED
+ */
+function isDuplicate(deliveryId) {
+  if (!deliveryId) return false;
+  var props = PropertiesService.getScriptProperties();
+  var existing = props.getProperty(deliveryId);
+  return existing === "DELIVERED";
+}
+
+/**
+ * Mark a deliveryId as successfully delivered.
+ * Once set, any future request with the same deliveryId will be ignored.
+ *
+ * @param {string} deliveryId - Unique delivery identifier to persist
+ */
+function markDelivered(deliveryId) {
+  if (!deliveryId) return;
+  var props = PropertiesService.getScriptProperties();
+  props.setProperty(deliveryId, "DELIVERED");
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // WEBHOOK ENTRY POINT — doPost / doGet
 // ════════════════════════════════════════════════════════════════════════
 
 /**
- * doGet — Health check endpoint.
- * Returns JSON confirming the web app is alive.
- * Used by monitoring tools and manual URL visits.
+ * doGet — Health check endpoint + truth verification endpoint.
+ *
+ * Auto-seeds WEBHOOK_SECRET into PropertiesService on first visit
+ * if not already set (reads from storeSecrets() source).
+ *
+ * Returns JSON confirming the web app is alive, plus truth state:
+ *   - lastEmailSent: the deliveryId of the most recently sent email
+ *   - This allows the Node truth-evaluator to independently verify email delivery
+ *
+ * Query params (optional):
+ *   ?verify=deliveryId — returns { verified: true/false, deliveryId: "..." }
  */
-function doGet() {
+function doGet(e) {
+  var props = PropertiesService.getScriptProperties();
+
+  // Auto-bootstrap WEBHOOK_SECRET if missing
+  if (!props.getProperty('WEBHOOK_SECRET')) {
+    props.setProperty('WEBHOOK_SECRET', '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
+  }
+
+  // ── Truth verification query ──────────────────────────────────────────
+  // If ?verify=deliveryId is passed, check if that delivery was confirmed
+  if (e && e.parameter && e.parameter.verify) {
+    var verifyDeliveryId = e.parameter.verify;
+    var lastSent = props.getProperty('lastEmailSent');
+    var isDuplicate = isDuplicate(verifyDeliveryId);
+    var verified = (lastSent === verifyDeliveryId) || isDuplicate;
+
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        status: "ok",
+        verified: verified,
+        deliveryId: verifyDeliveryId,
+        lastEmailSent: lastSent,
+        duplicateExists: isDuplicate
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({
       status: "ok",
       app: "Gahwa Newsletter",
       version: "v5",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      lastEmailSent: props.getProperty('lastEmailSent') || null
     }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+
 /**
- * doPost — Webhook entry point for external services (e.g. Hetzner cron).
+ * doPost — Idempotent webhook entry point for external services.
  *
- * Called by send_to_apps_script.sh after the operator generates a newsletter.
+ * Called by send_to_apps_script.sh / operator.js / daily-runner.js
+ * after the pipeline generates a newsletter.
+ *
+ * IDEMPOTENCY: Uses deliveryId to prevent duplicate processing.
+ * If a deliveryId has already been processed, returns "DUPLICATE_IGNORED".
+ *
  * Validates auth_token against WEBHOOK_SECRET stored in PropertiesService.
- * Returns structured JSON so the shell script can parse success/failure.
+ * Mark delivered ONLY after successful Gmail send.
  *
  * Expected payload format:
  * {
+ *   "deliveryId": "daily-newsletter-2026-05-07-abc123def",
  *   "auth_token": "<shared-secret>",
  *   "subject": "...",
  *   "htmlBody": "...",
@@ -510,6 +589,15 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // ── IDEMPOTENCY CHECK — guard against duplicate delivery ───────────
+    var deliveryId = contents.deliveryId;
+    if (deliveryId && isDuplicate(deliveryId)) {
+      log('INFO', '⏭️ DUPLICATE IGNORED — deliveryId already processed: ' + deliveryId);
+      return ContentService
+        .createTextOutput("DUPLICATE_IGNORED")
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+
     // ── Route based on action ──────────────────────────────────────────
     var action = contents.action || 'send';
     log('INFO', '📩 Webhook received — action: ' + action);
@@ -532,13 +620,27 @@ function doPost(e) {
           htmlBody: contents.htmlBody
         });
         log('INFO', '📧 Webhook-triggered email sent: ' + contents.subject);
+
+        // ── Mark delivered ONLY after successful email send ────────────
+        if (deliveryId) {
+          markDelivered(deliveryId);
+
+          // ── TRUTH VERIFICATION: Track lastEmailSent for independent verification ──
+          var props = PropertiesService.getScriptProperties();
+          props.setProperty('lastEmailSent', deliveryId);
+
+          log('INFO', '📝 Delivery marked + lastEmailSent updated: ' + deliveryId);
+        }
+
         return ContentService
           .createTextOutput(JSON.stringify({
             status: "ok",
             message: "Email sent",
-            subject: contents.subject
+            subject: contents.subject,
+            deliveryId: deliveryId
           }))
           .setMimeType(ContentService.MimeType.JSON);
+
       }
 
       return ContentService
@@ -567,4 +669,3 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
-

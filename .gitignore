@@ -3,3 +3,4 @@ node_modules/
 *.env
 secrets.json
 .DS_Store
+operator/runtime/state.json

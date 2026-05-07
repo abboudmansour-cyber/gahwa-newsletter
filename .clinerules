@@ -13,3 +13,56 @@ You are an expert at transforming CRM lead data into high-conversion B2B newslet
 - Avoid "flowery" AI-speak. Be direct and data-driven.
 - Formatting: Use clean Markdown with H2 headers for the main sections.
 - Language: Default to English, but ensure any local Saudi terms are used correctly (e.g., "Gahwa" context or "GCC" market specifics).
+
+# 🧱 GAHWA ATOMIC EXECUTION STANDARD v2.0 (10-SECTION CONTRACT)
+Every prompt executed in this project MUST follow the 10-section Atomic Format defined in `docs/atomic_prompt_template.md`:
+
+## ⚡ 0. HEADER (MANDATORY)
+SYSTEM: Gahwa Operator | MODE: Atomic Execution | STRICT MODE: ON | NO PARTIAL IMPLEMENTATION: TRUE
+
+## 🎯 1. OBJECTIVE (NO AMBIGUITY)
+Concrete, single-sentence goal with no vague wording. Only verbs: add / create / implement / integrate / fix.
+
+## 📦 2. REQUIRED ARTIFACTS (THE CONTRACT)
+Explicit lists of: FILES REQUIRED, FUNCTIONS REQUIRED, LOGS REQUIRED, BROKEN HOOKS CHECK.
+
+## 🧠 3. IMPLEMENTATION BOUNDARIES
+Hard constraints: no modifying existing architecture, no deleting modules, no new external deps, only additive, keep interfaces unchanged.
+
+## 🔧 4. IMPLEMENTATION TASKS (STEP LIST)
+Deterministic numbered steps. No narrative explanations. Only actions.
+
+## 🧪 5. VALIDATION LAYER (NON-NEGOTIABLE)
+CHECK block with machine-checkable verifications: file exists, function found via grep, log has entries, import tests.
+
+## 📊 6. COMPLETENESS REPORT (FORCED OUTPUT)
+Machine-readable JSON: { "status", "executionScore", "missingFiles", "missingFunctions", "brokenHooks", "failureClassification", "notes" }
+
+## 🔁 7. AUTO-RECOVERY RULE
+RETRY MODE: only implement missing items, do not reimplement working parts.
+
+## 🧾 8. DIFF GUARANTEE
+OUTPUT REQUIREMENT: list all created files, modified files, new functions added, hooks attached.
+
+## 🧠 9. FINAL SYSTEM BEHAVIOR CONTRACT
+* system must be fully traceable * every feature must map to a file * every file must map to a function * every function must be reachable from executor
+
+# 🔬 ENFORCEMENT
+- BEFORE execution: run `node operator/audit-runner.js --enforce "<prompt>" --level STRICT` to validate 10-section structure
+- AFTER execution: run `node operator/audit-runner.js --audit <name> -f <expected files> -fn <expected functions> -bh <hook checks>` to verify artifacts
+- Verify traceability: run `node operator/audit-runner.js --traceability` after every prompt
+- If score < 100/100: execution is INCOMPLETE. Next prompt is blocked until retry resolves.
+- ALL prompt outputs must include the COMPLETENESS OUTPUT JSON block at the end.
+
+# 🛡️ DIFF GUARD PROTOCOL
+For any execution that modifies existing code:
+1. Run `node operator/audit-runner.js --diff --protect "file1" "file2"` before and after
+2. Verify that no protected files were modified
+3. Report: FILES CHANGED, FILES ADDED, FILES UNTOUCHED, FUNCTIONS ADDED, FUNCTIONS MODIFIED
+4. Verdict must be PASS for the execution to be valid
+
+# 🚨 BLOCKING BEHAVIOR
+If completeness score < 100/100 or diff guard verdict is FAIL:
+- Next prompt is BLOCKED by prompt-auditor.js
+- Run `node operator/audit-runner.js --retry` for a focused retry prompt
+- Only blocked items may be implemented — do not touch working parts

@@ -28,7 +28,9 @@ import path from "path";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import crypto from "crypto";
 import { validateEnvironment, logWebhookStatus } from "./core/validate-env.js";
+import { evaluateTruth, calculateHealthScore, isSystemUnstable } from "./core/truth-evaluator.js";
 
 // ── Bootstrap execution context (MUST be called before ANY other logic) ─────
 ensureExecutionContext();
@@ -140,6 +142,19 @@ function markTodayComplete() {
  */
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Generate a unique delivery ID for idempotent delivery.
+ * Combines job name + date + short git commit hash.
+ * If git is unavailable, falls back to Date.now().
+ */
+function getDeliveryId() {
+  let gitCommitHash = "unknown";
+  try {
+    gitCommitHash = execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
+  } catch { /* git may not be available */ }
+  return `daily-newsletter-${todayDate()}-${gitCommitHash}`;
 }
 
 /**
@@ -401,12 +416,75 @@ async function pushToGitHub() {
   }
 }
 
+// ── Response Validation Layer ──────────────────────────────────────────
+/**
+ * Classify an Apps Script error from its response body text.
+ *
+ * Returns one of:
+ *   "MISSING_DOPOST"   — doPost handler not defined or deployed
+ *   "WRONG_HANDLER"    — doGet returned instead of doPost
+ *   "DEPLOYMENT_ERROR" — Arabic script error (تعذر = "unable to")
+ *   "HTML_ERROR_PAGE"  — Apps Script returned an error HTML page (not JSON/plain text)
+ *   "UNKNOWN_APP_SCRIPT_ERROR" — catch-all for other Apps Script failures
+ *   null               — response appears valid
+ */
+function classifyAppsScriptError(text) {
+  if (!text || typeof text !== "string") return null;
+  const lower = text.toLowerCase();
+
+  // DUPLICATE_IGNORED is a valid idempotent response — treat as success
+  if (text.includes("DUPLICATE_IGNORED")) return null;
+
+  if (text.includes("doPost")) return "MISSING_DOPOST";
+  if (text.includes("doGet"))  return "WRONG_HANDLER";
+  if (text.includes("تعذر"))   return "DEPLOYMENT_ERROR";
+
+  // Detect HTML error pages — Apps Script returns HTML pages with error info
+  // even on HTTP 200. If response looks like an HTML page (not JSON/plain text),
+  // and contains error indicators, classify it.
+  if (lower.includes("<!doctype html") || lower.includes("<html")) {
+    if (
+      lower.includes("error") ||
+      lower.includes("exception") ||
+      lower.includes("not found") ||
+      lower.includes("404")
+    ) {
+      return "HTML_ERROR_PAGE";
+    }
+  }
+
+  return null; // looks valid
+}
+
+/**
+ * Validate that the Apps Script response represents a real delivery,
+ * not just an HTTP 200 with an error page body.
+ *
+ * @param {number} httpCode - HTTP status code as a string (from curl -w)
+ * @param {string} responseBody - The response body text
+ * @returns {{ valid: boolean, classification: string|null }}
+ */
+function validateAppsScriptResponse(httpCode, responseBody) {
+  const classification = classifyAppsScriptError(responseBody);
+
+  // HTTP 200 alone is NOT treated as success.
+  // The response body must pass classification (no error signals found).
+  const isValidSuccess =
+    httpCode === "200" &&
+    classification === null;
+
+  return {
+    valid: isValidSuccess,
+    classification,
+  };
+}
+
 /**
  * Send newsletter JSON payload to Apps Script webhook.
  *
  * Validates response and logs structured status:
- *   - "Success: Newsletter Filed" on 200 OK
- *   - Critical failure logging for rendering errors from Parser.gs
+ *   - HTTP 200 alone is NOT treated as success — response body is validated
+ *   - doPost missing / HTML error pages caught immediately
  *   - Auth failure detection for misconfigured WEBHOOK_SECRET
  */
 async function sendToAppsScript(newsletter) {
@@ -425,10 +503,13 @@ async function sendToAppsScript(newsletter) {
   log("[APPS SCRIPT] Sending POST to webhook...");
 
   // Build the payload with auth_token for security
+  const deliveryId = getDeliveryId();
   const payload = {
     ...newsletter,
+    deliveryId,
     auth_token: WEBHOOK_SECRET,
   };
+  log(`[APPS SCRIPT] 🆔 Delivery ID: ${deliveryId}`);
 
   // Use temp file for payload to avoid shell escaping issues
   const tmpPayload = path.join(OUTPUT_DIR, ".tmp-apps-script-payload.json");
@@ -454,35 +535,32 @@ async function sendToAppsScript(newsletter) {
     const httpCode = lines.pop(); // Last line is the status code
     const responseBody = lines.join("\n").trim();
 
-    log(`[APPS SCRIPT] HTTP ${httpCode} — Response: ${responseBody || "(empty)"}`);
+    // ── Response validation layer ────────────────────────────────────
+    // HTTP 200 is NOT treated as success. Apps Script can return an HTML
+    // error page with 200. We validate the response body explicitly.
+    const validation = validateAppsScriptResponse(httpCode, responseBody);
+
+    log("[APPS SCRIPT] 📬 Delivery Status:", {
+      http: httpCode,
+      valid: validation.valid,
+      classification: validation.classification || "SUCCESS",
+    });
 
     // ── Handle response based on HTTP status code ──────────────────
     if (httpCode === "200") {
-      // Check for error indicators in Apps Script response body
-      const lowerBody = responseBody.toLowerCase();
-      if (
-        lowerBody.includes("error") ||
-        lowerBody.includes("exception") ||
-        lowerBody.includes("critical") ||
-        lowerBody.includes("parser.gs") ||
-        lowerBody.includes("rendering failed") ||
-        lowerBody.includes("pipeline failed")
-      ) {
-        log(`[APPS SCRIPT] ❌ CRITICAL FAILURE — Rendering error from Parser.gs detected`, "ERROR");
+      if (validation.valid) {
+        // TRUE success — response body confirmed execution
+        const isDup = responseBody && responseBody.includes("DUPLICATE_IGNORED");
+        log(`[APPS SCRIPT] ${isDup ? "⏭️" : "✅"} ${isDup ? "Duplicate Ignored (idempotent guard)" : "Success: Newsletter Filed"}`);
+        log(`[APPS SCRIPT] 🆔 Delivery ID: ${deliveryId}`);
+        log(`[APPS SCRIPT] Payload: ${newsletter.sections.length} sections, ${JSON.stringify(newsletter).length} bytes`);
+      } else {
+        // HTTP 200 but Apps Script returned an error page/body
+        const errType = validation.classification || "UNKNOWN_APP_SCRIPT_ERROR";
+        log(`[APPS SCRIPT] ❌ CRITICAL FAILURE — ${errType}`, "ERROR");
         log(`[APPS SCRIPT] Response body: ${responseBody}`, "ERROR");
-        throw new Error(`Apps Script rendering error: ${responseBody.slice(0, 300)}`);
+        throw new Error(`Apps Script delivery failed validation: ${errType} — ${responseBody.slice(0, 300)}`);
       }
-
-      // Check for unauthorized
-      if (lowerBody.includes("unauthorized")) {
-        log(`[APPS SCRIPT] ❌ Auth Failure — WEBHOOK_SECRET mismatch`, "ERROR");
-        log(`[APPS SCRIPT] Fix: Verify WEBHOOK_SECRET matches in both operator/.env and Apps Script PropertiesService`, "ERROR");
-        throw new Error("Apps Script webhook rejected auth_token");
-      }
-
-      // SUCCESS — exactly as specified
-      log("[APPS SCRIPT] ✅ Success: Newsletter Filed");
-      log(`[APPS SCRIPT] Payload: ${newsletter.sections.length} sections, ${JSON.stringify(newsletter).length} bytes`);
     } else if (httpCode === "401" || httpCode === "403") {
       log(`[APPS SCRIPT] ❌ Auth Failure (HTTP ${httpCode}) — Check WEBHOOK_SECRET configuration`, "ERROR");
       log(`[APPS SCRIPT] Response: ${responseBody}`, "ERROR");
