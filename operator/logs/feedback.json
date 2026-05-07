@@ -138,5 +138,21 @@
       "generic AI filler language detected"
     ],
     "suggestedPromptAdjustments": "Remove generic AI filler phrases. Use direct, data-driven language with concrete examples. Shorten sentences, remove redundancies, use active voice throughout."
+  },
+  {
+    "runId": "daily-newsletter-2026-05-07-1778193805164",
+    "timestamp": "2026-05-07T22:43:25.166Z",
+    "score": {
+      "clarity": 2,
+      "gccRelevance": 10,
+      "marketDepth": 8,
+      "readability": 10,
+      "overall": 8
+    },
+    "weaknessTags": [
+      "too generic AI content",
+      "generic AI filler language detected"
+    ],
+    "suggestedPromptAdjustments": "Remove generic AI filler phrases. Use direct, data-driven language with concrete examples. Shorten sentences, remove redundancies, use active voice throughout."
   }
 ]

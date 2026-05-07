@@ -61,5 +61,26 @@
       "mismatchRate": 0,
       "recoveryDependency": "none"
     }
+  },
+  {
+    "runId": "daily-newsletter-2026-05-07",
+    "timestamp": "2026-05-07T22:43:25.163Z",
+    "declaredState": "PARTIAL",
+    "verifiedState": "CONFIRMED_FAILURE",
+    "sources": {
+      "git": false,
+      "appsScript": false,
+      "email": false
+    },
+    "mismatch": true,
+    "notes": "No verification sources could confirm success | Declared PARTIAL but all sources confirm failure",
+    "deliveryId": "daily-newsletter-2026-05-07-67e2416",
+    "job": "daily-newsletter",
+    "gitHash": "67e24165cfb2023064a7ae3b65003b3fdbabf008",
+    "healthScore": {
+      "truthAccuracy": 67,
+      "mismatchRate": 33,
+      "recoveryDependency": "none"
+    }
   }
 ]
