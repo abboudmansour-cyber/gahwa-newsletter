@@ -72,23 +72,35 @@ function safeExec(command) {
 /**
  * Verify Git state:
  *   1. git log -1 — confirm a commit exists locally
- *   2. git rev-parse origin/main — verify remote tracking branch exists
- *   3. git merge-base --is-ancestor HEAD origin/main — confirm HEAD was pushed
+ *   2. Detect the current branch name
+ *   3. Check if HEAD is pushed to the remote tracking branch
+ *      (works for any branch: main, feature/*, etc.)
  *
  * @returns {{ verified: boolean, commitHash: string|null, details: object }}
  */
 function verifyGit() {
   const log = safeExec("git log -1 --format=%H");
-  const remoteRef = safeExec("git rev-parse origin/main 2>/dev/null || git rev-parse origin/master 2>/dev/null || echo 'no-remote'");
-  const isPushed = safeExec("git merge-base --is-ancestor HEAD origin/main 2>/dev/null && echo 'pushed' || (git merge-base --is-ancestor HEAD origin/master 2>/dev/null && echo 'pushed' || echo 'not-pushed')");
+  const currentBranch = safeExec("git rev-parse --abbrev-ref HEAD");
 
   const commitHash = log.success ? log.output : null;
-  const remoteExists = remoteRef.success && remoteRef.output !== "no-remote";
+  const branchName = currentBranch.success ? currentBranch.output : "unknown";
 
-  // SUCCESS if:
-  //   - commit exists (log succeeded)
-  //   - remote tracking branch exists
-  //   - HEAD is an ancestor of the remote tracking branch (i.e., commit was pushed)
+  // Determine the remote tracking ref for the current branch.
+  // This works for main, master, feature/*, or any branch with an upstream.
+  const upstreamRef = safeExec(`git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || echo 'no-upstream'`);
+  const remoteBranchName = upstreamRef.success ? upstreamRef.output : "no-upstream";
+
+  // Check if HEAD is an ancestor of the remote tracking branch (i.e., commit was pushed).
+  // If the remote tracking branch is "refs/remotes/origin/feature/*", the merge-base check
+  // expects "origin/feature/*" (not the full ref path).  We derive it from @{upstream}.
+  const remoteTrackingRef =
+    remoteBranchName.replace(/^refs\/remotes\//, "").replace(/^refs\/heads\//, "");
+
+  const isPushed = safeExec(
+    `git merge-base --is-ancestor HEAD ${remoteTrackingRef} 2>/dev/null && echo 'pushed' || echo 'not-pushed'`
+  );
+
+  const remoteExists = remoteBranchName !== "no-upstream";
   const verified = log.success && isPushed.success && isPushed.output === "pushed";
 
   return {
@@ -96,8 +108,9 @@ function verifyGit() {
     commitHash,
     details: {
       logOutput: log.output,
+      branchName,
+      remoteBranchName,
       remoteExists,
-      remoteRef: remoteRef.output,
       pushStatus: isPushed.output,
     },
   };
