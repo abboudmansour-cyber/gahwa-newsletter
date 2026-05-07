@@ -266,13 +266,22 @@ async function pushToAppsScript(filePath = "output/latest-newsletter.json") {
 
   payload.auth_token = webhookSecret;
 
-  console.log(`\n🚀 Pushing newsletter to Apps Script webhook...`);
+  // Mask webhook URL for safe logging
+  let maskedUrl = webhookUrl;
+  try {
+    const parsed = new URL(webhookUrl);
+    maskedUrl = `${parsed.protocol}//${parsed.host}/macros/s/***/exec`;
+  } catch { /* keep original if parse fails */ }
+
+  console.log(`\n🔗 Pushing newsletter to Apps Script webhook (masked URL)`);
+  console.log(`   URL:     ${maskedUrl}`);
   console.log(`   Payload: ${absolutePath}`);
 
   const MAX_ATTEMPTS = 3;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       console.log(`   ─── Attempt ${attempt} of ${MAX_ATTEMPTS} ───`);
+
 
       const res = await fetch(webhookUrl, {
         method: "POST",

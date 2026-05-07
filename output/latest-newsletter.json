@@ -3,39 +3,39 @@
   "title": "GCC Morning Brief",
   "sections": [
     {
-      "headline": "GCC markets open mixed amid oil price volatility",
-      "summary": "GCC stock markets opened mixed on Thursday, with Saudi Arabia's Tadawul down 0.3% and Dubai's DFM up 0.5%, as Brent crude hovered near $78 per barrel.",
-      "insight": "Divergent performance reflects ongoing uncertainty in global oil markets, but regional fundamentals remain supported by strong fiscal buffers and diversification efforts."
+      "headline": "GCC markets mixed as oil prices dip below $80",
+      "summary": "GCC stock markets showed mixed performance on Wednesday, with Saudi Arabia's Tadawul falling 0.3% and Dubai's DFM gaining 0.5%, as Brent crude slipped to $79.80 per barrel amid demand concerns.",
+      "insight": "The divergence reflects ongoing investor caution tied to oil price volatility, though UAE markets remain supported by strong real estate and tourism inflows."
     },
     {
-      "headline": "Saudi non-oil PMI rises to 58.2 in April",
-      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index (PMI) rose to 58.2 in April from 57.8 in March, indicating robust expansion in the non-oil private sector.",
-      "insight": "Sustained PMI readings above 55 underscore the resilience of Saudi non-oil activity, driven by strong domestic demand and government spending under Vision 2030."
+      "headline": "Saudi non-oil PMI hits 58.2 in April, fastest growth in 8 months",
+      "summary": "Saudi Arabia's non-oil Purchasing Managers' Index rose to 58.2 in April from 57.0 in March, marking the strongest expansion since August 2025, driven by new orders and employment gains.",
+      "insight": "The sustained PMI above 50 signals robust private sector momentum, underpinning Vision 2030 targets and likely boosting Q2 GDP forecasts."
     },
     {
-      "headline": "UAE GDP growth forecast at 4.1% for 2026",
-      "summary": "The UAE's GDP is projected to grow 4.1% in 2026, according to the latest IMF forecast, supported by tourism, real estate, and financial services.",
-      "insight": "The UAE's diversified economy continues to outperform regional peers, with non-oil sectors contributing over 70% of GDP growth this year."
+      "headline": "UAE announces $10 billion tech investment fund for AI and cloud",
+      "summary": "The UAE government launched a $10 billion fund to accelerate AI, cloud computing, and advanced manufacturing, with initial allocations to Abu Dhabi's Hub71 and Dubai Internet City.",
+      "insight": "This positions the UAE as a regional tech hub, attracting global talent and diversifying the economy beyond hydrocarbons, with potential spillover effects on fintech and logistics."
     },
     {
-      "headline": "Regional fintech funding hits $1.2bn in Q1 2026",
-      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, a 35% increase year-on-year, led by Saudi Arabia and the UAE.",
-      "insight": "The surge in fintech investment reflects growing digital adoption and supportive regulatory frameworks, positioning the GCC as a global fintech hub."
+      "headline": "Regional fintech funding surges 34% to $1.2 billion in Q1 2026",
+      "summary": "Fintech startups in the GCC raised $1.2 billion in Q1 2026, up 34% year-on-year, led by Saudi Arabia's $450 million round for digital payments firm Tamara and UAE's Tabby securing $300 million.",
+      "insight": "The funding boom reflects deepening investor appetite for digital financial services, driven by high smartphone penetration and regulatory support across the region."
     },
     {
-      "headline": "Saudi Aramco maintains dividend at $31bn for Q1",
-      "summary": "Saudi Aramco reported Q1 2026 net income of $27.5 billion and maintained its dividend at $31 billion, despite lower oil production.",
-      "insight": "Aramco's steady dividend underscores its cash flow resilience and commitment to shareholder returns, even as OPEC+ output cuts persist."
+      "headline": "Saudi Aramco maintains 2026 capex at $50 billion despite oil price dip",
+      "summary": "Saudi Aramco confirmed its $50 billion capital expenditure plan for 2026, focusing on gas expansion and petrochemicals, even as Brent crude averaged $82 in Q1, down from $85 in Q4 2025.",
+      "insight": "Aramco's steady investment signals long-term confidence in energy demand and supports Saudi Arabia's downstream diversification strategy."
     },
     {
-      "headline": "Dubai real estate transactions surge 22% in April",
-      "summary": "Dubai recorded 12,500 real estate transactions in April 2026, up 22% year-on-year, with total value exceeding AED 38 billion.",
-      "insight": "Continued strong demand from foreign investors and high-net-worth individuals is driving Dubai's property market, supported by visa reforms and economic stability."
+      "headline": "Qatar's LNG exports hit record 82 million tonnes in 2025",
+      "summary": "QatarEnergy reported record LNG exports of 82 million tonnes in 2025, up 7% from 2024, driven by new production from the North Field expansion project.",
+      "insight": "The record output strengthens Qatar's position as a top global LNG supplier, with further growth expected as the North Field East project ramps up through 2027."
     },
     {
-      "headline": "Qatar LNG exports rise 8% in Q1 2026",
-      "summary": "Qatar's liquefied natural gas (LNG) exports increased 8% year-on-year in Q1 2026, reaching 21 million tonnes, as global demand for cleaner energy grows.",
-      "insight": "Qatar's expansion of LNG capacity positions it to capture a larger share of the global gas market, especially as Europe diversifies away from Russian supplies."
+      "headline": "Dubai real estate transactions surge 22% in April to $8.5 billion",
+      "summary": "Dubai's real estate market recorded 12,500 transactions worth $8.5 billion in April 2026, a 22% increase year-on-year, led by off-plan sales in Dubai South and Business Bay.",
+      "insight": "The sustained demand underscores Dubai's appeal as a safe haven for capital, though rising supply could moderate price growth in the second half of 2026."
     }
   ]
 }

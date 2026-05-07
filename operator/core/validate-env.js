@@ -40,10 +40,9 @@ export function validateWebhookUrl(url) {
     return {
       valid: false,
       message:
-        `❌ Invalid APPS_SCRIPT_WEBHOOK_URL format.\n` +
+        `Invalid Apps Script Webhook URL (must be Web App /exec endpoint)\n` +
         `   Expected: https://script.google.com/macros/s/ABC123/exec\n` +
-        `   Got:      ${maskUrl(trimmed)}\n` +
-        `   → Deploy your Apps Script Web App and paste the exec URL into operator/.env`,
+        `   Got:      ${maskUrl(trimmed)}`,
     };
   }
 
@@ -51,10 +50,9 @@ export function validateWebhookUrl(url) {
     return {
       valid: false,
       message:
-        `❌ Invalid APPS_SCRIPT_WEBHOOK_URL format — must end with /exec.\n` +
+        `Invalid Apps Script Webhook URL (must be Web App /exec endpoint)\n` +
         `   Expected: https://script.google.com/macros/s/ABC123/exec\n` +
-        `   Got:      ${maskUrl(trimmed)}\n` +
-        `   → Make sure you're using the Web App deployment URL (ends with /exec)`,
+        `   Got:      ${maskUrl(trimmed)}`,
     };
   }
 
