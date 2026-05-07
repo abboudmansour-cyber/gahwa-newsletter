@@ -1,0 +1,432 @@
+// ╔══════════════════════════════════════════════════════════════════════╗
+// ║              THE GAHWA · STARTUP SCOUT OS v5                         ║
+// ║     The Gulf Brief · A Premium Daily Brew of Gulf Insight            ║
+// ╠══════════════════════════════════════════════════════════════════════╣
+// ║  FIRST TIME SETUP:                                                   ║
+// ║  1. Run storeSecrets() — stores API keys in PropertiesService        ║
+// ║  2. Run testClaudeKey() — should log "Hello"                         ║
+// ║  3. Run setupAllTriggers() — sets all automation                     ║
+// ║  4. Run resetPipeline() — clears any leftover state                  ║
+// ║  5. Run runScoutStep1() manually to test                             ║
+// ║                                                                      ║
+// ║  DAILY FLOW (automatic):                                             ║
+// ║  6:00am → aggregateNewsletters() builds Intel Dump                   ║
+// ║  9:00am → runScoutStep1() extracts all signals                       ║
+// ║  auto   → runScoutStep2() scores + ranks → Part 1                    ║
+// ║  auto   → runScoutStep3() generates Parts 2-7                        ║
+// ║  auto   → runScoutStep4() builds HTML + emails it                    ║
+// ║                                                                      ║
+// ║  MANUAL CONTROLS:                                                    ║
+// ║  resetPipeline()    — clear stuck state                              ║
+// ║  cleanupTempDocs()  — delete orphaned _SS_ docs                      ║
+// ║  runWeeklyRollup()  — Saturday trend analysis                        ║
+// ║  viewRunHistory()   — log last 30 days stats                         ║
+// ╚══════════════════════════════════════════════════════════════════════╝
+
+// ════════════════════════════════════════════════════════════════════════
+// CONFIG
+// Non-sensitive settings only. API keys → storeSecrets() → PropertiesService
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: CONFIG
+var CONFIG = {
+  // ── Folder IDs ──────────────────────────────────────────────────────
+  DAILY_INTEL_FOLDER_ID:  '14MfCtuSMSgnUGnxgduoxsXKQj5f4roI0',
+  SCOUT_OUTPUT_FOLDER_ID: '1fz_cnHzeu4IhrhPNzW-65rZVmX0A796S',
+  WEEKLY_FOLDER_ID:       '10weeyxOqd0c7V3AsLeH7XPnPtKu-HDti',
+
+  // ── Email ────────────────────────────────────────────────────────────
+  NOTIFY_EMAIL:           'abboudmansour@gmail.com',
+  GAHWA_EMAIL:            'abboudmansour@gmail.com',
+
+  // ── Beehiiv ──────────────────────────────────────────────────────────
+  BEEHIIV_PUB_ID:         'pub_ce38a7fe-d3af-4e0b-abc5-c049af970c2d',
+  BEEHIIV_URL:            'https://gahwa.beehiiv.com/subscribe',
+
+  // ── AI models (DeepSeek Anthropic-compatible endpoint) ────────────────
+  CLAUDE_FAST:            'deepseek-v4-flash',
+  CLAUDE_SMART:           'deepseek-v4-pro',
+
+  // ── Pipeline tuning ──────────────────────────────────────────────────
+  MAX_CHARS_PER_CHUNK:    48000,
+  PAUSE_MS:               2000,
+  MAX_RUN_MS:             270000,
+  MAX_STEP_ATTEMPTS:      2,       // Max auto-retries per step before aborting
+
+  // ── Branding ─────────────────────────────────────────────────────────
+  TITLE:                  'STARTUP SCOUT',
+  TAGLINE:                'Daily Intelligence for GCC Founders & Operators',
+  GAHWA_TITLE:            'GAHWA',
+  GAHWA_TAGLINE:          "It's gahwa time.",
+
+  // ── Compliance ───────────────────────────────────────────────────────
+  MAILING_ADDRESS:        'The Gahwa · P.O. Box 12345, Jeddah 21411, Saudi Arabia',
+  UNSUBSCRIBE_URL:        'https://gahwa.beehiiv.com/unsubscribe',
+  PREFERENCES_URL:        'https://gahwa.beehiiv.com/preferences',
+
+  // ── Beehiiv API posting ──────────────────────────────────────────────
+  // Set to true when Beehiiv plan is upgraded to Scale/Enterprise.
+  // Currently disabled — Posts API requires Enterprise plan (403).
+  // Auth is confirmed working. postToBeehiiv() function is preserved.
+  BEEHIIV_POST_ENABLED:   false,
+};
+
+// ════════════════════════════════════════════════════════════════════════
+// STEP 1 — EXTRACTION
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: runScoutStep1
+function runScoutStep1() {
+  autoSetupTriggers();
+  var startTime = Date.now();
+  var props     = PropertiesService.getScriptProperties();
+  var todayKey  = 'RAN_' + new Date().toDateString().replace(/ /g, '_');
+
+  if (props.getProperty(todayKey) === 'COMPLETE') {
+    log('INFO', 'Already completed today. Call resetPipeline() to re-run.');
+    return;
+  }
+
+  if (!props.getProperty('PIPELINE_ACTIVE')) {
+    log('INFO', '═══ SCOUT v5 START ═══');
+
+    var docText = getTodayIntelDump();
+    if (!docText) { log('ERROR', '⛔ No Intel Dump. Aborting.'); return; }
+    log('INFO', 'Doc: ' + docText.length + ' chars');
+
+    var fitness     = extractFitnessContent(docText);
+    var newsletters = splitNewsletters(docText);
+    var chunks      = buildAdaptiveChunks(newsletters);
+
+    log('INFO', 'Fitness: ' + (fitness ? fitness.length + ' chars' : 'not found'));
+    log('INFO', 'Newsletters: ' + newsletters.length + ' · Chunks: ' + chunks.length);
+
+    var chunksDocId = createDocInFolder('_SS_CHUNKS_', CONFIG.SCOUT_OUTPUT_FOLDER_ID);
+    var chunksDoc   = DocumentApp.openById(chunksDocId);
+    var cb          = chunksDoc.getBody();
+    cb.clear();
+    for (var c = 0; c < chunks.length; c++) {
+      cb.appendParagraph('===CHUNK_START_' + c + '===');
+      cb.appendParagraph(chunks[c]);
+      cb.appendParagraph('===CHUNK_END_' + c + '===');
+    }
+    chunksDoc.saveAndClose();
+
+    var sigDocId = createDocInFolder('_SS_SIGNALS_', CONFIG.SCOUT_OUTPUT_FOLDER_ID);
+
+    props.setProperty('PIPELINE_ACTIVE',  'true');
+    props.setProperty('PIPE_START',       Date.now().toString());
+    props.setProperty('NL_COUNT',         newsletters.length.toString());
+    props.setProperty('CHUNK_COUNT',      chunks.length.toString());
+    props.setProperty('CHUNK_INDEX',      '0');
+    props.setProperty('FAILED_CHUNKS',    '');
+    props.setProperty('CHUNKS_DOC_ID',    chunksDocId);
+    props.setProperty('SIGNALS_DOC_ID',   sigDocId);
+    props.setProperty('FITNESS',          (fitness || '').substring(0, 3000));
+    props.setProperty('IN_TOK',           '0');
+    props.setProperty('OUT_TOK',          '0');
+    log('INFO', 'Pipeline state saved. Extracting...');
+  } else {
+    log('INFO', 'Resuming extraction...');
+  }
+
+  var totalChunks = parseInt(props.getProperty('CHUNK_COUNT'));
+  var chunkIdx    = parseInt(props.getProperty('CHUNK_INDEX'));
+  var sigDocId    = props.getProperty('SIGNALS_DOC_ID');
+  var chunksDocId = props.getProperty('CHUNKS_DOC_ID');
+  var failedStr   = props.getProperty('FAILED_CHUNKS') || '';
+
+  log('INFO', 'Progress: ' + chunkIdx + '/' + totalChunks);
+
+  while (chunkIdx < totalChunks) {
+    if (Date.now() - startTime > CONFIG.MAX_RUN_MS) {
+      log('WARN', '⏰ Time limit at chunk ' + chunkIdx + '. Scheduling continuation...');
+      props.setProperty('CHUNK_INDEX', chunkIdx.toString());
+      scheduleContinuation('runScoutStep1');
+      return;
+    }
+
+    log('INFO', '📦 Chunk ' + (chunkIdx + 1) + '/' + totalChunks);
+    var chunkText = loadChunkFromDoc(chunksDocId, chunkIdx);
+    var result    = extractChunk(chunkText, chunkIdx + 1, totalChunks);
+    var failed    = isError(result);
+
+    if (failed) {
+      log('WARN', '⚠️ Chunk ' + (chunkIdx + 1) + ' failed');
+      failedStr += (failedStr ? ',' : '') + chunkIdx;
+      props.setProperty('FAILED_CHUNKS', failedStr);
+    }
+
+    appendToDoc(sigDocId, '\n\n══ CHUNK ' + (chunkIdx + 1) + '/' + totalChunks + (failed ? ' [FAILED]' : '') + ' ══\n' + result);
+    chunkIdx++;
+    props.setProperty('CHUNK_INDEX', chunkIdx.toString());
+    log('INFO', '✅ ' + chunkIdx + '/' + totalChunks);
+    if (chunkIdx < totalChunks) Utilities.sleep(CONFIG.PAUSE_MS);
+  }
+
+  if (failedStr) {
+    log('WARN', 'Retrying failed chunks: ' + failedStr);
+    failedStr.split(',').forEach(function(i) {
+      var idx   = parseInt(i);
+      var retry = extractChunk(loadChunkFromDoc(chunksDocId, idx), idx + 1, totalChunks);
+      appendToDoc(sigDocId, '\n\n══ CHUNK ' + (idx + 1) + ' RETRY ══\n' + retry);
+      Utilities.sleep(CONFIG.PAUSE_MS);
+    });
+    props.setProperty('FAILED_CHUNKS', '');
+  }
+
+  log('INFO', '🏁 Extraction complete. Scheduling Step 2...');
+  scheduleContinuation('runScoutStep2');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// STEP 2 — SCORE + RANK (Part 1)
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: runScoutStep2
+function runScoutStep2() {
+  log('INFO', '══ STEP 2: SCORING ══');
+  var props = PropertiesService.getScriptProperties();
+
+  if (!validatePipelineState(['SIGNALS_DOC_ID', 'NL_COUNT'])) {
+    sendNotification('⛔ Scout Step 2 FAILED', 'Pipeline state missing. Run resetPipeline().');
+    return;
+  }
+
+  if (!checkAndIncrementAttempts('STEP2_ATTEMPTS', CONFIG.MAX_STEP_ATTEMPTS)) {
+    sendNotification('⛔ Scout Step 2 ABORTED', 'Max retries reached. Run resetPipeline().');
+    clearPipelineState();
+    return;
+  }
+
+  var sigDocId = props.getProperty('SIGNALS_DOC_ID');
+  var nlCount  = parseInt(props.getProperty('NL_COUNT') || '0');
+  var signals  = readDoc(sigDocId);
+
+  log('INFO', 'Signals: ' + signals.length + ' chars');
+
+  if (signals.trim().length < 200) {
+    sendNotification('⛔ Scout Step 2 FAILED', 'Signals doc is empty.');
+    return;
+  }
+  if (signals.length > 580000) {
+    signals = signals.substring(0, 580000) + '\n[TRIMMED]';
+    log('WARN', 'Signals trimmed to 580k chars');
+  }
+
+  var part1 = generatePart1(signals, nlCount);
+  if (isError(part1)) {
+    log('ERROR', '⛔ Part 1 generation failed: ' + part1.substring(0, 100));
+    sendNotification('⛔ Scout Step 2 FAILED', part1);
+    scheduleContinuation('runScoutStep2');
+    return;
+  }
+
+  log('INFO', '✅ Part 1: ' + part1.length + ' chars');
+  var p1DocId = createDocInFolder('_SS_PART1_', CONFIG.SCOUT_OUTPUT_FOLDER_ID);
+  var p1Doc   = DocumentApp.openById(p1DocId);
+  p1Doc.getBody().appendParagraph(part1);
+  p1Doc.saveAndClose();
+  props.setProperty('PART1_DOC_ID', p1DocId);
+  scheduleContinuation('runScoutStep3');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// STEP 3 — PARTS 2-7
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: runScoutStep3
+function runScoutStep3() {
+  log('INFO', '══ STEP 3: PARTS 2-7 ══');
+  var props = PropertiesService.getScriptProperties();
+
+  if (!validatePipelineState(['PART1_DOC_ID'])) {
+    sendNotification('⛔ Scout Step 3 FAILED', 'Pipeline state missing PART1_DOC_ID. Run resetPipeline().');
+    return;
+  }
+
+  if (!checkAndIncrementAttempts('STEP3_ATTEMPTS', CONFIG.MAX_STEP_ATTEMPTS)) {
+    sendNotification('⛔ Scout Step 3 ABORTED', 'Max retries reached. Run resetPipeline().');
+    clearPipelineState();
+    return;
+  }
+
+  var p1DocId = props.getProperty('PART1_DOC_ID');
+  var fitness = props.getProperty('FITNESS') || '';
+  var nlCount = parseInt(props.getProperty('NL_COUNT') || '0');
+  var part1   = readDoc(p1DocId);
+
+  var parts2to7 = generateParts2to7(part1, fitness, nlCount);
+  if (isError(parts2to7)) {
+    log('ERROR', '⛔ Parts 2-7 failed: ' + parts2to7.substring(0, 100));
+    sendNotification('⛔ Scout Step 3 FAILED', parts2to7);
+    scheduleContinuation('runScoutStep3');
+    return;
+  }
+
+  log('INFO', '✅ Parts 2-7: ' + parts2to7.length + ' chars');
+  var p27DocId = createDocInFolder('_SS_PARTS27_', CONFIG.SCOUT_OUTPUT_FOLDER_ID);
+  var p27Doc   = DocumentApp.openById(p27DocId);
+  p27Doc.getBody().appendParagraph(parts2to7);
+  p27Doc.saveAndClose();
+  props.setProperty('PARTS27_DOC_ID', p27DocId);
+  scheduleContinuation('runScoutStep4');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// STEP 4 — HTML + EMAIL + CLEANUP
+// Phase 2: Scout internal HTML deactivated. Gahwa public output only.
+// Beehiiv posting: disabled — Posts API requires Enterprise plan.
+//   Re-enable by setting CONFIG.BEEHIIV_POST_ENABLED = true after upgrade.
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: runScoutStep4
+function runScoutStep4() {
+  log('INFO', '══ STEP 4: HTML + EMAIL ══');
+  var props = PropertiesService.getScriptProperties();
+
+  if (!validatePipelineState(['PART1_DOC_ID', 'PARTS27_DOC_ID'])) {
+    sendNotification('⛔ Scout Step 4 FAILED', 'Pipeline state missing docs. Run resetPipeline().');
+    return;
+  }
+
+  if (!checkAndIncrementAttempts('STEP4_ATTEMPTS', CONFIG.MAX_STEP_ATTEMPTS)) {
+    sendNotification('⛔ Scout Step 4 ABORTED', 'Max retries reached. Run resetPipeline().');
+    clearPipelineState();
+    return;
+  }
+
+  var p1DocId   = props.getProperty('PART1_DOC_ID');
+  var p27DocId  = props.getProperty('PARTS27_DOC_ID');
+  var nlCount   = parseInt(props.getProperty('NL_COUNT')  || '0');
+  var pipeStart = parseInt(props.getProperty('PIPE_START') || Date.now());
+  var fitness   = props.getProperty('FITNESS') || '';
+  var inTok     = parseInt(props.getProperty('IN_TOK')    || '0');
+  var outTok    = parseInt(props.getProperty('OUT_TOK')   || '0');
+
+  var part1     = readDoc(p1DocId);
+  var parts2to7 = readDoc(p27DocId);
+
+  var cost   = ((inTok * 0.000003) + (outTok * 0.000015)).toFixed(4);
+  var runMin = Math.round((Date.now() - pipeStart) / 60000);
+  log('INFO', 'Cost: $' + cost + ' | Runtime: ' + runMin + 'min | Tokens: ' + inTok + ' in / ' + outTok + ' out');
+
+  var streak  = updateRunHistory(nlCount, part1, cost);
+  var dateStr = new Date().toDateString();
+
+  // ── Scout internal HTML — DEACTIVATED (Phase 2: public Gahwa output only) ──
+  var shareUrl = '';
+
+  // ── Gahwa public output — ACTIVE ─────────────────────────────────────
+  if (CONFIG.GAHWA_EMAIL) {
+    log('INFO', 'DIAG part1 first 200: ' + part1.substring(0, 200));
+    log('INFO', 'DIAG parts2to7 first 200: ' + parts2to7.substring(0, 200));
+    var gahwaHtml  = buildGahwaHTML(part1, parts2to7, shareUrl);
+    var gahwaFname = 'Gahwa_' + dateStr.replace(/ /g, '_') + '.html';
+    var gahwaFile  = DriveApp.getFolderById(CONFIG.SCOUT_OUTPUT_FOLDER_ID)
+                             .createFile(gahwaFname, gahwaHtml, MimeType.HTML);
+    gahwaFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    log('INFO', 'Gahwa Drive: https://drive.google.com/file/d/' + gahwaFile.getId() + '/view');
+
+    var gahwaSubject = parseWinningSubject(parts2to7, dateStr);
+    var emailHtml = gahwaHtml.replace(
+      /src="data:image\/[^"]{100,}"/g,
+      'src="' + (getFinjanUrl() || '') + '"'
+    );
+    GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, gahwaSubject, '', { htmlBody: emailHtml });
+    log('INFO', 'Gahwa email sent: ' + gahwaSubject);
+
+    // ── Beehiiv posting — DISABLED (Enterprise plan required) ────────────
+    // Auth confirmed working. Key is valid. Plan blocks POST /posts endpoint.
+    // To re-enable: set CONFIG.BEEHIIV_POST_ENABLED = true after upgrading plan.
+    if (CONFIG.BEEHIIV_POST_ENABLED) {
+      var beehiivUrl = postToBeehiiv(gahwaHtml, dateStr, part1, parts2to7);
+      if (beehiivUrl) log('INFO', 'Beehiiv post: ' + beehiivUrl);
+    } else {
+      log('INFO', 'Beehiiv: skipped — Posts API requires Enterprise plan. Set BEEHIIV_POST_ENABLED=true to re-enable.');
+    }
+  }
+
+  updateTrendTracker(part1);
+
+  var todayKey = 'RAN_' + new Date().toDateString().replace(/ /g, '_');
+  props.setProperty(todayKey, 'COMPLETE');
+  clearPipelineState();
+  log('INFO', '\uD83C\uDF89 Done in ' + runMin + 'min · $' + cost);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// WEEKLY ROLLUP
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: runWeeklyRollup
+function runWeeklyRollup() {
+  var props = PropertiesService.getScriptProperties();
+  var trends;
+  try { trends = JSON.parse(props.getProperty('TREND_TRACKER') || '{}'); } catch(e) { trends = {}; }
+
+  var keys = Object.keys(trends);
+  if (!keys.length) { log('INFO', 'No trend data yet.'); return; }
+  keys.sort(function(a, b) { return trends[b].count - trends[a].count; });
+
+  var summary = 'WEEKLY SIGNAL FREQUENCY\n';
+  keys.slice(0, 50).forEach(function(k) {
+    var e = trends[k];
+    summary += e.count + 'x | ' + e.headline + '\n';
+  });
+
+  var rollup = generateWeeklyRollup(summary);
+  if (isError(rollup)) { log('ERROR', 'Weekly rollup failed.'); return; }
+
+  var dateStr     = new Date().toDateString();
+  var rollupHtml  = buildWeeklyRollupHTML(rollup, dateStr);
+  var fname       = 'WeeklyRollup_' + dateStr.replace(/ /g, '_') + '.html';
+  var f           = DriveApp.getFolderById(CONFIG.SCOUT_OUTPUT_FOLDER_ID)
+                            .createFile(fname, rollupHtml, MimeType.HTML);
+  f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  log('INFO', 'Weekly rollup: https://drive.google.com/file/d/' + f.getId() + '/view');
+  sendHTMLEmail('STARTUP SCOUT · Weekly Rollup · ' + dateStr, rollupHtml);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// DAILY HEALTH CHECK
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: dailyHealthCheck
+function dailyHealthCheck() {
+  var props    = PropertiesService.getScriptProperties();
+  var todayKey = 'RAN_' + new Date().toDateString().replace(/ /g, '_');
+  if (props.getProperty(todayKey) === 'COMPLETE') {
+    log('INFO', 'Health check: Newsletter sent successfully today.');
+    return;
+  }
+  var pipeStatus = props.getProperty('PIPELINE_ACTIVE') ? 'ACTIVE (still running)' : 'INACTIVE (not started or failed)';
+  var msg = 'SCOUT ALERT: Newsletter has not sent today (' + new Date().toDateString() + '). Pipeline: ' + pipeStatus + '. Check Apps Script logs.';
+  log('WARN', msg);
+  if (CONFIG.NOTIFY_EMAIL) GmailApp.sendEmail(CONFIG.NOTIFY_EMAIL, 'SCOUT ALERT: Newsletter not sent today', msg);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// MANUAL CONTROLS
+// ════════════════════════════════════════════════════════════════════════
+
+// @agent-target: runFullPipeline
+function runFullPipeline() {
+  aggregateNewsletters();
+  Utilities.sleep(5000);
+  runScoutStep1();
+}
+
+// @agent-target: testClaudeKey
+function testClaudeKey() {
+  var result = callClaude('Say hello in one word.', CONFIG.CLAUDE_FAST);
+  log('INFO', 'Claude test: ' + result);
+}
+
+// @agent-target: resetPipeline
+function resetPipeline() {
+  clearPipelineState();
+  var props = PropertiesService.getScriptProperties();
+  props.deleteProperty('RAN_' + new Date().toDateString().replace(/ /g, '_'));
+  log('INFO', '\u2705 Reset complete. Run runScoutStep1().');
+}
