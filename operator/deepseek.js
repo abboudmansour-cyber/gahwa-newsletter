@@ -14,6 +14,26 @@ const MAX_SAFE_RESPONSE_LENGTH = 5000;
 const PLAN_TIMEOUT_MS = 30000; // 30-second hard timeout for plan generation
 
 /**
+ * Sanitize UTF-8 string: normalize Unicode, strip null bytes and control chars.
+ * Applied as the FIRST operation on every raw LLM output before any downstream processing.
+ *
+ * @param {string} text - Raw text to sanitize
+ * @returns {string} Clean, normalized string
+ */
+function sanitizeUTF8(text) {
+  if (!text || typeof text !== "string") return text;
+  // Remove null bytes
+  let cleaned = text.replace(/\0/g, "");
+  // Remove replacement characters (U+FFFD) that indicate bad decode
+  cleaned = cleaned.replace(/\uFFFD/g, "");
+  // Normalize Unicode to NFC (composed form)
+  if (cleaned.normalize) cleaned = cleaned.normalize("NFC");
+  // Strip control characters except newlines (\n), tabs (\t), carriage returns (\r)
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+  return cleaned;
+}
+
+/**
  * Fetch with a hard timeout using AbortController.
  * Throws a clear "PLAN_GENERATION_TIMEOUT" error if the request exceeds timeoutMs.
  *
@@ -197,7 +217,7 @@ async function callDeepSeek(task, currentDate, fixMode = false) {
     throw new Error("DeepSeek returned empty or invalid response");
   }
 
-  return text;
+  return sanitizeUTF8(text);
 }
 
 /**
@@ -333,5 +353,5 @@ Output the newsletter as a JSON object matching the schema described in the user
     throw new Error("DeepSeek returned empty or invalid response");
   }
 
-  return text;
+  return sanitizeUTF8(text);
 }

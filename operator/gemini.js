@@ -7,6 +7,22 @@ const API_KEY = process.env.GEMINI_API_KEY;
 const API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
+/**
+ * Sanitize UTF-8 string: normalize Unicode, strip null bytes and control chars.
+ * Applied as the FIRST operation on every raw LLM output before any downstream processing.
+ *
+ * @param {string} text - Raw text to sanitize
+ * @returns {string} Clean, normalized string
+ */
+function sanitizeUTF8(text) {
+  if (!text || typeof text !== "string") return text;
+  let cleaned = text.replace(/\0/g, "");
+  cleaned = cleaned.replace(/\uFFFD/g, "");
+  if (cleaned.normalize) cleaned = cleaned.normalize("NFC");
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+  return cleaned;
+}
+
 export async function askGemini(task) {
   if (!API_KEY) {
     throw new Error("❌ GEMINI_API_KEY is not set in .env");
@@ -59,13 +75,15 @@ OUTPUT:
 
   const data = await res.json();
 
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-  if (!text) {
+  if (!rawText) {
     console.error("❌ Invalid Gemini response — no text in candidates");
     console.error("Full response:", JSON.stringify(data, null, 2));
     throw new Error("Gemini returned empty or invalid response");
   }
+
+  const text = sanitizeUTF8(rawText);
 
   try {
     return JSON.parse(text);

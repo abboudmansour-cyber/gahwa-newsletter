@@ -16,6 +16,24 @@
 // Model:    deepseek-v4-flash (FAST) or deepseek-v4-pro (SMART)
 // ════════════════════════════════════════════════════════════════════════
 
+/**
+ * sanitizeUTF8 — Normalize Unicode, strip null bytes and control characters.
+ * Applied as the FIRST operation on every raw LLM output before any downstream processing.
+ *
+ * @param {string} text - Raw text to sanitize
+ * @return {string} Clean, normalized string
+ */
+function sanitizeUTF8(text) {
+  if (!text || typeof text !== 'string') return text;
+  // Remove null bytes
+  var cleaned = text.replace(/\0/g, '');
+  // Remove replacement characters (U+FFFD) that indicate bad decode
+  cleaned = cleaned.replace(/\uFFFD/g, '');
+  // Strip control characters except newlines (\n), tabs (\t), carriage returns (\r)
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  return cleaned;
+}
+
 // @agent-target: callClaude
 function callClaude(prompt, modelName) {
   // Backward compatibility: handle boolean legacy params (true → SMART, false → FAST)
@@ -78,7 +96,7 @@ function callClaude(prompt, modelName) {
           log('WARN', 'Token tracking failed (non-fatal): ' + e.message);
         }
 
-        return text;
+        return sanitizeUTF8(text);
       }
 
       if (code === 529 || code === 503) {

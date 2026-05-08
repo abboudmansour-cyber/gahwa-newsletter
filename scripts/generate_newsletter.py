@@ -16,7 +16,9 @@ Designed for both local dev and Hetzner VPS production.
 
 import json
 import os
+import re
 import sys
+import unicodedata
 import urllib.request
 import urllib.error
 from datetime import date
@@ -64,6 +66,24 @@ def load_env():
         sys.exit(1)
 
     return api_key
+
+
+def sanitize_utf8(text: str) -> str:
+    """
+    Sanitize UTF-8 string: normalize Unicode, strip null bytes and control chars.
+    Applied as the FIRST operation on every raw LLM output before any downstream processing.
+    """
+    if not text:
+        return text
+    # Remove null bytes
+    text = text.replace('\0', '')
+    # Remove replacement characters (U+FFFD) that indicate bad decode
+    text = text.replace('\ufffd', '')
+    # Normalize Unicode to NFC (composed form)
+    text = unicodedata.normalize('NFC', text)
+    # Strip control characters except newlines (\n), tabs (\t), carriage returns (\r)
+    text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
+    return text
 
 
 def build_prompt() -> str:
@@ -148,6 +168,9 @@ def call_deepseek(api_key: str, prompt: str) -> dict:
     if not content:
         print("❌ DeepSeek returned empty content")
         sys.exit(1)
+
+    # ── FIRST operation: sanitize UTF-8 ────────────────────────────────
+    content = sanitize_utf8(content)
 
     # Strip markdown code fences if present
     content = content.strip()

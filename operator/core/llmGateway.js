@@ -33,6 +33,22 @@ const API_URL = "https://api.deepseek.com/v1/chat/completions";
 const DEFAULT_MODEL = "deepseek-reasoner";
 
 /**
+ * Sanitize a string to normalize Unicode, strip null bytes and control chars.
+ * Applied as the FIRST operation on every raw LLM output before any downstream processing.
+ *
+ * @param {*} text - Value to sanitize (non-strings pass through)
+ * @returns {*} Clean, normalized string or original value if not a string
+ */
+function sanitizeUTF8(text) {
+  if (!text || typeof text !== "string") return text;
+  let cleaned = text.replace(/\0/g, "");
+  cleaned = cleaned.replace(/\uFFFD/g, "");
+  if (cleaned.normalize) cleaned = cleaned.normalize("NFC");
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+  return cleaned;
+}
+
+/**
  * Sanitize a string to remove invalid Unicode characters that can cause
  * "lone leading surrogate" errors in DeepSeek API.
  *
@@ -194,7 +210,12 @@ export async function callDeepSeek(messages, options = {}) {
 
       // ── Success ────────────────────────────────────────────────
       if (res.ok) {
-        return await res.json();
+        const raw = await res.json();
+        // Sanitize the content field in the response (first operation on LLM output)
+        if (raw?.choices?.[0]?.message?.content) {
+          raw.choices[0].message.content = sanitizeUTF8(raw.choices[0].message.content);
+        }
+        return raw;
       }
 
       // ── HTTP error handling ─────────────────────────────────────
