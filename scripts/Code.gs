@@ -340,9 +340,33 @@ function runScoutStep4() {
     Logger.log("STEP 5 — preparing email: recipient=" + CONFIG.GAHWA_EMAIL);
     log('INFO', 'DIAG part1 first 200: ' + part1.substring(0, 200));
     log('INFO', 'DIAG parts2to7 first 200: ' + parts2to7.substring(0, 200));
+    // ── UTF-8 DIAGNOSTIC — log raw input BEFORE render ──────────────
+    var diagRaw1 = (part1 || '').substring(0, 60);
+    var diagRaw1Codes = (part1 || '').split('').slice(0, 30).map(function(c){return c.charCodeAt(0);}).join(',');
+    Logger.log('[UTF8-DIAG] part1 raw first 60: ' + diagRaw1);
+    Logger.log('[UTF8-DIAG] part1 char codes first 30: ' + diagRaw1Codes);
+    Logger.log('[UTF8-DIAG] part1 has surrogate: ' + (/[\uD800-\uDFFF]/.test(part1 || '')));
+    Logger.log('[UTF8-DIAG] part1 has replacement char (U+FFFD): ' + (/[\uFFFD]/.test(part1 || '')));
+    var diagRaw27 = (parts2to7 || '').substring(0, 60);
+    var diagRaw27Codes = (parts2to7 || '').split('').slice(0, 30).map(function(c){return c.charCodeAt(0);}).join(',');
+    Logger.log('[UTF8-DIAG] parts2to7 raw first 60: ' + diagRaw27);
+    Logger.log('[UTF8-DIAG] parts2to7 char codes first 30: ' + diagRaw27Codes);
+    Logger.log('[UTF8-DIAG] parts2to7 has surrogate: ' + (/[\uD800-\uDFFF]/.test(parts2to7 || '')));
+    Logger.log('[UTF8-DIAG] parts2to7 has replacement char (U+FFFD): ' + (/[\uFFFD]/.test(parts2to7 || '')));
+    // ─────────────────────────────────────────────────────────────────
     var gahwaHtml  = buildGahwaHTML(part1, parts2to7, shareUrl);
     Logger.log("STEP 5 — HTML rendered, length: " + (gahwaHtml ? gahwaHtml.length : 0));
+    // ── FINAL OUTPUT VALIDATION ──────────────────────────────────────
+    if (gahwaHtml) {
+      Logger.log('[UTF8-VALIDATE] htmlBody length: ' + gahwaHtml.length);
+      Logger.log('[UTF8-VALIDATE] htmlBody has <meta charset: ' + (/<meta\s+charset\s*=/i.test(gahwaHtml)));
+      Logger.log('[UTF8-VALIDATE] htmlBody has U+FFFD replacement char: ' + (/[\uFFFD]/.test(gahwaHtml)));
+      Logger.log('[UTF8-VALIDATE] htmlBody has lone surrogates: ' + (/[\uD800-\uDFFF]/.test(gahwaHtml)));
+      Logger.log('[UTF8-VALIDATE] htmlBody JSON-safe first 100: ' + JSON.stringify(gahwaHtml.substring(0, 100)));
+    }
+    // ─────────────────────────────────────────────────────────────────
     var gahwaFname = 'Gahwa_' + dateStr.replace(/ /g, '_') + '.html';
+
     var gahwaFile  = DriveApp.getFolderById(CONFIG.SCOUT_OUTPUT_FOLDER_ID)
                              .createFile(gahwaFname, gahwaHtml, MimeType.HTML);
     gahwaFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);

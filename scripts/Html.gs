@@ -8,14 +8,33 @@
  * Strip invalid UTF-8 byte sequences that cause Gmail rendering corruption (e.g. "").
  * Keeps valid printable Unicode, replaces broken sequences with empty string.
  * Never produces replacement glyphs.
+ * 
+ * DIAGNOSTIC VERSION: Logs before/after state for corruption tracing.
  */
 function sanitizeUTF8(str) {
   if (str === null || str === undefined) return '';
-  // Remove non-characters, surrogates, and control chars (except \t \n \r)
-  return String(str)
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+  var input = String(str);
+  // Detect if corruption exists BEFORE sanitization
+  var hasReplacementChar = /[\uFFFD]/.test(input);
+  var hasSurrogates = /[\uD800-\uDFFF]/.test(input);
+  if (hasReplacementChar) {
+    Logger.log('[sanitizeUTF8] ⚠️ REPLACEMENT CHARS (U+FFFD) DETECTED IN INPUT — first 60 chars: ' + input.substring(0, 60));
+    Logger.log('[sanitizeUTF8] ⚠️ CHAR CODES first 30: ' + input.split('').slice(0, 30).map(function(c){return c.charCodeAt(0);}).join(','));
+  }
+  if (hasSurrogates) {
+    Logger.log('[sanitizeUTF8] ⚠️ LONE SURROGATES DETECTED — first 60 chars: ' + input.substring(0, 60));
+  }
+  
+  // Remove non-characters, surrogates, control chars (except \t \n \r), AND U+FFFD replacement chars
+  var output = input
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF\uFFFD]/g, '')
     .replace(/[\uD800-\uDFFF]/g, '')        // strip lone surrogates (root cause of )
     .replace(/[\uFEFF]/g, '');              // strip BOM if present
+  
+  if (input !== output) {
+    Logger.log('[sanitizeUTF8] ✅ SANITIZED — removed ' + (input.length - output.length) + ' chars');
+  }
+  return output;
 }
 
 /**

@@ -36,21 +36,11 @@ function getField(text, key) {
   return m ? m[1].trim() : '';
 }
 
-/**
- * HTML-escapes a string. The single safety function for all template output.
- */
-// @agent-target: h
-function h(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g,  '&amp;')
-    .replace(/</g,  '&lt;')
-    .replace(/>/g,  '&gt;')
-    .replace(/"/g,  '&quot;')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g,   '\n');
-}
-
+// h() function REMOVED from Parser.gs.
+// Html.gs provides the canonical h() which includes UTF-8 sanitization.
+// Parser.gs's duplicate was overwriting Html.gs's version due to Apps Script
+// alphabetically loading order (Parser > Html), causing sanitizeUTF8() bypass.
+// See Html.gs for the single source of truth for h().
 /**
  * Returns true if a Claude response indicates an error.
  */
