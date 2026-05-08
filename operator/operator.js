@@ -480,9 +480,17 @@ async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json")
   // Custom header prevents Google's auth proxy from intercepting
   // "Authorization: Bearer" (which triggers OAuth at Google's proxy).
   // Apps Script reads from e.headers['X-Gahwa-Webhook-Secret'].
+  // ── AUTH: Body-based (survives Apps Script POST→302→callback GET chain) ───
+  // Apps Script web apps redirect POST to a callback GET URL.
+  // Custom headers (e.g. X-Gahwa-Webhook-Secret) are DROPPED by Google's proxy
+  // during redirect. The POST body IS preserved through the redirect.
+  // Solution: embed webhookSecret in the payload body.
+  // fallback: also set header for non-redirect scenarios (direct POST).
   const authHeaders = {};
   if (webhookSecret) {
     authHeaders["X-Gahwa-Webhook-Secret"] = webhookSecret;
+    authHeaders["x-gahwa-webhook-secret"] = webhookSecret;
+    payload._webhookSecret = webhookSecret;  // survives redirect
   }
 
   // Mask webhook URL for safe logging

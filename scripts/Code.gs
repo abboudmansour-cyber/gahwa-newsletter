@@ -569,17 +569,18 @@ function doPost(e) {
 
     var contents = JSON.parse(e.postData.contents);
 
-    // ── HEADER-BASED AUTHENTICATION (single canonical model) ────────────
-    // Read secret ONLY from X-Gahwa-Webhook-Secret header.
-    // Custom header avoids Google's auth proxy intercepting "Authorization: Bearer".
-    // No PropertiesService dependency for auth validation.
-    // No fallback secret retrieval logic.
-    // Apps Script normalizes header keys to lowercase.
-    // Check both cases for robust lookup (e.g., node-fetch vs curl vs custom agents).
-    var authHeader = e.headers?.['X-Gahwa-Webhook-Secret'] || e.headers?.['x-gahwa-webhook-secret'];
+    // ── DUAL-MODE AUTHENTICATION (Header + Body payload) ───────────────
+    // Apps Script Web Apps redirect POST → callback GET, which DROPS headers.
+    // The POST body IS preserved through the redirect chain.
+    // Auth strategy:
+    //   1. Try X-Gahwa-Webhook-Secret header first (direct POST, no redirect)
+    //   2. Fall back to payload._webhookSecret (survives POST→302→callback GET)
+    //
+    // This handles both curl direct POST and node-fetch with redirect:"manual".
     var secretToken = '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa';
 
-    // Compare directly — raw secret or Bearer-prefixed both work for backward compat
+    // ── Method 1: Check header ─────────────────────────────────────────
+    var authHeader = e.headers?.['X-Gahwa-Webhook-Secret'] || e.headers?.['x-gahwa-webhook-secret'];
     var tokenFromHeader = null;
     if (authHeader) {
       if (authHeader.indexOf('Bearer ') === 0) {
@@ -589,14 +590,25 @@ function doPost(e) {
       }
     }
 
-    if (!tokenFromHeader || tokenFromHeader !== secretToken) {
-      log('WARN', 'Unauthorized webhook attempt');
+    // ── Method 2: Check payload body (survives redirect) ───────────────
+    var tokenFromBody = contents._webhookSecret || null;
+
+    // Either source is valid — header takes precedence, body is fallback
+    var effectiveToken = tokenFromHeader || tokenFromBody;
+
+    if (!effectiveToken || effectiveToken !== secretToken) {
+      log('WARN', 'Unauthorized webhook attempt — header:' + (!!tokenFromHeader) + ' body:' + (!!tokenFromBody));
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "error",
           message: "Unauthorized"
         }))
         .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Strip _webhookSecret from contents before processing to avoid leaking
+    if (contents._webhookSecret) {
+      delete contents._webhookSecret;
     }
 
 
