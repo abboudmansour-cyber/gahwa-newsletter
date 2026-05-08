@@ -2020,6 +2020,62 @@
           "status": "ACTIVE"
         }
       ]
+    },
+    {
+      "runId": "daily-newsletter-2026-05-08",
+      "date": "2026-05-08",
+      "scenarios": [
+        {
+          "scenario": "GCC states deepen multipolar trade relationships — new corridors and bilateral agreements signal strategic shift away from single-alignment dependency toward diversified economic partnerships",
+          "type": "GEO",
+          "drivers": [
+            "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown signals.",
+            "GCC-China trade volumes exceed $350B annually with yuan-denominated oil contracts gaining traction, signaling de-dollarization momentum in energy trade.",
+            "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty."
+          ],
+          "potentialImpacts": {
+            "RegionalStability": "positive",
+            "Economy": "moderate",
+            "Policy": "evolving"
+          },
+          "probabilityBand": "HIGH",
+          "confidence": 0.79,
+          "status": "ACTIVE"
+        },
+        {
+          "scenario": "Oil prices remain elevated due to sustained supply constraints",
+          "type": "MACRO",
+          "drivers": [
+            "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty.",
+            "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown signals."
+          ],
+          "potentialImpacts": {
+            "SaudiEconomy": "positive",
+            "InflationPressure": "moderate",
+            "InvestmentFlows": "increase"
+          },
+          "probabilityBand": "HIGH",
+          "confidence": 0.73,
+          "status": "ACTIVE"
+        },
+        {
+          "scenario": "GCC/KSA AI compute infrastructure investment accelerates as sovereign funds compete to establish regional tech dominance — capital deployment pace signals strategic race against global AI leaders",
+          "type": "MARKET",
+          "drivers": [
+            "GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale",
+            "Saudi Arabia accelerates NEOM AI City and data center investments with $15B committed to GPU clusters and sovereign AI infrastructure buildout.",
+            "US Federal Reserve holds rates at 4.25-4.50%"
+          ],
+          "potentialImpacts": {
+            "Economy": "positive",
+            "Tech": "transformative",
+            "Markets": "positive"
+          },
+          "probabilityBand": "HIGH",
+          "confidence": 0.73,
+          "status": "ACTIVE"
+        }
+      ]
     }
   ]
 }
