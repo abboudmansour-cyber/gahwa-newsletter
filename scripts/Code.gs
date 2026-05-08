@@ -294,18 +294,21 @@ function runScoutStep3() {
 
 // @agent-target: runScoutStep4
 function runScoutStep4() {
+  Logger.log("STEP 4 — runScoutStep4 entered");
   log('INFO', '══ STEP 4: HTML + EMAIL ══');
   var props = PropertiesService.getScriptProperties();
 
 
   if (!validatePipelineState(['PART1_DOC_ID', 'PARTS27_DOC_ID'])) {
     sendNotification('⛔ Scout Step 4 FAILED', 'Pipeline state missing docs. Run resetPipeline().');
+    Logger.log("STEP 4 — FAILED: pipeline state missing docs");
     return;
   }
 
   if (!checkAndIncrementAttempts('STEP4_ATTEMPTS', CONFIG.MAX_STEP_ATTEMPTS)) {
     sendNotification('⛔ Scout Step 4 ABORTED', 'Max retries reached. Run resetPipeline().');
     clearPipelineState();
+    Logger.log("STEP 4 — ABORTED: max retries reached");
     return;
   }
 
@@ -326,15 +329,18 @@ function runScoutStep4() {
 
   var streak  = updateRunHistory(nlCount, part1, cost);
   var dateStr = new Date().toDateString();
+  Logger.log("STEP 4 — dateStr: " + dateStr + " | nlCount: " + nlCount);
 
   // ── Scout internal HTML — DEACTIVATED (Phase 2: public Gahwa output only) ──
   var shareUrl = '';
 
   // ── Gahwa public output — ACTIVE ─────────────────────────────────────
   if (CONFIG.GAHWA_EMAIL) {
+    Logger.log("STEP 5 — preparing email: recipient=" + CONFIG.GAHWA_EMAIL);
     log('INFO', 'DIAG part1 first 200: ' + part1.substring(0, 200));
     log('INFO', 'DIAG parts2to7 first 200: ' + parts2to7.substring(0, 200));
     var gahwaHtml  = buildGahwaHTML(part1, parts2to7, shareUrl);
+    Logger.log("STEP 5 — HTML rendered, length: " + (gahwaHtml ? gahwaHtml.length : 0));
     var gahwaFname = 'Gahwa_' + dateStr.replace(/ /g, '_') + '.html';
     var gahwaFile  = DriveApp.getFolderById(CONFIG.SCOUT_OUTPUT_FOLDER_ID)
                              .createFile(gahwaFname, gahwaHtml, MimeType.HTML);
@@ -342,11 +348,20 @@ function runScoutStep4() {
     log('INFO', 'Gahwa Drive: https://drive.google.com/file/d/' + gahwaFile.getId() + '/view');
 
     var gahwaSubject = parseWinningSubject(parts2to7, dateStr);
+    Logger.log("STEP 5 — subject: \"" + gahwaSubject + "\" | htmlBody length: " + gahwaHtml.length);
     var emailHtml = gahwaHtml.replace(
       /src="data:image\/[^"]{100,}"/g,
       'src="' + (getFinjanUrl() || '') + '"'
     );
-    GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, gahwaSubject, '', { htmlBody: emailHtml });
+    Logger.log("STEP 6 — calling GmailApp.sendEmail to: " + CONFIG.GAHWA_EMAIL);
+    try {
+      GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, gahwaSubject, '', { htmlBody: emailHtml });
+      Logger.log("EMAIL SEND SUCCESS — subject: " + gahwaSubject);
+      Logger.log("STEP 7 — email send completed");
+    } catch (err) {
+      Logger.log("EMAIL SEND FAILURE: " + err.message);
+      throw err;
+    }
     log('INFO', 'Gahwa email sent: ' + gahwaSubject);
     // ── TRUTH VERIFICATION: track last sent email deliveryId ────────────
     var sentDeliveryId = 'scout-internal-' + new Date().toISOString().slice(0, 10);
@@ -363,6 +378,8 @@ function runScoutStep4() {
     } else {
       log('INFO', 'Beehiiv: skipped — Posts API requires Enterprise plan. Set BEEHIIV_POST_ENABLED=true to re-enable.');
     }
+  } else {
+    Logger.log("STEP 4 — SKIPPED: CONFIG.GAHWA_EMAIL not set");
   }
 
   updateTrendTracker(part1);
@@ -370,6 +387,7 @@ function runScoutStep4() {
   var todayKey = 'RAN_' + new Date().toDateString().replace(/ /g, '_');
   props.setProperty(todayKey, 'COMPLETE');
   clearPipelineState();
+  Logger.log("STEP 4 — COMPLETE");
   log('INFO', '\uD83C\uDF89 Done in ' + runMin + 'min · $' + cost);
 }
 
@@ -531,43 +549,55 @@ function doGet(e) {
 
 
 /**
- * doPost — Idempotent webhook entry point for external services.
+ * doPost — Definitively instrumented delivery pipeline entry point.
  *
  * Called by send_to_apps_script.sh / operator.js / daily-runner.js
  * after the pipeline generates a newsletter.
  *
+ * INSTRUMENTED: Full step-by-step Logger.log() tracing (STEP 1-7).
+ * Every path returns JSON with {status, stage, message, runId}.
+ *
  * IDEMPOTENCY: Uses deliveryId to prevent duplicate processing.
- * If a deliveryId has already been processed, returns "DUPLICATE_IGNORED".
- *
- * AUTH: Header-based ONLY (no PropertiesService dependency).
- *   - Reads token from: e.headers.Authorization
- *   - Expected format:  Bearer <token>
- *   - Token validated against the hardcoded secret constant.
- *
- * Mark delivered ONLY after successful Gmail send.
- *
- * Expected payload format:
- * {
- *   "deliveryId": "daily-newsletter-2026-05-07-abc123def",
-
- *   "subject": "...",
- *   "htmlBody": "...",
- *   "action": "deploy" | "send" | "test"
- * }
+ * AUTH: DUAL-MODE (header + body payload for redirect survival).
  */
 function doPost(e) {
+  Logger.log("STEP 1 — doPost entered");
   try {
     // ── Parse payload ──────────────────────────────────────────────────
     if (!e || !e.postData || !e.postData.contents) {
+      Logger.log("STEP 1 — FAILED: no POST data received");
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "error",
-          message: "No POST data received"
+          stage: "STEP_1",
+          message: "No POST data received",
+          runId: null
         }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
     var contents = JSON.parse(e.postData.contents);
+    var runId = (contents._ctx && contents._ctx.runId) || contents.deliveryId || null;
+    Logger.log("STEP 1 — payload parsed, runId: " + runId);
+
+    // ── Log payload details ──────────────────────────────────────────
+    var sectionCount = (contents.sections && contents.sections.length) || 0;
+    Logger.log("STEP 1 — payload section count: " + sectionCount);
+    Logger.log("STEP 1 — payload runId: " + runId);
+    if (contents.deliveryId) Logger.log("STEP 1 — deliveryId: " + contents.deliveryId);
+
+    // ── Required field validation ─────────────────────────────────────
+    if (!contents.action && !contents.subject && !contents.htmlBody && !contents.deliveryId) {
+      Logger.log("STEP 1 — FAILURE: payload missing all required fields (action/subject/htmlBody/deliveryId)");
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          status: "error",
+          stage: "STEP_1",
+          message: "Payload missing required fields",
+          runId: runId
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     // ── DUAL-MODE AUTHENTICATION (Header + Body payload) ───────────────
     // Apps Script Web Apps redirect POST → callback GET, which DROPS headers.
@@ -597,14 +627,18 @@ function doPost(e) {
     var effectiveToken = tokenFromHeader || tokenFromBody;
 
     if (!effectiveToken || effectiveToken !== secretToken) {
+      Logger.log("STEP 2 — FAILED: auth rejected — header: " + (!!tokenFromHeader) + " body: " + (!!tokenFromBody));
       log('WARN', 'Unauthorized webhook attempt — header:' + (!!tokenFromHeader) + ' body:' + (!!tokenFromBody));
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "error",
-          message: "Unauthorized"
+          stage: "STEP_2",
+          message: "Unauthorized",
+          runId: runId
         }))
         .setMimeType(ContentService.MimeType.JSON);
     }
+    Logger.log("STEP 2 — auth passed");
 
     // Strip _webhookSecret from contents before processing to avoid leaking
     if (contents._webhookSecret) {
@@ -615,79 +649,129 @@ function doPost(e) {
     // ── IDEMPOTENCY CHECK — guard against duplicate delivery ───────────
     var deliveryId = contents.deliveryId;
     if (deliveryId && isDuplicate(deliveryId)) {
+      Logger.log("STEP 1 — DUPLICATE IGNORED: " + deliveryId);
       log('INFO', '⏭️ DUPLICATE IGNORED — deliveryId already processed: ' + deliveryId);
       return ContentService
-        .createTextOutput("DUPLICATE_IGNORED")
-        .setMimeType(ContentService.MimeType.TEXT);
+        .createTextOutput(JSON.stringify({
+          status: "ok",
+          stage: "STEP_1",
+          message: "DUPLICATE_IGNORED",
+          runId: runId
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     // ── Route based on action ──────────────────────────────────────────
     var action = contents.action || 'send';
+    Logger.log("STEP 3 — payload parsed, action: " + action);
     log('INFO', '📩 Webhook received — action: ' + action);
 
     if (action === 'deploy') {
+      Logger.log("STEP 3 — action=deploy, triggering runFullPipeline");
       // Trigger full pipeline run
       runFullPipeline();
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "ok",
-          message: "Pipeline deploy triggered"
+          stage: "STEP_3",
+          message: "Pipeline deploy triggered",
+          runId: runId
         }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'send' || action === 'test') {
-      // Send email directly with provided content
-      if (contents.subject && contents.htmlBody) {
+      Logger.log("STEP 3 — action=" + action);
+      Logger.log("STEP 4 — newsletter rendered check: subject=" + (!!contents.subject) + " htmlBody=" + (!!contents.htmlBody));
+
+      // Validate required fields
+      if (!contents.subject) {
+        Logger.log("STEP 4 — FAILURE: missing subject");
+        Logger.log("EMAIL SEND FAILURE: subject is missing or empty");
+        return ContentService
+          .createTextOutput(JSON.stringify({
+            status: "error",
+            stage: "STEP_4",
+            message: "Missing required field: subject",
+            runId: runId
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      if (!contents.htmlBody) {
+        Logger.log("STEP 4 — FAILURE: missing htmlBody");
+        Logger.log("EMAIL SEND FAILURE: htmlBody is missing or empty");
+        return ContentService
+          .createTextOutput(JSON.stringify({
+            status: "error",
+            stage: "STEP_4",
+            message: "Missing required field: htmlBody",
+            runId: runId
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      Logger.log("STEP 5 — preparing email: recipient=" + CONFIG.GAHWA_EMAIL
+        + ", subject=\"" + contents.subject
+        + "\", htmlBody length=" + (contents.htmlBody ? contents.htmlBody.length : 0));
+
+      Logger.log("STEP 6 — calling GmailApp.sendEmail");
+      try {
         GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, contents.subject, '', {
           htmlBody: contents.htmlBody
         });
-        log('INFO', '📧 Webhook-triggered email sent: ' + contents.subject);
+        Logger.log("EMAIL SEND SUCCESS — subject: " + contents.subject + " | recipient: " + CONFIG.GAHWA_EMAIL);
+        Logger.log("STEP 7 — email send completed");
+      } catch (err) {
+        Logger.log("EMAIL SEND FAILURE: " + err.message);
+        throw err;
+      }
+      log('INFO', '📧 Webhook-triggered email sent: ' + contents.subject);
 
-        // ── Mark delivered ONLY after successful email send ────────────
-        if (deliveryId) {
-          markDelivered(deliveryId);
+      // ── Mark delivered ONLY after successful email send ────────────
+      if (deliveryId) {
+        markDelivered(deliveryId);
 
-          // ── TRUTH VERIFICATION: Track lastEmailSent for independent verification ──
-          var props = PropertiesService.getScriptProperties();
-          props.setProperty('lastEmailSent', deliveryId);
+        // ── TRUTH VERIFICATION: Track lastEmailSent for independent verification ──
+        var props = PropertiesService.getScriptProperties();
+        props.setProperty('lastEmailSent', deliveryId);
 
-          log('INFO', '📝 Delivery marked + lastEmailSent updated: ' + deliveryId);
-        }
-
-        return ContentService
-          .createTextOutput(JSON.stringify({
-            status: "ok",
-            message: "Email sent",
-            subject: contents.subject,
-            deliveryId: deliveryId
-          }))
-          .setMimeType(ContentService.MimeType.JSON);
-
+        log('INFO', '📝 Delivery marked + lastEmailSent updated: ' + deliveryId);
       }
 
+      Logger.log("STEP 7 — returning success response");
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "ok",
-          message: "Payload received (no email — missing subject/htmlBody)"
+          stage: "STEP_7",
+          message: "Email sent",
+          subject: contents.subject,
+          runId: runId,
+          deliveryId: deliveryId
         }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
     // ── Unknown action ──────────────────────────────────────────────────
+    Logger.log("STEP 3 — WARNING: unknown action: " + action);
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "ok",
-        message: "Unknown action '" + action + "'. Payload acknowledged."
+        stage: "STEP_3",
+        message: "Unknown action '" + action + "'. Payload acknowledged.",
+        runId: runId
       }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
+    Logger.log("doPost CATCH: " + err.message);
+    Logger.log("EMAIL SEND FAILURE: " + err.message);
     log('ERROR', 'Webhook error: ' + err.message);
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "error",
-        message: err.toString()
+        stage: "CATCH",
+        message: err.toString(),
+        runId: null
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
