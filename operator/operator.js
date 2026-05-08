@@ -514,9 +514,13 @@ async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json")
       });
 
       // Step 2: POST the payload with session cookies
+      // IMPORTANT: redirect: "manual" prevents node-fetch from auto-following
+      // the 302 redirect and dropping the X-Gahwa-Webhook-Secret header.
+      // Apps Script /exec POST → 302 → callback GET needs the auth header too.
       console.log(`   📤 Sending POST payload...`);
       const postRes = await fetch(webhookUrl, {
         method: "POST",
+        redirect: "manual",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(payload),
       });
