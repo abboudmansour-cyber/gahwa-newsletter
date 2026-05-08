@@ -31,8 +31,9 @@
 // ║             No PropertiesService dependency for auth validation       ║
 // ║                                                                      ║
 // ║  Expects:   { deliveryId, subject, htmlBody, action }                ║
+// ║             OR raw newsletter format: { title, sections, ... }       ║
 // ║  Returns:   JSON with { status: "ok"|"error", ... }                  ║
-// ║  Dedup:     "DUPLICATE_IGNORED" if deliveryId already processed      ║
+// ║  Dedup:     Returns JSON with message "DUPLICATE_IGNORED"            ║
 // ╚══════════════════════════════════════════════════════════════════════╝
 
 // ════════════════════════════════════════════════════════════════════════
@@ -549,6 +550,70 @@ function doGet(e) {
 
 
 /**
+ * buildPlainSubject — Derive an email subject from the newsletter payload.
+ *
+ * Priority order:
+ *   1. Explicit contents.subject (preferred for direct email requests)
+ *   2. contents.title (from raw newsletter JSON format)
+ *   3. First section's headline
+ *   4. Hardcoded fallback
+ *
+ * @param {Object} contents - The parsed JSON payload
+ * @return {string} The computed email subject line
+ */
+function buildPlainSubject(contents) {
+  if (contents.subject) return contents.subject;
+  if (contents.title) return contents.title;
+  if (contents.sections && contents.sections.length > 0 && contents.sections[0].headline) {
+    return contents.sections[0].headline;
+  }
+  return "GCC Morning Brief — " + new Date().toDateString();
+}
+
+
+/**
+ * buildPlainHtmlBody — Build an HTML email body from the newsletter payload.
+ *
+ * If contents.htmlBody is already provided, uses it directly.
+ * Otherwise, reconstructs from the newsletter's sections array.
+ *
+ * @param {Object} contents - The parsed JSON payload
+ * @return {string} The HTML email body
+ */
+function buildPlainHtmlBody(contents) {
+  if (contents.htmlBody) return contents.htmlBody;
+  if (!contents.sections || contents.sections.length === 0) return "";
+
+  var title = contents.title || "GCC Morning Brief";
+  var dateStr = new Date().toDateString();
+  var html = "";
+
+  html += "<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a2e;\">";
+  html += "<h1 style=\"color: #1a1a2e; border-bottom: 2px solid #c9a96e; padding-bottom: 10px;\">" + title + "</h1>";
+  html += "<p style=\"color: #666; font-size: 14px;\">" + dateStr + "</p>";
+
+  for (var i = 0; i < contents.sections.length; i++) {
+    var section = contents.sections[i];
+    html += "<div style=\"margin-bottom: 24px;\">";
+    html += "<h2 style=\"color: #c9a96e; font-size: 18px; margin-bottom: 8px;\">" + section.headline + "</h2>";
+    if (section.summary) {
+      html += "<p style=\"font-size: 15px; line-height: 1.6; color: #333;\">" + section.summary + "</p>";
+    }
+    if (section.insight) {
+      html += "<p style=\"font-size: 13px; color: #888; font-style: italic; border-left: 3px solid #c9a96e; padding-left: 12px;\">" + section.insight + "</p>";
+    }
+    html += "</div>";
+  }
+
+  html += "<br><hr style=\"border: none; border-top: 1px solid #eee;\">";
+  html += "<p style=\"font-size: 12px; color: #999; text-align: center;\">" + CONFIG.MAILING_ADDRESS + "</p>";
+  html += "</div>";
+
+  return html;
+}
+
+
+/**
  * doPost — Definitively instrumented delivery pipeline entry point.
  *
  * Called by send_to_apps_script.sh / operator.js / daily-runner.js
@@ -556,6 +621,10 @@ function doGet(e) {
  *
  * INSTRUMENTED: Full step-by-step Logger.log() tracing (STEP 1-7).
  * Every path returns JSON with {status, stage, message, runId}.
+ *
+ * Accepts two payload formats:
+ *   Direct email: { subject, htmlBody, deliveryId, action }
+ *   Raw newsletter: { title, sections, strategicInsights, scenarios, deliveryId }
  *
  * IDEMPOTENCY: Uses deliveryId to prevent duplicate processing.
  * AUTH: DUAL-MODE (header + body payload for redirect survival).
@@ -585,19 +654,7 @@ function doPost(e) {
     Logger.log("STEP 1 — payload section count: " + sectionCount);
     Logger.log("STEP 1 — payload runId: " + runId);
     if (contents.deliveryId) Logger.log("STEP 1 — deliveryId: " + contents.deliveryId);
-
-    // ── Required field validation ─────────────────────────────────────
-    if (!contents.action && !contents.subject && !contents.htmlBody && !contents.deliveryId) {
-      Logger.log("STEP 1 — FAILURE: payload missing all required fields (action/subject/htmlBody/deliveryId)");
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          status: "error",
-          stage: "STEP_1",
-          message: "Payload missing required fields",
-          runId: runId
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+    Logger.log("STEP 1 — payload keys: " + Object.keys(contents).join(", "));
 
     // ── DUAL-MODE AUTHENTICATION (Header + Body payload) ───────────────
     // Apps Script Web Apps redirect POST → callback GET, which DROPS headers.
@@ -668,7 +725,6 @@ function doPost(e) {
 
     if (action === 'deploy') {
       Logger.log("STEP 3 — action=deploy, triggering runFullPipeline");
-      // Trigger full pipeline run
       runFullPipeline();
       return ContentService
         .createTextOutput(JSON.stringify({
@@ -682,50 +738,57 @@ function doPost(e) {
 
     if (action === 'send' || action === 'test') {
       Logger.log("STEP 3 — action=" + action);
-      Logger.log("STEP 4 — newsletter rendered check: subject=" + (!!contents.subject) + " htmlBody=" + (!!contents.htmlBody));
 
-      // Validate required fields
-      if (!contents.subject) {
-        Logger.log("STEP 4 — FAILURE: missing subject");
-        Logger.log("EMAIL SEND FAILURE: subject is missing or empty");
+      // ── Derive subject + htmlBody from payload ─────────────────────
+      // The operator sends a raw newsletter JSON with sections[], title, etc.
+      // We synthesize subject and htmlBody if not provided explicitly.
+      var subject = buildPlainSubject(contents);
+      var htmlBody = buildPlainHtmlBody(contents);
+      Logger.log("STEP 4 — newsletter rendered: subject derived=\"" + subject
+        + "\", htmlBody length=" + htmlBody.length);
+
+      // Validate derived fields
+      if (!subject || subject.trim() === "") {
+        Logger.log("STEP 4 — FAILURE: could not derive subject from payload");
+        Logger.log("EMAIL SEND FAILURE: subject cannot be derived from payload — missing subject/title/sections[0].headline");
         return ContentService
           .createTextOutput(JSON.stringify({
             status: "error",
             stage: "STEP_4",
-            message: "Missing required field: subject",
+            message: "Could not derive subject — payload missing subject/title/sections[0].headline",
             runId: runId
           }))
           .setMimeType(ContentService.MimeType.JSON);
       }
-      if (!contents.htmlBody) {
-        Logger.log("STEP 4 — FAILURE: missing htmlBody");
-        Logger.log("EMAIL SEND FAILURE: htmlBody is missing or empty");
+      if (!htmlBody || htmlBody.trim() === "" || htmlBody === "<html><body></body></html>") {
+        Logger.log("STEP 4 — FAILURE: could not build htmlBody from payload");
+        Logger.log("EMAIL SEND FAILURE: htmlBody empty — payload has no htmlBody or sections");
         return ContentService
           .createTextOutput(JSON.stringify({
             status: "error",
             stage: "STEP_4",
-            message: "Missing required field: htmlBody",
+            message: "Could not build htmlBody — payload has no htmlBody or sections",
             runId: runId
           }))
           .setMimeType(ContentService.MimeType.JSON);
       }
 
       Logger.log("STEP 5 — preparing email: recipient=" + CONFIG.GAHWA_EMAIL
-        + ", subject=\"" + contents.subject
-        + "\", htmlBody length=" + (contents.htmlBody ? contents.htmlBody.length : 0));
+        + ", subject=\"" + subject
+        + "\", htmlBody length=" + htmlBody.length);
 
       Logger.log("STEP 6 — calling GmailApp.sendEmail");
       try {
-        GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, contents.subject, '', {
-          htmlBody: contents.htmlBody
+        GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, subject, '', {
+          htmlBody: htmlBody
         });
-        Logger.log("EMAIL SEND SUCCESS — subject: " + contents.subject + " | recipient: " + CONFIG.GAHWA_EMAIL);
+        Logger.log("EMAIL SEND SUCCESS — subject: " + subject + " | recipient: " + CONFIG.GAHWA_EMAIL);
         Logger.log("STEP 7 — email send completed");
       } catch (err) {
         Logger.log("EMAIL SEND FAILURE: " + err.message);
         throw err;
       }
-      log('INFO', '📧 Webhook-triggered email sent: ' + contents.subject);
+      log('INFO', '📧 Webhook-triggered email sent: ' + subject);
 
       // ── Mark delivered ONLY after successful email send ────────────
       if (deliveryId) {
@@ -744,7 +807,7 @@ function doPost(e) {
           status: "ok",
           stage: "STEP_7",
           message: "Email sent",
-          subject: contents.subject,
+          subject: subject,
           runId: runId,
           deliveryId: deliveryId
         }))
