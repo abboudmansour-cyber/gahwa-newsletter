@@ -2,136 +2,6 @@
   {
     "story": "Saudi Arabia expands tourism and business visa reforms, including 5-year multiple-entry visas for 49 countries, boosting FDI and tourism targets.",
     "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
-    "timestamp": "2026-05-08T00:20:01.387Z"
-  },
-  {
-    "story": "UAE-Israel economic corridor expands with $3.5B in bilateral trade, technology partnerships, and investment flows under Abraham Accords framework.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
-    "timestamp": "2026-05-08T00:20:01.387Z"
-  },
-  {
-    "story": "GCC-EU Free Trade Agreement negotiations resume after 15-year hiatus, focusing on services, digital trade, and clean energy technology transfers.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
-    "timestamp": "2026-05-08T00:20:01.387Z"
-  },
-  {
-    "story": "Saudi Personal Data Protection Law (PDPL) enforcement phase triggers $500M+ in compliance spending, driving demand for local AI and cloud solutions.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
-    "timestamp": "2026-05-08T00:20:01.387Z"
-  },
-  {
-    "story": "Saudi cloud services market grows 28% YoY to $4.2B as Oracle, Microsoft, and Google expand local data center regions to meet sovereignty requirements.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
-    "timestamp": "2026-05-08T00:20:01.387Z"
-  },
-  {
-    "story": "UAE launches Global AI Talent Visa program, attracting 2,500+ AI researchers and engineers, targeting top-10 global AI talent hub status by 2028.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
-    "timestamp": "2026-05-08T00:20:01.387Z"
-  },
-  {
-    "story": "Qatar leverages LNG position to mediate regional disputes and secure long-term energy supply agreements with European and Asian partners.",
-    "reason": "DEFERRED: LOW_GCC_RELEVANCE",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC oil revenues forecast to sustain fiscal breakeven at current production levels, with Saudi Arabia needing ~$85/bbl for budget balance.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC inflation remains contained at 2.1-2.8% YoY, driven by housing and food costs, below global averages.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC non-oil GDP expands 4.2% YoY driven by tourism, logistics, financial services, and manufacturing — diversification momentum sustained.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC combined fiscal surplus projected at $45B for FY2026 as non-oil revenue growth offsets moderate oil price environment.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "PIF total assets under management surpass $925B, with accelerated domestic deployment in giga-projects and international strategic stakes.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "ADIA and Mubadala increase allocation to private credit and infrastructure, signaling shift toward yield-generating alternative assets.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "Tadawul All Share Index (TASI) trades near 12,450, supported by banking and materials sectors, with YTD gains of 8.3%.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "ADX and DFM indices mixed — Abu Dhabi index gains 0.8% on ADNOC and banking support, while Dubai trades flat on real estate profit-taking.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC IPO pipeline remains active with 8+ listings in Q2 2026 across Tadawul, ADX, and QSE — healthcare and logistics sectors dominate issuance.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "Red Sea shipping disruptions continue to impact GCC port throughput and insurance costs, though maritime security patrols show stabilizing effect.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "Qatar GDP growth moderates to 2.5% as LNG expansion projects reach operational phase and non-energy sector diversification accelerates.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "Qatar Energy index rises 1.2% on North Field LNG expansion progress and sustained Asian demand for LNG contracts.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "Dubai real estate index corrects 2.1% as Emaar and DAMAC face profit-taking following 18-month rally — transaction volumes remain elevated.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "UAE logistics and transport stocks outperform on e-commerce growth and port expansion — DP World, AD Ports, and Aramex see volume increases.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "Saudi-Iran diplomatic engagement continues with embassy operations normalized, though regional proxy competition in Yemen and Iraq persists.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "UAE AI Ministry launches national AI adoption framework targeting 15% GDP contribution from AI by 2031, with mandatory federal AI training programs.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC AI startup funding reaches $1.2B in Q1 2026, with enterprise AI, healthcare AI, and fintech AI capturing 80% of deal flow.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC cyber security spending exceeds $6B as AI-powered threat detection and national cyber resilience frameworks become priority for sovereign security.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "GCC-India strategic partnership deepens with food security deals, energy cooperation, and expanded air transport agreements worth $2.8B.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
-    "timestamp": "2026-05-08T00:21:58.536Z"
-  },
-  {
-    "story": "Saudi Arabia expands tourism and business visa reforms, including 5-year multiple-entry visas for 49 countries, boosting FDI and tourism targets.",
-    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
     "timestamp": "2026-05-08T00:21:58.536Z"
   },
   {
@@ -2498,5 +2368,135 @@
     "story": "UAE launches Global AI Talent Visa program, attracting 2,500+ AI researchers and engineers, targeting top-10 global AI talent hub status by 2028.",
     "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
     "timestamp": "2026-05-08T12:08:59.501Z"
+  },
+  {
+    "story": "Qatar leverages LNG position to mediate regional disputes and secure long-term energy supply agreements with European and Asian partners.",
+    "reason": "DEFERRED: LOW_GCC_RELEVANCE",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC oil revenues forecast to sustain fiscal breakeven at current production levels, with Saudi Arabia needing ~$85/bbl for budget balance.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC inflation remains contained at 2.1-2.8% YoY, driven by housing and food costs, below global averages.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC non-oil GDP expands 4.2% YoY driven by tourism, logistics, financial services, and manufacturing — diversification momentum sustained.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC combined fiscal surplus projected at $45B for FY2026 as non-oil revenue growth offsets moderate oil price environment.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "PIF total assets under management surpass $925B, with accelerated domestic deployment in giga-projects and international strategic stakes.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "ADIA and Mubadala increase allocation to private credit and infrastructure, signaling shift toward yield-generating alternative assets.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Tadawul All Share Index (TASI) trades near 12,450, supported by banking and materials sectors, with YTD gains of 8.3%.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "ADX and DFM indices mixed — Abu Dhabi index gains 0.8% on ADNOC and banking support, while Dubai trades flat on real estate profit-taking.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC IPO pipeline remains active with 8+ listings in Q2 2026 across Tadawul, ADX, and QSE — healthcare and logistics sectors dominate issuance.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Red Sea shipping disruptions continue to impact GCC port throughput and insurance costs, though maritime security patrols show stabilizing effect.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Qatar GDP growth moderates to 2.5% as LNG expansion projects reach operational phase and non-energy sector diversification accelerates.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/macro)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Qatar Energy index rises 1.2% on North Field LNG expansion progress and sustained Asian demand for LNG contracts.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Dubai real estate index corrects 2.1% as Emaar and DAMAC face profit-taking following 18-month rally — transaction volumes remain elevated.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "UAE logistics and transport stocks outperform on e-commerce growth and port expansion — DP World, AD Ports, and Aramex see volume increases.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/markets)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Saudi-Iran diplomatic engagement continues with embassy operations normalized, though regional proxy competition in Yemen and Iraq persists.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "UAE AI Ministry launches national AI adoption framework targeting 15% GDP contribution from AI by 2031, with mandatory federal AI training programs.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC AI startup funding reaches $1.2B in Q1 2026, with enterprise AI, healthcare AI, and fintech AI capturing 80% of deal flow.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC cyber security spending exceeds $6B as AI-powered threat detection and national cyber resilience frameworks become priority for sovereign security.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC-India strategic partnership deepens with food security deals, energy cooperation, and expanded air transport agreements worth $2.8B.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Saudi Arabia expands tourism and business visa reforms, including 5-year multiple-entry visas for 49 countries, boosting FDI and tourism targets.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "UAE-Israel economic corridor expands with $3.5B in bilateral trade, technology partnerships, and investment flows under Abraham Accords framework.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "GCC-EU Free Trade Agreement negotiations resume after 15-year hiatus, focusing on services, digital trade, and clean energy technology transfers.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/geopolitics)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Saudi Personal Data Protection Law (PDPL) enforcement phase triggers $500M+ in compliance spending, driving demand for local AI and cloud solutions.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "Saudi cloud services market grows 28% YoY to $4.2B as Oracle, Microsoft, and Google expand local data center regions to meet sovereignty requirements.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
+  },
+  {
+    "story": "UAE launches Global AI Talent Visa program, attracting 2,500+ AI researchers and engineers, targeting top-10 global AI talent hub status by 2028.",
+    "reason": "DEFERRED: CATEGORY_BALANCE (max 2/ai_tech)",
+    "timestamp": "2026-05-08T12:18:10.173Z"
   }
 ]
