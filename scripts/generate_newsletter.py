@@ -90,13 +90,19 @@ CONTENT REQUIREMENTS:
 - Each section must have: headline, summary, and insight
 - Cover GCC markets, Saudi economy, UAE business, regional fintech, and energy
 - Be data-driven: include specific numbers, percentages, and market data
-- Tone: authoritative, direct, professional — suitable for GCC executives
+- Tone: analytical, direct, concise — suitable for GCC executives
+- WRITING RULES:
+  * No phrases like "signals", "reflects momentum", "positions the GCC", "higher-for-longer", "strategic pivot"
+  * Start each section with a concrete data point, not a framing sentence
+  * Use specific financial language: revenue, margin, yield, spread, growth rate, allocation
+  * One clear takeaway per section — no abstract labels
+  * Avoid repeated sentence openings across sections (e.g. not every section starting with "The")
 
 EXAMPLE SECTION:
 {{
   "headline": "Saudi non-oil GDP grows 4.5% in Q1",
-  "summary": "Saudi Arabia's non-oil GDP expanded 4.5% year-on-year in Q1 2026, driven by tourism, logistics, and manufacturing as Vision 2030 diversification gains momentum.",
-  "insight": "The continued strength in non-oil sectors signals resilience against global oil price volatility and reinforces investor confidence in the Kingdom's economic transformation."
+  "summary": "Non-oil GDP expanded 4.5% year-on-year in Q1 2026. Tourism arrivals up 22%. Logistics PMI at 58.3. Manufacturing output rose 7.1%.",
+  "insight": "Non-oil growth this broad reduces the Kingdom's fiscal breakeven oil price. Investors should watch consumer credit data next month for demand sustainability."
 }}
 
 Return ONLY valid JSON — no markdown, no code fences, no extra text."""

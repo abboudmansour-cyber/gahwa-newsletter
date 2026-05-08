@@ -465,7 +465,28 @@ function dedupText(text) {
   var seen = {};
   var result = [];
   var lastOpening = '';
+  var repetitionCount = {};     // track structural pattern repetition
   var openingPatterns = ['The ', 'This ', 'That ', 'These ', 'Those ', 'It ', 'What ', 'How ', 'Why ', 'When '];
+  
+  // AI template language patterns to catch and deduplicate
+  var templateFramingPatterns = [
+    /^in (the )?(coming|recent|current)/i,
+    /^as (the )?(GCC|region|market|sector)/i,
+    /^(this|that) (signals|reflects|positions|paints)/i,
+    /^it (remains|is worth|comes as)/i,
+    /^(meanwhile|however|nevertheless|moreover|furthermore),/i,
+  ];
+  
+  // Banned AI-ism patterns — sentences matching these get limited to 1 per doc
+  var aiPhrasePatterns = [
+    /signals/i,
+    /reflects momentum/i,
+    /positions the GCC/i,
+    /higher.for.longer/i,
+    /strategic pivot/i,
+  ];
+  
+  var aiPhraseCount = 0;
   
   lines.forEach(function(line) {
     var trimmed = line.trim();
@@ -473,37 +494,39 @@ function dedupText(text) {
     
     // 1. Detect repeated full lines (exact match)
     var key = trimmed.toLowerCase().substring(0, 60);
-    if (seen[key]) return; // skip duplicate line
+    if (seen[key]) return;
     seen[key] = true;
     
     // 2. Detect repeated sentence openings (first 5 words)
     var words = trimmed.split(/\s+/);
     if (words.length >= 5) {
       var opening = words.slice(0, 5).join(' ').toLowerCase();
-      // Check if this opening matches a banned pattern
       var isBannedOpening = openingPatterns.some(function(p) {
         return opening.indexOf(p.toLowerCase()) === 0;
       });
-      if (isBannedOpening && opening === lastOpening) return; // skip repeated opening
+      if (isBannedOpening && opening === lastOpening) return;
       if (isBannedOpening) lastOpening = opening;
     }
     
-    // 3. Detect repeated framing patterns
-    var framingPatterns = [
-      /^in (the )?(coming|recent|current)/i,
-      /^as (the )?(GCC|region|market|sector)/i,
-      /^(this|that) (signals|reflects|positions|paints)/i,
-      /^it (remains|is worth|comes as)/i,
-      /^(meanwhile|however|nevertheless|moreover|furthermore),/i,
-    ];
-    
-    var isFraming = framingPatterns.some(function(p) { return p.test(trimmed); });
+    // 3. Detect repeated economic framing patterns
+    var isFraming = templateFramingPatterns.some(function(p) { return p.test(trimmed); });
     if (isFraming) {
-      // Allow max 2 framing lines per document
       if (result.filter(function(l) { 
-        return framingPatterns.some(function(p) { return p.test(l.trim()); });
+        return templateFramingPatterns.some(function(p) { return p.test(l.trim()); });
       }).length >= 2) return;
     }
+    
+    // 4. Cap repeated AI template phrases across sections
+    var hasAIPhrase = aiPhrasePatterns.some(function(p) { return p.test(trimmed); });
+    if (hasAIPhrase) {
+      aiPhraseCount++;
+      if (aiPhraseCount > 1) return;  // only allow 1 AI-ism sentence per doc
+    }
+    
+    // 5. Track structural pattern repetition (e.g. "Saudi Arabia recorded..." multiple times)
+    var firstTwo = words.slice(0, 2).join(' ').toLowerCase();
+    repetitionCount[firstTwo] = (repetitionCount[firstTwo] || 0) + 1;
+    if (repetitionCount[firstTwo] > 2) return;  // max 2 sentences with same start words
     
     result.push(line);
   });

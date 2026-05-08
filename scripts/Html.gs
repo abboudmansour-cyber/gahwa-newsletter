@@ -5,15 +5,30 @@
 // ========================================================================
 
 /**
- * HTML-escape a string (prevents XSS in email HTML)
+ * Strip invalid UTF-8 byte sequences that cause Gmail rendering corruption (e.g. "").
+ * Keeps valid printable Unicode, replaces broken sequences with empty string.
+ * Never produces replacement glyphs.
+ */
+function sanitizeUTF8(str) {
+  if (str === null || str === undefined) return '';
+  // Remove non-characters, surrogates, and control chars (except \t \n \r)
+  return String(str)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+    .replace(/[\uD800-\uDFFF]/g, '')        // strip lone surrogates (root cause of )
+    .replace(/[\uFEFF]/g, '');              // strip BOM if present
+}
+
+/**
+ * HTML-escape a string (prevents XSS in email HTML).
+ * Also sanitizes UTF-8 to prevent Gmail corruption rendering.
  */
 function h(str) {
   if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+  return sanitizeUTF8(String(str))
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
     .replace(/'/g, '&#39;');
 }
 
@@ -772,7 +787,7 @@ function getGahwaCSS() {
   return [
     '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}',
     '',
-    'body{background:#FFFFFF;font-family:\'Work Sans\',-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#2A3D4F;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}',
+    'body{background:#FFFFFF;font-family:\'Work Sans\',-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#1C2E3F;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}',
     'a{color:inherit;text-decoration:none}',
     '.gw{max-width:600px;margin:0 auto;background:#FFFFFF;}@media only screen and (max-width:480px){.gw{max-width:100%!important;border-left:none!important;border-right:none!important;}}',
 
@@ -793,7 +808,7 @@ function getGahwaCSS() {
     '.gw-intro__p{font-family:\'Work Sans\',sans-serif;font-size:15px;font-weight:500;font-style:normal;color:#2A3D4F;line-height:1.7;padding-left:16px;border-left:4px solid #1A3E5C;margin:0;}',
 
     // Section labels
-    '.gw-label{display:flex;align-items:center;gap:10px;padding:32px 24px 0}',
+    '.gw-label{display:flex;align-items:center;gap:10px;padding:20px 24px 0}',
     '.gw-label__icon{font-size:12px;line-height:1;flex-shrink:0}',
     '.gw-label__text{font-family:\'Montserrat\',sans-serif;font-size:9px;font-weight:800;letter-spacing:0.28em;text-transform:uppercase;color:#5C6470;white-space:nowrap;}',
     '.gw-label__rule{flex:1;height:1px;background:#C4BFB8}',
