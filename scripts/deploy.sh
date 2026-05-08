@@ -181,7 +181,7 @@ run_push() {
       # Determine auth header (header-based auth only)
     local auth_header=""
     if [ -n "${WEBHOOK_SECRET:-}" ]; then
-      auth_header="-H \"Authorization: Bearer ${WEBHOOK_SECRET}\""
+      auth_header="-H \"X-Gahwa-Webhook-Secret: ${WEBHOOK_SECRET}\""
     fi
 
     # Send via curl — capture status and body

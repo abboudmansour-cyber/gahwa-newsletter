@@ -250,5 +250,68 @@
       "mismatchRate": 27,
       "recoveryDependency": "none"
     }
+  },
+  {
+    "runId": "daily-newsletter-2026-05-08",
+    "timestamp": "2026-05-08T01:01:17.122Z",
+    "declaredState": "PARTIAL",
+    "verifiedState": "CONFIRMED_PARTIAL",
+    "sources": {
+      "git": true,
+      "appsScript": false,
+      "email": false
+    },
+    "mismatch": false,
+    "notes": "Partial confirmation: 1/3 sources verified | Apps Script delivery not confirmed | Email delivery not confirmed",
+    "deliveryId": "daily-newsletter-2026-05-08-7c9777d",
+    "job": "daily-newsletter",
+    "gitHash": "7c9777dd92d2a45fb5f0aaa4571a3e84fe7003b6",
+    "healthScore": {
+      "truthAccuracy": 75,
+      "mismatchRate": 25,
+      "recoveryDependency": "none"
+    }
+  },
+  {
+    "runId": "daily-newsletter-2026-05-08",
+    "timestamp": "2026-05-08T08:21:26.126Z",
+    "declaredState": "SUCCESS",
+    "verifiedState": "CONFIRMED_SUCCESS",
+    "sources": {
+      "git": true,
+      "appsScript": true,
+      "email": true
+    },
+    "mismatch": false,
+    "notes": "All 3 verification sources confirm success",
+    "deliveryId": "daily-newsletter-2026-05-08-7c9777d",
+    "job": "daily-newsletter",
+    "gitHash": "7c9777dd92d2a45fb5f0aaa4571a3e84fe7003b6",
+    "healthScore": {
+      "truthAccuracy": 77,
+      "mismatchRate": 23,
+      "recoveryDependency": "none"
+    }
+  },
+  {
+    "runId": "daily-newsletter-2026-05-08",
+    "timestamp": "2026-05-08T08:40:07.956Z",
+    "declaredState": "SUCCESS",
+    "verifiedState": "CONFIRMED_SUCCESS",
+    "sources": {
+      "git": true,
+      "appsScript": true,
+      "email": true
+    },
+    "mismatch": false,
+    "notes": "All 3 verification sources confirm success",
+    "deliveryId": "daily-newsletter-2026-05-08-7c9777d",
+    "job": "daily-newsletter",
+    "gitHash": "7c9777dd92d2a45fb5f0aaa4571a3e84fe7003b6",
+    "healthScore": {
+      "truthAccuracy": 79,
+      "mismatchRate": 21,
+      "recoveryDependency": "none"
+    }
   }
 ]

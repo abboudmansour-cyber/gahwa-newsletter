@@ -386,5 +386,71 @@
         ]
       }
     }
+  },
+  {
+    "eventId": "4a23f241-e49d-4991-8381-5e2df2f57ee8",
+    "timestamp": "2026-05-08T01:01:17.126Z",
+    "runId": "daily-newsletter-2026-05-08",
+    "type": "FEEDBACK_RECORDED",
+    "data": {
+      "file": null,
+      "commit": null,
+      "deliveryId": null,
+      "error": null,
+      "metadata": {
+        "overall": 8,
+        "gccRelevance": 10,
+        "clarity": 2,
+        "marketDepth": 8,
+        "weaknessTags": [
+          "too generic AI content",
+          "generic AI filler language detected"
+        ]
+      }
+    }
+  },
+  {
+    "eventId": "1ee31d9e-6fdf-4edb-b8a2-f36f1458b6bb",
+    "timestamp": "2026-05-08T08:21:26.131Z",
+    "runId": "daily-newsletter-2026-05-08",
+    "type": "FEEDBACK_RECORDED",
+    "data": {
+      "file": null,
+      "commit": null,
+      "deliveryId": null,
+      "error": null,
+      "metadata": {
+        "overall": 8,
+        "gccRelevance": 10,
+        "clarity": 2,
+        "marketDepth": 8,
+        "weaknessTags": [
+          "too generic AI content",
+          "generic AI filler language detected"
+        ]
+      }
+    }
+  },
+  {
+    "eventId": "9bf273a7-ba38-446b-9c09-5340b91448b5",
+    "timestamp": "2026-05-08T08:40:07.961Z",
+    "runId": "daily-newsletter-2026-05-08",
+    "type": "FEEDBACK_RECORDED",
+    "data": {
+      "file": null,
+      "commit": null,
+      "deliveryId": null,
+      "error": null,
+      "metadata": {
+        "overall": 8,
+        "gccRelevance": 10,
+        "clarity": 2,
+        "marketDepth": 8,
+        "weaknessTags": [
+          "too generic AI content",
+          "generic AI filler language detected"
+        ]
+      }
+    }
   }
 ]

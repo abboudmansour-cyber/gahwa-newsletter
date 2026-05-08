@@ -1,0 +1,8 @@
+
+--- Delivery Report: 2026-05-08T08:21:25.962Z ---
+HTTP 200 — VALIDATED SUCCESS
+Delivery ID: daily-newsletter-2026-05-08-7c9777d
+
+--- Delivery Report: 2026-05-08T08:40:07.786Z ---
+HTTP 200 — VALIDATED SUCCESS
+Delivery ID: daily-newsletter-2026-05-08-7c9777d
