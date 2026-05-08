@@ -1,20 +1,6 @@
 {
   "runs": [
     {
-      "date": "2026-05-07T14:55:30.417Z",
-      "job": "daily-newsletter",
-      "scores": {
-        "clarity": 7,
-        "relevance": 7,
-        "gcc_focus": 7,
-        "readability": 7,
-        "overall": 7,
-        "issues": []
-      },
-      "issues": [],
-      "commit": "d9219fb4c4e1f56e829129be114fc618826d68ce"
-    },
-    {
       "date": "2026-05-07T15:13:08.435Z",
       "job": "daily-newsletter",
       "scores": {
@@ -265,6 +251,13 @@
       "scores": {},
       "issues": [],
       "commit": "9f1ed2ec23447a442fcc191eed5e3b3efa625b9a"
+    },
+    {
+      "date": "2026-05-08T10:09:24.502Z",
+      "job": "daily-newsletter",
+      "scores": {},
+      "issues": [],
+      "commit": "4220560c77e35a190e08a0cf11935af9d6fce579"
     }
   ]
 }
