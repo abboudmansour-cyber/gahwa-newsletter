@@ -60,162 +60,123 @@ npm install
 # Make scripts executable
 chmod +x /opt/gahwa-newsletter/scripts/*.sh
 
-# ── Production Hardening ──────────────────────────────────────────────
+# ── Generate webhook secret ──────────────────────────────────────────────
+# Generate a random 24-byte hex key for WEBHOOK_SECRET
+SECRET=$(openssl rand -hex 24)
+echo "🔑 Generated WEBHOOK_SECRET: ${SECRET}"
 
-# 1. Log rotation for /opt/gahwa-newsletter/operator/logs
-cat > /etc/logrotate.d/gahwa << 'LOGEOF'
-/opt/gahwa-newsletter/operator/logs/*.log {
-    daily
-    missingok
-    rotate 7
-    compress
-    delaycompress
-    notifempty
-    create 0640 root root
-}
-LOGEOF
-echo "✅ Logrotate config installed"
+# ── Configure .env ──────────────────────────────────────────────────────────
+# Enable WEBHOOK_SECRET (commented out by default) and set it
+# First check if APPS_SCRIPT_WEBHOOK_URL needs to be set
+if grep -q "APPS_SCRIPT_WEBHOOK_URL=your-webhook-url" /opt/gahwa-newsletter/operator/.env 2>/dev/null; then
+  echo "⚠️  APPS_SCRIPT_WEBHOOK_URL is not set. Edit operator/.env and add it."
+  echo "   See operator/env.hetzner.template for reference."
+fi
 
-# 2. Secure environment file
+# Enable WEBHOOK_SECRET (it's REQUIRED — uncomment and set it)
+sed -i "s/^# WEBHOOK_SECRET=.*/WEBHOOK_SECRET=${SECRET}/" /opt/gahwa-newsletter/operator/.env 2>/dev/null || true
+sed -i "s/^WEBHOOK_SECRET=.*/WEBHOOK_SECRET=${SECRET}/" /opt/gahwa-newsletter/operator/.env 2>/dev/null || true
+echo "✅ WEBHOOK_SECRET configured in operator/.env"
+
+# ── Set up GitHub credentials ──────────────────────────────────────────────
+# Generate SSH deploy key (no passphrase)
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N "" -C "gahwa-operator" 2>/dev/null || true
+echo ""
+echo "============================================"
+echo "🔑 SSH PUBLIC KEY (add to GitHub Deploy Keys)"
+echo "============================================"
+cat ~/.ssh/id_ed25519.pub
+echo "============================================"
+echo ""
+
+# ── GitHub Credentials ──────────────────────────────────────────────────────
 if [ -f /opt/gahwa-newsletter/operator/.env ]; then
-  chmod 600 /opt/gahwa-newsletter/operator/.env
-  echo "✅ Existing .env secured"
-else
-  cp /opt/gahwa-newsletter/operator/env.hetzner.template /opt/gahwa-newsletter/operator/.env
-  chmod 600 /opt/gahwa-newsletter/operator/.env
-  echo "⚠️  WARNING: Created .env from template. EDIT IT NOW with real values:"
-  echo "   vi /opt/gahwa-newsletter/operator/.env"
+  # Extract GIT_USER_NAME and GIT_USER_EMAIL from .env
+  GIT_USER=$(grep "^GIT_USER_NAME=" /opt/gahwa-newsletter/operator/.env | cut -d= -f2)
+  GIT_EMAIL=$(grep "^GIT_USER_EMAIL=" /opt/gahwa-newsletter/operator/.env | cut -d= -f2)
+
+  git config --global user.name "${GIT_USER:-Gahwa Operator}"
+  git config --global user.email "${GIT_EMAIL:-operator@gahwa.ai}"
+
+  # Check for GitHub token (optional, SSH is preferred)
+  GH_TOKEN=$(grep "^GITHUB_TOKEN=" /opt/gahwa-newsletter/operator/.env | cut -d= -f2)
+  if [ -n "$GH_TOKEN" ] && [ "$GH_TOKEN" != "ghp_your-github-token-here" ]; then
+    echo "✅ GitHub token configured in .env"
+  fi
 fi
 
-# 3. Generate unique Webhook Secret (if not already set)
-if grep -q "your-webhook-secret-hex" /opt/gahwa-newsletter/operator/.env 2>/dev/null; then
-  SECRET=$(openssl rand -hex 24)
-  # Uncomment and set WEBHOOK_SECRET (it's OPTIONAL, but setup generates one for convenience)
-  sed -i "s/^# WEBHOOK_SECRET=.*/WEBHOOK_SECRET=${SECRET}/" /opt/gahwa-newsletter/operator/.env
-  echo "✅ Webhook Secret generated: ${SECRET}"
+# ── Apps Script (clasp) login ────────────────────────────────────────────────
+echo ""
+echo "📋 NEXT STEPS:"
+echo "────────────────────────────────────────────────"
+echo "1. Log in to Apps Script (required for clasp push):"
+echo "   cd /opt/gahwa-newsletter && clasp login"
+echo ""
+echo "2. Push the Apps Script code:"
+echo "   cd /opt/gahwa-newsletter && clasp push"
+echo ""
+
+# ── Setup systemd service for continuous operation ──────────────────────────
+# Create a systemd timer to run daily at 7 AM AST
+SYSTEMD_SERVICE="/etc/systemd/system/gahwa-daily.service"
+if [ ! -f "$SYSTEMD_SERVICE" ]; then
+  cat > "$SYSTEMD_SERVICE" << 'SERVICEEOF'
+[Unit]
+Description=Gahwa Daily Newsletter Generator
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/node /opt/gahwa-newsletter/operator/daily-runner.js
+WorkingDirectory=/opt/gahwa-newsletter
+Environment=NODE_ENV=production
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+SERVICEEOF
+  echo "✅ Systemd service created: gahwa-daily.service"
 fi
 
-# 4. Generate GitHub Webhook Secret (if not already set)
-if grep -q "your-webhook-secret-hex" /opt/gahwa-newsletter/operator/.env 2>/dev/null; then
-  GH_SECRET=$(openssl rand -hex 32)
-  sed -i "s/GITHUB_WEBHOOK_SECRET=.*/GITHUB_WEBHOOK_SECRET=${GH_SECRET}/" /opt/gahwa-newsletter/operator/.env
-  echo "✅ GitHub Webhook Secret generated: ${GH_SECRET}"
-  echo "   IMPORTANT: Add this secret to GitHub repo Settings → Webhooks → (your webhook) → Secret"
+SYSTEMD_TIMER="/etc/systemd/system/gahwa-daily.timer"
+if [ ! -f "$SYSTEMD_TIMER" ]; then
+  cat > "$SYSTEMD_TIMER" << 'TIMEREOF'
+[Unit]
+Description=Gahwa Daily Newsletter Timer — runs at 7 AM AST daily
+
+[Timer]
+OnCalendar=*-*-* 07:00:00 Asia/Riyadh
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+TIMEREOF
+  echo "✅ Systemd timer created: gahwa-daily.timer (7:00 AM AST daily)"
 fi
 
-# 5. SSH Key setup for git pull (server-side only, NOT used by GitHub Actions)
-# This SSH key is needed so the server can git pull from GitHub via webhook trigger.
-echo ""
-echo "=== Git Authentication Setup ==="
-echo "The Hetzner server needs an SSH deploy key to pull code from GitHub."
-echo "This key is NOT stored in GitHub Actions — it lives only on the server."
+systemctl daemon-reload 2>/dev/null || true
+systemctl enable gahwa-daily.timer 2>/dev/null || true
+systemctl start gahwa-daily.timer 2>/dev/null || true
 
-if [ ! -f ~/.ssh/id_ed25519 ]; then
-  echo "🔑 Generating SSH key for git pull..."
-  ssh-keygen -t ed25519 -C "gahwa-hetzner-$(hostname)" -f ~/.ssh/id_ed25519 -N ""
-  echo ""
-  echo "⚠️  ADD THIS SSH KEY AS A GITHUB DEPLOY KEY:"
-  cat ~/.ssh/id_ed25519.pub
-  echo ""
-  echo "   Go to: https://github.com/${GITHUB_USER}/gahwa-newsletter/settings/keys"
-  echo "   → Add deploy key with read/write access"
-  echo ""
-  echo "   ⚠️  DO NOT add this key to GitHub Actions secrets."
-  echo "      It is for server-side git pull only."
-else
-  echo "✅ SSH deploy key exists at ~/.ssh/id_ed25519"
-  echo "   (verify it's added as a deploy key in GitHub settings)"
+# Legacy crontab fallback (for systems without systemd)
+CRON_EXISTS=$(crontab -l 2>/dev/null | grep "daily-runner" || true)
+if [ -z "$CRON_EXISTS" ]; then
+  (crontab -l 2>/dev/null; echo "0 7 * * * cd /opt/gahwa-newsletter && /usr/bin/node /opt/gahwa-newsletter/operator/daily-runner.js >> /opt/gahwa-newsletter/operator/logs/cron.log 2>&1") | crontab -
+  echo "✅ Crontab entry added (7:00 AM AST daily)"
 fi
 
-# 6. Configure git for the repo
-cd /opt/gahwa-newsletter
-git config user.email "gahwa-bot@hetzner.local"
-git config user.name "Gahwa Daily Bot"
-git remote set-url origin git@github.com:${GITHUB_USER}/gahwa-newsletter.git
-echo "✅ Git remote configured: git@github.com:${GITHUB_USER}/gahwa-newsletter.git"
-echo "   (server will use its own SSH deploy key on git pull)"
-
-# ── Systemd Service for Webhook Listener ──────────────────────────────
-
+# ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
-echo "=== Installing Gahwa Listener (systemd) ==="
-
-# Copy systemd service file
-cp /opt/gahwa-newsletter/operator/gahwa-listener.service /etc/systemd/system/gahwa-listener.service
-chmod 644 /etc/systemd/system/gahwa-listener.service
-
-# Create logs directory
-mkdir -p /opt/gahwa-newsletter/operator/logs
-
-# Reload systemd, enable, and start the service
-systemctl daemon-reload
-systemctl enable gahwa-listener
-systemctl restart gahwa-listener
-
-echo "✅ Gahwa Listener service installed and started."
-echo "   Status: systemctl status gahwa-listener"
-echo "   Logs:   /opt/gahwa-newsletter/operator/logs/listener-stdout.log"
-
-# ── Cron Installation ──────────────────────────────────────────────────
-
+echo "╔══════════════════════════════════════════════════════════════════╗"
+echo "║           ✅ HETZNER SETUP COMPLETE                              ║"
+echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
-echo "=== Installing Daily Cron ==="
-
-# Remove any old cron entries
-(crontab -l 2>/dev/null | grep -v "gahwa-newsletter" | grep -v "daily-runner" | grep -v "operator.js") | crontab - 2>/dev/null || true
-
-# Install new cron: runs at 7:00 AM Saudi time (UTC+3)
-# This now sends a POST to the local listener daemon instead of running directly
-CRON_LINE="0 7 * * * curl -s -X POST http://127.0.0.1:3000/webhook -H 'Content-Type: application/json' -d '{\"job\":\"daily-newsletter\",\"trigger\":\"cron\"}' >> /opt/gahwa-newsletter/operator/logs/cron-daily.log 2>&1"
-
-(crontab -l 2>/dev/null; echo "${CRON_LINE}") | crontab -
-
-echo "✅ Cron installed: 0 7 * * * (7:00 AM daily)"
-echo "   Command: curl -X POST http://127.0.0.1:3000/webhook (triggers gahwa-listener.service)"
-echo "   The listener daemon handles locking, retries, and logging."
+echo "═══════════════════════════════════════════════"
+echo "📋 SETUP SUMMARY"
+echo "═══════════════════════════════════════════════"
 echo ""
-echo "   IMPORTANT: The old cron job ran operator.js directly."
-echo "   The new cron job sends a POST to the local listener daemon"
-echo "   (gahwa-listener.service) which handles duplicate protection,"
-echo "   retries, dead letter queue, and success logging."
-echo ""
-echo "   To bypass the listener for manual runs:"
-echo "     node operator/server.js --once --job=daily-newsletter"
-echo "   or point curl directly at the listener:"
-echo "     curl -X POST http://127.0.0.1:3000/webhook -d '{\"job\":\"daily-newsletter\"}'"
-
-# ── Test Config File ───────────────────────────────────────────────────
-
-# Create a test config file that the daily-runner can use for validation
-cat > /opt/gahwa-newsletter/operator/output/.test-config.json << 'TESTEOF'
-{
-  "test": true,
-  "config_path": "/opt/gahwa-newsletter/operator/.env",
-  "node_version": "20+",
-  "scripts": [
-    "operator/daily-runner.js",
-    "operator/deepseek.js",
-    "operator/github.js",
-    "operator/operator.js"
-  ]
-}
-TESTEOF
-
-echo "✅ Test config written"
-
-# ── Final Summary ──────────────────────────────────────────────────────
-
-echo ""
-echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║         GAHWA DAILY AUTOPILOT — SETUP COMPLETE              ║"
-echo "╚══════════════════════════════════════════════════════════════╝"
-echo ""
-echo "REPO:    /opt/gahwa-newsletter"
-echo "OUTPUT:  /opt/gahwa-newsletter/operator/output/latest-newsletter.json"
-echo "LOGS:    /opt/gahwa-newsletter/operator/logs/daily-errors.log"
-echo "CRON:    0 7 * * * (7:00 AM AST)"
-echo ""
-echo "REQUIRED MANUAL STEPS:"
+echo "📁 Project:  /opt/gahwa-newsletter"
 echo ""
 echo "1. EDIT .env with your real API keys:"
 echo "   vi /opt/gahwa-newsletter/operator/.env"
@@ -227,14 +188,22 @@ echo ""
 echo "3. Test the pipeline:"
 echo "   cd /opt/gahwa-newsletter && node operator/daily-runner.js --dry-run"
 echo ""
-echo "4. Verify crontab:"
+echo "4. Verify systemd timer or crontab:"
+echo "   systemctl status gahwa-daily.timer"
 echo "   crontab -l"
 echo ""
 echo "5. For Apps Script webhook integration:"
 echo "   - Deploy your Apps Script project as a Web App"
 echo "   - Set APPS_SCRIPT_WEBHOOK_URL in /opt/gahwa-newsletter/operator/.env"
-echo "   - Run storeSecrets() in Apps Script with WEBHOOK_SECRET value below"
+echo "   - Set WEBHOOK_SECRET in BOTH places:"
+echo "     1. operator/.env (already done above)"
+echo "     2. scripts/Code.gs (var secretToken = '<value>')"
+echo "   - Redeploy the Apps Script project after updating Code.gs"
 echo ""
 echo "WEBHOOK_SECRET: $(grep WEBHOOK_SECRET /opt/gahwa-newsletter/operator/.env | cut -d= -f2)"
+echo ""
+echo "NOTE: Auth model is HEADER-BASED (Bearer token)."
+echo "      WEBHOOK_SECRET is hardcoded in Code.gs — no PropertiesService dependency."
+echo "      Run storeSecrets() only for DEEPSEEK_API_KEY and BEEHIIV_API_KEY (not for WEBHOOK_SECRET)."
 echo ""
 echo "=== Setup complete. The system will run autonomously at 7 AM daily. ==="

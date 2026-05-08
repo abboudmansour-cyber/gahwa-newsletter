@@ -455,8 +455,8 @@ async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json")
     return false;
   }
 
-  // Read and inject auth_token into payload
   let payload;
+
   try {
     payload = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
   } catch (err) {
@@ -475,7 +475,13 @@ async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json")
     startedAt: ctx.startedAt,
   };
 
-  payload.auth_token = webhookSecret;
+  // ── AUTH: Header-based ONLY (no body payload auth) ──────────────
+  // Send secret in HTTP Authorization header.
+  // Apps Script extracts from e.headers.Authorization.
+  const authHeaders = {};
+  if (webhookSecret) {
+    authHeaders["Authorization"] = `Bearer ${webhookSecret}`;
+  }
 
   // Mask webhook URL for safe logging
   let maskedUrl = webhookUrl;
@@ -496,7 +502,7 @@ async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json")
 
       const res = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(payload),
       });
 
@@ -553,7 +559,7 @@ async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json")
       if (res.status === 401 || res.status === 403) {
         console.log(`   ❌ [AUTH ERROR] Apps Script rejected the request (HTTP ${res.status})`);
         console.log(`   Response: ${body}`);
-        console.log(`   Fix: WEBHOOK_SECRET must match in both .env and Apps Script PropertiesService.`);
+        console.log(`   Fix: WEBHOOK_SECRET in .env must match the hardcoded secret in scripts/Code.gs`);
         break;
       }
 

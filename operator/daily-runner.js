@@ -513,12 +513,11 @@ async function sendToAppsScript(newsletter) {
 
   log("[APPS SCRIPT] Sending POST to webhook...");
 
-  // Build the payload with auth_token for security
+  // Build payload (auth sent via header, not in body)
   const deliveryId = getDeliveryId();
   const payload = {
     ...newsletter,
     deliveryId,
-    auth_token: WEBHOOK_SECRET,
   };
   log(`[APPS SCRIPT] 🆔 Delivery ID: ${deliveryId}`);
 
@@ -528,8 +527,10 @@ async function sendToAppsScript(newsletter) {
 
   try {
     // Execute curl with full response capture (including HTTP status code)
+    const headerAuth = WEBHOOK_SECRET ? `-H "Authorization: Bearer ${WEBHOOK_SECRET}"` : "";
     const cmd = `curl -s -w "\\n%{http_code}" -L -X POST "${APPS_SCRIPT_WEBHOOK_URL}" \
       -H "Content-Type: application/json" \
+      ${headerAuth} \
       -d @"${tmpPayload}"`;
 
     const stdout = execSync(cmd, {

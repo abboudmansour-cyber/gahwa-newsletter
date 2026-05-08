@@ -178,26 +178,19 @@ run_push() {
     echo -e "   ─── Attempt $attempt of $max_attempts ───"
     start_time=$(date +%s)
 
-    # Inject auth_token into payload inline
-    local payload_file
-    payload_file=$(mktemp /tmp/gahwa-payload-XXXXXXXX.json)
-    trap 'rm -f "$payload_file"' EXIT
-
-    if ! jq --arg token "${WEBHOOK_SECRET:-}" '. + {auth_token: $token}' "$json_file" > "$payload_file" 2>/dev/null; then
-      echo -e "${RED}   ❌ Payload injection failed. Check JSON validity.${NC}"
-      rm -f "$payload_file"
-      exit 1
+      # Determine auth header (header-based auth only)
+    local auth_header=""
+    if [ -n "${WEBHOOK_SECRET:-}" ]; then
+      auth_header="-H \"Authorization: Bearer ${WEBHOOK_SECRET}\""
     fi
 
     # Send via curl — capture status and body
     local curl_output
-    curl_output=$(curl -s -L -w "\n%{http_code}" \
+    curl_output=$(eval curl -s -L -w "\\n%{http_code}" \
       -X POST "$APPS_SCRIPT_WEBHOOK_URL" \
       -H "Content-Type: application/json" \
-      -d @"$payload_file" 2>&1) || true
-
-    rm -f "$payload_file"
-    trap '' EXIT
+      $auth_header \
+      -d @"$json_file" 2>&1) || true
 
     http_code=$(echo "$curl_output" | tail -n1)
     response_body=$(echo "$curl_output" | sed '$d')

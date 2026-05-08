@@ -81,24 +81,24 @@ if [ -z "${WEBHOOK_SECRET:-}" ]; then
   echo "⚠  WEBHOOK_SECRET not set — sending without signature verification"
 fi
 
+# ── Determine auth header (header-based auth only) ──────────────────────────
+AUTH_HEADER=""
+if [ -n "${WEBHOOK_SECRET:-}" ]; then
+  AUTH_HEADER="-H \"Authorization: Bearer ${WEBHOOK_SECRET}\""
+fi
 echo "🚀 Gahwa Newsletter — Push to Apps Script"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "   Webhook: configured ✅"
 echo "   Payload: $JSON_FILE"
+echo "   Auth:    HEADER-BASED"
 echo ""
 
-# ── Inject auth_token into payload ──────────────────────────────────────────
+# ── Inject deliveryId for idempotent delivery ────────────────────────────────
 PAYLOAD_FILE=$(mktemp /tmp/gahwa-payload-XXXXXXXX.json)
 trap 'rm -f "$PAYLOAD_FILE"' EXIT
 
-if ! jq --arg token "${WEBHOOK_SECRET:-}" '. + {auth_token: $token}' "$JSON_FILE" > "$PAYLOAD_FILE"; then
-  echo "❌ [PAYLOAD ERROR] Failed to inject auth_token into JSON"
-  echo "  Verify that $JSON_FILE contains valid JSON."
-  echo "  Run: jq . $JSON_FILE"
-  exit 1
-fi
+cp "$JSON_FILE" "$PAYLOAD_FILE"
 
-# ── Inject deliveryId for idempotent delivery ────────────────────────────────
 DELIVERY_ID="${JOB_NAME:-daily-newsletter}-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
 if ! jq --arg did "$DELIVERY_ID" '. + {deliveryId: $did}' "$PAYLOAD_FILE" > "${PAYLOAD_FILE}.tmp"; then
   echo "⚠  Warning: Could not inject deliveryId"
@@ -120,9 +120,10 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
 
   # Capture both response body and HTTP status code in one call
   # Use -w for status code on the last line, -s for silent mode
-  CURL_OUTPUT=$(curl -s -L -w "\n%{http_code}" \
+  CURL_OUTPUT=$(eval curl -s -L -w "\\n%{http_code}" \
     -X POST "$WEBAPP_URL" \
     -H "Content-Type: application/json" \
+    $AUTH_HEADER \
     -d @"$PAYLOAD_FILE" 2>&1) || true
 
   # Extract HTTP status code (last line after splitting)
@@ -175,11 +176,12 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
       echo "❌ [AUTH ERROR] Apps Script rejected the request (HTTP $HTTP_CODE)"
       echo "   Response: ${RESPONSE_BODY:-"(empty)"}"
       echo ""
-      echo "   Fix: WEBHOOK_SECRET must match in both:"
+      echo "   Fix: WEBHOOK_SECRET must match in both places:"
       echo "     1. operator/.env"
-      echo "     2. Apps Script → Project Settings → Script Properties"
+      echo "     2. scripts/Code.gs → secretToken constant"
       echo ""
-      echo "   Run \`openssl rand -hex 24\` to generate a new secret."
+      echo "   Auth model: HEADER-BASED only (no PropertiesService dependency)"
+      echo "   Run \`openssl rand -hex 24\` to generate a new secret, then update both locations."
       SUCCESS=false
       break
       ;;

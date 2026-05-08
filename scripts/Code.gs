@@ -24,12 +24,15 @@
 // ╚══════════════════════════════════════════════════════════════════════╝
 // ║                                                                      ║
 // ║  WEBHOOK ENTRY POINT:                                                ║
-// ║  doPost(e)  — Receives JSON payloads from send_to_apps_script.sh     ║
+// ║  doPost(e)  — Receives JSON payloads from Node.js/curl senders       ║
 // ║  doGet(e)   — Health check endpoint                                  ║
 // ║                                                                      ║
-// ║  Expects: { deliveryId, auth_token, ...newsletter_fields }           ║
-// ║  Returns:  JSON with { status: "ok"|"error", ... }                   ║
-// ║  Dedup:    "DUPLICATE_IGNORED" if deliveryId already processed       ║
+// ║  Auth:      Header-based ONLY — Authorization: Bearer <token>        ║
+// ║             No PropertiesService dependency for auth validation       ║
+// ║                                                                      ║
+// ║  Expects:   { deliveryId, subject, htmlBody, action }                ║
+// ║  Returns:   JSON with { status: "ok"|"error", ... }                  ║
+// ║  Dedup:     "DUPLICATE_IGNORED" if deliveryId already processed      ║
 // ╚══════════════════════════════════════════════════════════════════════╝
 
 // ════════════════════════════════════════════════════════════════════════
@@ -483,12 +486,11 @@ function markDelivered(deliveryId) {
 /**
  * doGet — Health check endpoint + truth verification endpoint.
  *
- * Auto-seeds WEBHOOK_SECRET into PropertiesService on first visit
- * if not already set (reads from storeSecrets() source).
- *
  * Returns JSON confirming the web app is alive, plus truth state:
  *   - lastEmailSent: the deliveryId of the most recently sent email
  *   - This allows the Node truth-evaluator to independently verify email delivery
+ *
+ * Auth: Uses header-based Authorization: Bearer <token> (no PropertiesService dependency)
  *
  * Query params (optional):
  *   ?verify=deliveryId — returns { verified: true/false, deliveryId: "..." }
@@ -496,12 +498,8 @@ function markDelivered(deliveryId) {
 function doGet(e) {
   var props = PropertiesService.getScriptProperties();
 
-  // Auto-bootstrap WEBHOOK_SECRET if missing
-  if (!props.getProperty('WEBHOOK_SECRET')) {
-    props.setProperty('WEBHOOK_SECRET', '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
-  }
-
   // ── Truth verification query ──────────────────────────────────────────
+
   // If ?verify=deliveryId is passed, check if that delivery was confirmed
   if (e && e.parameter && e.parameter.verify) {
     var verifyDeliveryId = e.parameter.verify;
@@ -541,13 +539,17 @@ function doGet(e) {
  * IDEMPOTENCY: Uses deliveryId to prevent duplicate processing.
  * If a deliveryId has already been processed, returns "DUPLICATE_IGNORED".
  *
- * Validates auth_token against WEBHOOK_SECRET stored in PropertiesService.
+ * AUTH: Header-based ONLY (no PropertiesService dependency).
+ *   - Reads token from: e.headers.Authorization
+ *   - Expected format:  Bearer <token>
+ *   - Token validated against the hardcoded secret constant.
+ *
  * Mark delivered ONLY after successful Gmail send.
  *
  * Expected payload format:
  * {
  *   "deliveryId": "daily-newsletter-2026-05-07-abc123def",
- *   "auth_token": "<shared-secret>",
+
  *   "subject": "...",
  *   "htmlBody": "...",
  *   "action": "deploy" | "send" | "test"
@@ -567,41 +569,28 @@ function doPost(e) {
 
     var contents = JSON.parse(e.postData.contents);
 
-    // ── Auto-bootstrap WEBHOOK_SECRET with persistence verification ────
-    // Must match the value in operator/.env so Node sender is always valid.
-    // We use a verification loop to guard against PropertiesService
-    // eventual consistency delays (rare but observed in Apps Script).
-    var props = PropertiesService.getScriptProperties();
-    var secretToken = props.getProperty('WEBHOOK_SECRET');
-    if (!secretToken) {
-      for (var attempt = 0; attempt < 3; attempt++) {
-        props.setProperty('WEBHOOK_SECRET', '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
-        Utilities.sleep(100);
-        secretToken = props.getProperty('WEBHOOK_SECRET');
-        if (secretToken) break;
-      }
+    // ── HEADER-BASED AUTHENTICATION (single canonical model) ────────────
+    // Read secret ONLY from Authorization header.
+    // No PropertiesService dependency for auth validation.
+    // No fallback secret retrieval logic.
+    var authHeader = e.headers?.Authorization;
+    var secretToken = '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa';
+
+    var tokenFromHeader = null;
+    if (authHeader && authHeader.indexOf('Bearer ') === 0) {
+      tokenFromHeader = authHeader.substring(7);
     }
 
-    // ── Security gate ──────────────────────────────────────────────────
-    if (!secretToken) {
-      log('ERROR', 'WEBHOOK_SECRET not set in PropertiesService.');
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          status: "error",
-          message: "Server misconfigured: WEBHOOK_SECRET not set"
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    if (!contents.auth_token || contents.auth_token !== secretToken) {
+    if (!tokenFromHeader || tokenFromHeader !== secretToken) {
       log('WARN', 'Unauthorized webhook attempt');
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "error",
-          message: "Unauthorized: invalid auth_token"
+          message: "Unauthorized"
         }))
         .setMimeType(ContentService.MimeType.JSON);
     }
+
 
     // ── IDEMPOTENCY CHECK — guard against duplicate delivery ───────────
     var deliveryId = contents.deliveryId;

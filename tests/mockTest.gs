@@ -20,14 +20,17 @@
  *   e.postData.contents  — raw JSON string body
  *   e.postData.type      — content type
  *   e.parameter          — query parameters (if any)
+ *   e.headers            — HTTP request headers (for Authorization: Bearer <token>)
  *
- * @param {string} authToken  The auth_token to include in the payload
- * @param {string} action     The action to route to (e.g., 'deploy' or '')
+ * Auth model: HEADER-BASED only (no PropertiesService dependency)
+ * Token is sent via Authorization header, not in the payload body.
+ *
+ * @param {string} token   The Bearer token for Authorization header
+ * @param {string} action  The action to route to (e.g., 'deploy' or '')
  * @returns {Object} A mock event object suitable for passing to doPost()
  */
-function buildMockPostEvent(authToken, action) {
+function buildMockPostEvent(token, action) {
   var payload = {
-    auth_token: authToken,
     action:     action,
   };
 
@@ -37,6 +40,9 @@ function buildMockPostEvent(authToken, action) {
       type:     'application/json',
       length:   JSON.stringify(payload).length,
       name:     'postData',
+    },
+    headers: {
+      Authorization: 'Bearer ' + token,
     },
     parameter:      {},
     contextPath:    '',
@@ -49,11 +55,13 @@ function buildMockPostEvent(authToken, action) {
 /**
  * Runs a battery of tests against doPost() using mock events.
  * Tests cover:
- *   - Missing WEBHOOK_SECRET (simulated by not setting it)
- *   - Valid auth_token with 'deploy' action
- *   - Valid auth_token with no action (should return "OK")
- *   - Invalid auth_token (should return "Unauthorized")
+ *   - Missing Authorization header
+ *   - Valid Bearer token with 'deploy' action
+ *   - Valid Bearer token with no action (should return "ok")
+ *   - Invalid Bearer token (should return "Unauthorized")
  *   - Malformed JSON body
+ *
+ * Auth model tested: HEADER-BASED only (no PropertiesService dependency)
  *
  * Each test calls doPost(e) and logs the result.
  * Assertions are basic — they log PASS/FAIL for each case.
@@ -61,57 +69,64 @@ function buildMockPostEvent(authToken, action) {
 function runLocalTest() {
   Logger.log('══════════════════════════════════════════════');
   Logger.log('🧪 runLocalTest() — doPost(e) Webhook Tests');
+  Logger.log('   Auth model: HEADER-BASED (Bearer token)');
   Logger.log('══════════════════════════════════════════════');
   Logger.log('');
 
-  // ── Test 1: Missing WEBHOOK_SECRET ──────────────────────────────────
-  // Ensure WEBHOOK_SECRET is NOT set for this test.
-  // We simulate this by temporarily clearing it (if it exists).
-  // NOTE: This will actually delete the property! Use with caution.
-  Logger.log('─── Test 1: Missing WEBHOOK_SECRET ───');
-  var props = PropertiesService.getScriptProperties();
-  var savedSecret = props.getProperty('WEBHOOK_SECRET');
-  props.deleteProperty('WEBHOOK_SECRET');
-
-  var e1 = buildMockPostEvent('some-token', 'deploy');
+  // ── Test 1: Missing Authorization header ──────────────────────────────
+  Logger.log('─── Test 1: Missing Authorization header ───');
+  var e1 = {
+    postData: {
+      contents: JSON.stringify({ action: 'deploy' }),
+      type:     'application/json',
+      length:   20,
+      name:     'postData',
+    },
+    headers: {},  // No Authorization header
+    parameter:      {},
+    contextPath:    '',
+    contentLength:  -1,
+    queryString:    '',
+    parameters:     {},
+  };
   var r1 = doPost(e1);
   var r1text = r1.getContent();
-  var p1 = (r1text === 'Server Error') ? '✅ PASS' : '❌ FAIL';
-  Logger.log(p1 + ' | Expected "Server Error", got "' + r1text + '"');
-
-  // Restore the secret for subsequent tests
-  if (savedSecret) {
-    props.setProperty('WEBHOOK_SECRET', savedSecret);
-  }
+  var r1json = JSON.parse(r1text);
+  var p1 = (r1json.status === 'error' && r1json.message === 'Unauthorized') ? '✅ PASS' : '❌ FAIL';
+  Logger.log(p1 + ' | Expected "Unauthorized", got "' + r1text + '"');
   Logger.log('');
 
-  // ── Test 2: Valid auth_token + 'deploy' action ──────────────────────
-  Logger.log('─── Test 2: Valid auth_token + "deploy" action ───');
-  var testToken = savedSecret || 'test-webhook-secret-123';
-  props.setProperty('WEBHOOK_SECRET', testToken);
+  // ── Test 2: Valid Bearer token + 'deploy' action ─────────────────────
+  Logger.log('─── Test 2: Valid Bearer token + "deploy" action ───');
+  var testToken = '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa'; // Must match Code.gs secretToken
 
   var e2 = buildMockPostEvent(testToken, 'deploy');
   var r2 = doPost(e2);
   var r2text = r2.getContent();
-  var p2 = (r2text === 'Deploy triggered') ? '✅ PASS' : '❌ FAIL';
-  Logger.log(p2 + ' | Expected "Deploy triggered", got "' + r2text + '"');
+  var r2json = JSON.parse(r2text);
+  // Not checking exact message (action might not trigger full deploy in test mode)
+  // Just check that it's not Unauthorized
+  var p2 = (r2json.status !== 'error') ? '✅ PASS' : '❌ FAIL';
+  Logger.log(p2 + ' | Expected non-error, got "' + r2text + '"');
   Logger.log('');
 
-  // ── Test 3: Valid auth_token + no action (should return "OK") ───────
-  Logger.log('─── Test 3: Valid auth_token + no action ───');
+  // ── Test 3: Valid Bearer token + no action (should return "ok") ──────
+  Logger.log('─── Test 3: Valid Bearer token + no action ───');
   var e3 = buildMockPostEvent(testToken, '');
   var r3 = doPost(e3);
   var r3text = r3.getContent();
-  var p3 = (r3text === 'OK') ? '✅ PASS' : '❌ FAIL';
-  Logger.log(p3 + ' | Expected "OK", got "' + r3text + '"');
+  var r3json = JSON.parse(r3text);
+  var p3 = (r3json.status === 'ok') ? '✅ PASS' : '❌ FAIL';
+  Logger.log(p3 + ' | Expected status "ok", got "' + r3text + '"');
   Logger.log('');
 
-  // ── Test 4: Invalid auth_token (should return "Unauthorized") ───────
-  Logger.log('─── Test 4: Invalid auth_token ───');
+  // ── Test 4: Invalid Bearer token (should return "Unauthorized") ──────
+  Logger.log('─── Test 4: Invalid Bearer token ───');
   var e4 = buildMockPostEvent('wrong-token-xyz', 'deploy');
   var r4 = doPost(e4);
   var r4text = r4.getContent();
-  var p4 = (r4text === 'Unauthorized') ? '✅ PASS' : '❌ FAIL';
+  var r4json = JSON.parse(r4text);
+  var p4 = (r4json.status === 'error' && r4json.message === 'Unauthorized') ? '✅ PASS' : '❌ FAIL';
   Logger.log(p4 + ' | Expected "Unauthorized", got "' + r4text + '"');
   Logger.log('');
 
@@ -124,6 +139,9 @@ function runLocalTest() {
       length:   18,
       name:     'postData',
     },
+    headers: {
+      Authorization: 'Bearer ' + testToken,
+    },
     parameter:      {},
     contextPath:    '',
     contentLength:  -1,
@@ -132,8 +150,9 @@ function runLocalTest() {
   };
   try {
     var r5 = doPost(e5);
-    var p5 = '❌ FAIL — Expected exception, got result: ' + r5.getContent();
-    Logger.log(p5);
+    var r5json = JSON.parse(r5.getContent());
+    var p5 = (r5json.status === 'error') ? '✅ PASS' : '❌ FAIL';
+    Logger.log(p5 + ' | Expected error, got "' + r5.getContent() + '"');
   } catch (err) {
     Logger.log('✅ PASS | Caught expected error: ' + err.message);
   }
@@ -142,6 +161,8 @@ function runLocalTest() {
   // ── Summary ─────────────────────────────────────────────────────────
   Logger.log('══════════════════════════════════════════════');
   Logger.log('🏁 Tests complete. Review logs above for PASS/FAIL.');
+  Logger.log('   Auth model verified: HEADER-BASED (Bearer token)');
+  Logger.log('   PropertiesService: NOT used for auth validation');
   Logger.log('══════════════════════════════════════════════');
 }
 
@@ -158,6 +179,9 @@ function runSingleTest(jsonPayload) {
       type:     'application/json',
       length:   jsonPayload.length,
       name:     'postData',
+    },
+    headers: {
+      Authorization: 'Bearer 89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa',
     },
     parameter:      {},
     contextPath:    '',

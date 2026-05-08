@@ -19,9 +19,8 @@ function storeSecrets() {
   var props = PropertiesService.getScriptProperties();
   props.setProperty('SECRET_DEEPSEEK_API_KEY', '__PASTE_YOUR_DEEPSEEK_KEY_HERE__');
   props.setProperty('SECRET_BEEHIIV_API_KEY',  '__PASTE_YOUR_BEEHIIV_KEY_HERE__');
-  props.setProperty('WEBHOOK_SECRET',          '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
   Logger.log('✅ Secrets stored in PropertiesService. Remove keys from storeSecrets() now.');
-  Logger.log('ℹ️  WEBHOOK_SECRET: 89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa');
+  Logger.log('ℹ️  WEBHOOK_SECRET is now hardcoded in Code.gs (header-based auth). No PropertiesService dependency.');
 }
 
 /**

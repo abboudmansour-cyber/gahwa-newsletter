@@ -90,7 +90,7 @@ export function logWebhookStatus() {
  * @returns {boolean} true if valid, false if invalid (only returns when exitOnFailure=false)
  */
 export function validateEnvironment({ exitOnFailure = true } = {}) {
-  const required = ["DEEPSEEK_API_KEY", "APPS_SCRIPT_WEBHOOK_URL"];
+  const required = ["DEEPSEEK_API_KEY", "APPS_SCRIPT_WEBHOOK_URL", "WEBHOOK_SECRET"];
   const missing = required.filter((key) => !process.env[key] || process.env[key].trim() === "");
 
   if (missing.length > 0) {
@@ -106,6 +106,10 @@ export function validateEnvironment({ exitOnFailure = true } = {}) {
 
     if (missing.includes("APPS_SCRIPT_WEBHOOK_URL")) {
       console.error("   Add APPS_SCRIPT_WEBHOOK_URL to operator/.env");
+    }
+    if (missing.includes("WEBHOOK_SECRET")) {
+      console.error("   Add WEBHOOK_SECRET to operator/.env");
+      console.error("   Generate one with: openssl rand -hex 24");
     }
 
     console.error("═══════════════════════════════════════════════════════");
@@ -129,6 +133,7 @@ export function validateEnvironment({ exitOnFailure = true } = {}) {
   }
 
   console.log(`✅ Environment validated — all required variables present`);
+  console.log(`📡 Webhook auth mode: HEADER-BASED (ACTIVE)`);
   return true;
 }
 
