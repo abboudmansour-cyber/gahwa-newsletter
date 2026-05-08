@@ -81,10 +81,11 @@ if [ -z "${WEBHOOK_SECRET:-}" ]; then
   echo "⚠  WEBHOOK_SECRET not set — sending without signature verification"
 fi
 
-# ── Determine auth header (header-based auth only) ──────────────────────────
+# ── Determine auth header (X-Gahwa-Webhook-Secret only) ────────────────────
+# Custom header to avoid Google's auth proxy intercepting standard headers.
 AUTH_HEADER=""
 if [ -n "${WEBHOOK_SECRET:-}" ]; then
-  AUTH_HEADER="-H \"Authorization: Bearer ${WEBHOOK_SECRET}\""
+  AUTH_HEADER="-H \"X-Gahwa-Webhook-Secret: ${WEBHOOK_SECRET}\""
 fi
 echo "🚀 Gahwa Newsletter — Push to Apps Script"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

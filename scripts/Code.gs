@@ -570,15 +570,21 @@ function doPost(e) {
     var contents = JSON.parse(e.postData.contents);
 
     // ── HEADER-BASED AUTHENTICATION (single canonical model) ────────────
-    // Read secret ONLY from Authorization header.
+    // Read secret ONLY from X-Gahwa-Webhook-Secret header.
+    // Custom header avoids Google's auth proxy intercepting "Authorization: Bearer".
     // No PropertiesService dependency for auth validation.
     // No fallback secret retrieval logic.
-    var authHeader = e.headers?.Authorization;
+    var authHeader = e.headers?.['X-Gahwa-Webhook-Secret'];
     var secretToken = '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa';
 
+    // Compare directly — raw secret or Bearer-prefixed both work for backward compat
     var tokenFromHeader = null;
-    if (authHeader && authHeader.indexOf('Bearer ') === 0) {
-      tokenFromHeader = authHeader.substring(7);
+    if (authHeader) {
+      if (authHeader.indexOf('Bearer ') === 0) {
+        tokenFromHeader = authHeader.substring(7);
+      } else {
+        tokenFromHeader = authHeader;
+      }
     }
 
     if (!tokenFromHeader || tokenFromHeader !== secretToken) {
