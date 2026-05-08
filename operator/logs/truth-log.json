@@ -313,5 +313,26 @@
       "mismatchRate": 21,
       "recoveryDependency": "none"
     }
+  },
+  {
+    "runId": "daily-newsletter-2026-05-08",
+    "timestamp": "2026-05-08T08:50:49.963Z",
+    "declaredState": "SUCCESS",
+    "verifiedState": "CONFIRMED_SUCCESS",
+    "sources": {
+      "git": true,
+      "appsScript": true,
+      "email": true
+    },
+    "mismatch": false,
+    "notes": "All 3 verification sources confirm success",
+    "deliveryId": "daily-newsletter-2026-05-08-c7b0b32",
+    "job": "daily-newsletter",
+    "gitHash": "c7b0b32a23c852462c5a472f98979abb1f2fa9d3",
+    "healthScore": {
+      "truthAccuracy": 80,
+      "mismatchRate": 20,
+      "recoveryDependency": "none"
+    }
   }
 ]

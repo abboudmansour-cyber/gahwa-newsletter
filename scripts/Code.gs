@@ -574,7 +574,9 @@ function doPost(e) {
     // Custom header avoids Google's auth proxy intercepting "Authorization: Bearer".
     // No PropertiesService dependency for auth validation.
     // No fallback secret retrieval logic.
-    var authHeader = e.headers?.['X-Gahwa-Webhook-Secret'];
+    // Apps Script normalizes header keys to lowercase.
+    // Check both cases for robust lookup (e.g., node-fetch vs curl vs custom agents).
+    var authHeader = e.headers?.['X-Gahwa-Webhook-Secret'] || e.headers?.['x-gahwa-webhook-secret'];
     var secretToken = '89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa';
 
     // Compare directly — raw secret or Bearer-prefixed both work for backward compat
