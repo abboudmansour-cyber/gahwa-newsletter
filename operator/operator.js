@@ -500,11 +500,32 @@ async function pushToAppsScript(ctx, filePath = "output/latest-newsletter.json")
       console.log(`   ─── Attempt ${attempt} of ${MAX_ATTEMPTS} ───`);
 
 
-      const res = await fetch(webhookUrl, {
+      // ── APPS SCRIPT POST HANDLING ─────────────────────────────────────
+      // Apps Script Web Apps redirect POST → GET via 302 to /usercallback.
+      // Using redirect: "manual" to capture the redirect URL,
+      // then manually GET the callback URL which processes the POST payload.
+      // This preserves the Authorization header across the redirect chain.
+      const postRes = await fetch(webhookUrl, {
         method: "POST",
+        redirect: "manual",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(payload),
       });
+
+      let res = postRes;
+
+      // If we got a 302 redirect (standard Apps Script behavior),
+      // follow it with a GET to the callback URL
+      if (postRes.status >= 300 && postRes.status < 400) {
+        const redirectUrl = postRes.headers.get("location");
+        if (redirectUrl) {
+          console.log(`   ↪️ Following redirect to callback URL...`);
+          res = await fetch(redirectUrl, {
+            method: "GET",
+            headers: { ...authHeaders },
+          });
+        }
+      }
 
       const body = await res.text();
 
