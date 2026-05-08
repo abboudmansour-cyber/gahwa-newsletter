@@ -50,3 +50,7 @@ Delivery ID: daily-newsletter-2026-05-08-5029258
 --- Delivery Report: 2026-05-08T11:32:23.300Z ---
 HTTP 200 — VALIDATED SUCCESS
 Delivery ID: daily-newsletter-2026-05-08-3c5adf6
+
+--- Delivery Report: 2026-05-08T11:46:37.825Z ---
+HTTP 200 — VALIDATED SUCCESS
+Delivery ID: daily-newsletter-2026-05-08-268332a

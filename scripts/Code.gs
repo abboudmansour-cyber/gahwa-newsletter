@@ -612,6 +612,7 @@ function buildPlainHtmlBody(contents) {
   var dateStr = new Date().toDateString();
   var html = "";
 
+  html += "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body>";
   html += "<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a2e;\">";
   html += "<h1 style=\"color: #1a1a2e; border-bottom: 2px solid #c9a96e; padding-bottom: 10px;\">" + title + "</h1>";
   html += "<p style=\"color: #666; font-size: 14px;\">" + dateStr + "</p>";
@@ -631,7 +632,7 @@ function buildPlainHtmlBody(contents) {
 
   html += "<br><hr style=\"border: none; border-top: 1px solid #eee;\">";
   html += "<p style=\"font-size: 12px; color: #999; text-align: center;\">" + CONFIG.MAILING_ADDRESS + "</p>";
-  html += "</div>";
+  html += "</div></body></html>";
 
   return html;
 }
@@ -802,6 +803,7 @@ function doPost(e) {
         + "\", htmlBody length=" + htmlBody.length);
 
       Logger.log("STEP 6 — calling GmailApp.sendEmail");
+      htmlBody = htmlBody.replace(/\uFFFD/g, "");
       try {
         GmailApp.sendEmail(CONFIG.GAHWA_EMAIL, subject, '', {
           htmlBody: htmlBody
