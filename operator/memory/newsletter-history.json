@@ -223,6 +223,13 @@
       "scores": {},
       "issues": [],
       "commit": "5a229fb7bf3e420b4322f9b91a47aa06ddfc58a9"
+    },
+    {
+      "date": "2026-05-08T00:12:17.850Z",
+      "job": "daily-newsletter",
+      "scores": {},
+      "issues": [],
+      "commit": "7bdaae4a28ce03a35887496373ea5cf83866b6af"
     }
   ]
 }
