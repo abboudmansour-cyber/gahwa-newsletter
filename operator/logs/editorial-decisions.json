@@ -8888,5 +8888,259 @@
       }
     ],
     "editorialRationale": "Included 8 stories (2 macro, 2 markets, 2 geopolitics, 2 ai_tech) — all passed GCC relevance >= 7, signal strength >= 6, noise <= 4, and category balance enforced at max 2 per category. Deferred 26 stories for future runs — had partial merit but didn't meet full inclusion thresholds (1 for LOW_GCC_RELEVANCE, 7 for CATEGORY_BALANCE (max 2/macro), 6 for CATEGORY_BALANCE (max 2/markets), 6 for CATEGORY_BALANCE (max 2/geopolitics), 6 for CATEGORY_BALANCE (max 2/ai_tech))."
+  },
+  {
+    "runId": "daily-newsletter-2026-05-08",
+    "timestamp": "2026-05-08T12:30:19.445Z",
+    "includedStories": [
+      {
+        "summary": "Brent crude trades near $78/bbl as OPEC+ maintains gradual output normalization amid global demand uncertainty.",
+        "signalType": "MACRO",
+        "region": "GCC",
+        "scores": {
+          "relevanceToGCC": 10,
+          "economicImpact": 9,
+          "signalStrength": 10,
+          "noiseLevel": 1
+        }
+      },
+      {
+        "summary": "US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg a",
+        "signalType": "MACRO",
+        "region": "GCC",
+        "scores": {
+          "relevanceToGCC": 10,
+          "economicImpact": 9,
+          "signalStrength": 10,
+          "noiseLevel": 1
+        }
+      },
+      {
+        "summary": "Saudi Aramco shares stabilize around SAR 28.50 as sustained dividend yield of 6.2% attracts institutional flows despite ",
+        "signalType": "MARKET",
+        "region": "KSA",
+        "scores": {
+          "relevanceToGCC": 9,
+          "economicImpact": 8,
+          "signalStrength": 10,
+          "noiseLevel": 1
+        }
+      },
+      {
+        "summary": "GCC banking sector shows robust NIM expansion as higher-for-longer rate environment boosts lending income — SNB, QNB, FA",
+        "signalType": "MARKET",
+        "region": "GCC",
+        "scores": {
+          "relevanceToGCC": 10,
+          "economicImpact": 8,
+          "signalStrength": 9,
+          "noiseLevel": 1
+        }
+      },
+      {
+        "summary": "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline agains",
+        "signalType": "GEO",
+        "region": "GCC",
+        "scores": {
+          "relevanceToGCC": 10,
+          "economicImpact": 7,
+          "signalStrength": 10,
+          "noiseLevel": 1
+        }
+      },
+      {
+        "summary": "GCC-China trade volumes exceed $350B annually with yuan-denominated oil contracts gaining traction, signaling de-dollari",
+        "signalType": "GEO",
+        "region": "GCC",
+        "scores": {
+          "relevanceToGCC": 10,
+          "economicImpact": 7,
+          "signalStrength": 9,
+          "noiseLevel": 1
+        }
+      },
+      {
+        "summary": "GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale — digital banking adopt",
+        "signalType": "AI",
+        "region": "GCC",
+        "scores": {
+          "relevanceToGCC": 10,
+          "economicImpact": 6,
+          "signalStrength": 9,
+          "noiseLevel": 2
+        }
+      },
+      {
+        "summary": "Saudi Arabia accelerates NEOM AI City and data center investments with $15B committed to GPU clusters and sovereign AI i",
+        "signalType": "AI",
+        "region": "KSA",
+        "scores": {
+          "relevanceToGCC": 9,
+          "economicImpact": 6,
+          "signalStrength": 9,
+          "noiseLevel": 2
+        }
+      }
+    ],
+    "excludedStories": [],
+    "deferredStories": [
+      {
+        "summary": "Qatar leverages LNG position to mediate regional disputes and secure long-term energy supply agreements with European an",
+        "signalType": "GEO",
+        "region": "QA",
+        "reason": "LOW_GCC_RELEVANCE"
+      },
+      {
+        "summary": "GCC oil revenues forecast to sustain fiscal breakeven at current production levels, with Saudi Arabia needing ~$85/bbl f",
+        "signalType": "MACRO",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/macro)"
+      },
+      {
+        "summary": "GCC inflation remains contained at 2.1-2.8% YoY, driven by housing and food costs, below global averages.",
+        "signalType": "MACRO",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/macro)"
+      },
+      {
+        "summary": "GCC non-oil GDP expands 4.2% YoY driven by tourism, logistics, financial services, and manufacturing — diversification m",
+        "signalType": "MACRO",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/macro)"
+      },
+      {
+        "summary": "GCC combined fiscal surplus projected at $45B for FY2026 as non-oil revenue growth offsets moderate oil price environmen",
+        "signalType": "MACRO",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/macro)"
+      },
+      {
+        "summary": "PIF total assets under management surpass $925B, with accelerated domestic deployment in giga-projects and international",
+        "signalType": "MACRO",
+        "region": "KSA",
+        "reason": "CATEGORY_BALANCE (max 2/macro)"
+      },
+      {
+        "summary": "ADIA and Mubadala increase allocation to private credit and infrastructure, signaling shift toward yield-generating alte",
+        "signalType": "MACRO",
+        "region": "UAE",
+        "reason": "CATEGORY_BALANCE (max 2/macro)"
+      },
+      {
+        "summary": "Tadawul All Share Index (TASI) trades near 12,450, supported by banking and materials sectors, with YTD gains of 8.3%.",
+        "signalType": "MARKET",
+        "region": "KSA",
+        "reason": "CATEGORY_BALANCE (max 2/markets)"
+      },
+      {
+        "summary": "ADX and DFM indices mixed — Abu Dhabi index gains 0.8% on ADNOC and banking support, while Dubai trades flat on real est",
+        "signalType": "MARKET",
+        "region": "UAE",
+        "reason": "CATEGORY_BALANCE (max 2/markets)"
+      },
+      {
+        "summary": "GCC IPO pipeline remains active with 8+ listings in Q2 2026 across Tadawul, ADX, and QSE — healthcare and logistics sect",
+        "signalType": "MARKET",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/markets)"
+      },
+      {
+        "summary": "Red Sea shipping disruptions continue to impact GCC port throughput and insurance costs, though maritime security patrol",
+        "signalType": "GEO",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/geopolitics)"
+      },
+      {
+        "summary": "Qatar GDP growth moderates to 2.5% as LNG expansion projects reach operational phase and non-energy sector diversificati",
+        "signalType": "MACRO",
+        "region": "QA",
+        "reason": "CATEGORY_BALANCE (max 2/macro)"
+      },
+      {
+        "summary": "Qatar Energy index rises 1.2% on North Field LNG expansion progress and sustained Asian demand for LNG contracts.",
+        "signalType": "MARKET",
+        "region": "QA",
+        "reason": "CATEGORY_BALANCE (max 2/markets)"
+      },
+      {
+        "summary": "Dubai real estate index corrects 2.1% as Emaar and DAMAC face profit-taking following 18-month rally — transaction volum",
+        "signalType": "MARKET",
+        "region": "UAE",
+        "reason": "CATEGORY_BALANCE (max 2/markets)"
+      },
+      {
+        "summary": "UAE logistics and transport stocks outperform on e-commerce growth and port expansion — DP World, AD Ports, and Aramex s",
+        "signalType": "MARKET",
+        "region": "UAE",
+        "reason": "CATEGORY_BALANCE (max 2/markets)"
+      },
+      {
+        "summary": "Saudi-Iran diplomatic engagement continues with embassy operations normalized, though regional proxy competition in Yeme",
+        "signalType": "GEO",
+        "region": "KSA",
+        "reason": "CATEGORY_BALANCE (max 2/geopolitics)"
+      },
+      {
+        "summary": "UAE AI Ministry launches national AI adoption framework targeting 15% GDP contribution from AI by 2031, with mandatory f",
+        "signalType": "AI",
+        "region": "UAE",
+        "reason": "CATEGORY_BALANCE (max 2/ai_tech)"
+      },
+      {
+        "summary": "GCC AI startup funding reaches $1.2B in Q1 2026, with enterprise AI, healthcare AI, and fintech AI capturing 80% of deal",
+        "signalType": "AI",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/ai_tech)"
+      },
+      {
+        "summary": "GCC cyber security spending exceeds $6B as AI-powered threat detection and national cyber resilience frameworks become p",
+        "signalType": "AI",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/ai_tech)"
+      },
+      {
+        "summary": "GCC-India strategic partnership deepens with food security deals, energy cooperation, and expanded air transport agreeme",
+        "signalType": "GEO",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/geopolitics)"
+      },
+      {
+        "summary": "Saudi Arabia expands tourism and business visa reforms, including 5-year multiple-entry visas for 49 countries, boosting",
+        "signalType": "GEO",
+        "region": "KSA",
+        "reason": "CATEGORY_BALANCE (max 2/geopolitics)"
+      },
+      {
+        "summary": "UAE-Israel economic corridor expands with $3.5B in bilateral trade, technology partnerships, and investment flows under ",
+        "signalType": "GEO",
+        "region": "UAE",
+        "reason": "CATEGORY_BALANCE (max 2/geopolitics)"
+      },
+      {
+        "summary": "GCC-EU Free Trade Agreement negotiations resume after 15-year hiatus, focusing on services, digital trade, and clean ene",
+        "signalType": "GEO",
+        "region": "GCC",
+        "reason": "CATEGORY_BALANCE (max 2/geopolitics)"
+      },
+      {
+        "summary": "Saudi Personal Data Protection Law (PDPL) enforcement phase triggers $500M+ in compliance spending, driving demand for l",
+        "signalType": "AI",
+        "region": "KSA",
+        "reason": "CATEGORY_BALANCE (max 2/ai_tech)"
+      },
+      {
+        "summary": "Saudi cloud services market grows 28% YoY to $4.2B as Oracle, Microsoft, and Google expand local data center regions to ",
+        "signalType": "AI",
+        "region": "KSA",
+        "reason": "CATEGORY_BALANCE (max 2/ai_tech)"
+      },
+      {
+        "summary": "UAE launches Global AI Talent Visa program, attracting 2,500+ AI researchers and engineers, targeting top-10 global AI t",
+        "signalType": "AI",
+        "region": "UAE",
+        "reason": "CATEGORY_BALANCE (max 2/ai_tech)"
+      }
+    ],
+    "editorialRationale": "Included 8 stories (2 macro, 2 markets, 2 geopolitics, 2 ai_tech) — all passed GCC relevance >= 7, signal strength >= 6, noise <= 4, and category balance enforced at max 2 per category. Deferred 26 stories for future runs — had partial merit but didn't meet full inclusion thresholds (1 for LOW_GCC_RELEVANCE, 7 for CATEGORY_BALANCE (max 2/macro), 6 for CATEGORY_BALANCE (max 2/markets), 6 for CATEGORY_BALANCE (max 2/geopolitics), 6 for CATEGORY_BALANCE (max 2/ai_tech))."
   }
 ]
