@@ -127,6 +127,19 @@ function isPathSafe(targetPath) {
 }
 
 // -----------------------------
+// UTF-8 INVARIANT GATE
+// Applied to all string values in the newsletter object before JSON serialization.
+// Catches corruption that entered as JSON escape sequences (�) which survive
+// raw-text sanitization but become live U+FFFD characters after JSON.parse.
+// -----------------------------
+function _cleanStr(s) {
+  return s
+    .replace(/\uFFFD/g, "")
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "");
+}
+
+// -----------------------------
 // EXECUTE FILE OPS
 // -----------------------------
 function writeFile(filePath, content) {
@@ -666,7 +679,7 @@ async function executePlan(plan, ctx) {
         const newsletter = await generateNewsletterContent(ctx);
 
         // Save to output/latest-newsletter.json
-        writeFile(outputPath, JSON.stringify(newsletter, null, 2));
+        writeFile(outputPath, JSON.stringify(newsletter, (_k, v) => typeof v === "string" ? _cleanStr(v) : v, 2));
         console.log(`✅ [STEP SUCCESS] generate_newsletter — output/latest-newsletter.json`);
         success++;
         continue;

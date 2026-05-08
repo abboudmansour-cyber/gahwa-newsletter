@@ -128,6 +128,13 @@ function writeFileSyncSafe(filePath, content) {
   fs.writeFileSync(filePath, content, "utf-8");
 }
 
+function _cleanStr(s) {
+  return s
+    .replace(/\uFFFD/g, "")
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "");
+}
+
 /**
  * Check if we already ran successfully today (idempotency guard).
  * Uses a daily marker file: /operator/output/.daily-marker-YYYY-MM-DD
@@ -607,7 +614,7 @@ function saveNewsletter(newsletter) {
     return;
   }
 
-  writeFileSyncSafe(OUTPUT_FILE, JSON.stringify(newsletter, null, 2));
+  writeFileSyncSafe(OUTPUT_FILE, JSON.stringify(newsletter, (_k, v) => typeof v === "string" ? _cleanStr(v) : v, 2));
   log(`[FILE SAVED] ${OUTPUT_FILE} (${JSON.stringify(newsletter).length} bytes)`);
 }
 

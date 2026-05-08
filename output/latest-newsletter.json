@@ -4,33 +4,28 @@
   "sections": [
     {
       "headline": "🔎 GCC Intelligence Signals",
-      "summary": "US Federal Reserve holds rates at 4.25-4.50%, with GCC central banks expected to maintain currency peg alignment. Brent crude trades near $78/bbl as OPEC+ extends 2.2M bpd voluntary cuts. GCC banking sector shows robust NIM expansion, and fintech deploys AI-driven credit scoring at scale with digital banking adoption reaching 65% in KSA and 72% in UAE.",
-      "insight": "The macro backdrop remains supportive for GCC financials and sovereign fiscal planning, with higher-for-longer rates boosting bank margins and stable oil prices underpinning budget execution."
+      "summary": "Top macro driver: US Federal Reserve holds rates at 4.25-4.50% — GCC central banks (SAMA, UAE CB, QCB) expected to maintain currency peg alignment. Top market movement: GCC banking sector shows robust NIM expansion as higher-for-longer rate environment boosts lending income — SNB, QNB, FAB report strong quarterly metrics. Top geopolitical shift: OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown signals. Top AI/tech catalyst: GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale — digital banking adoption reaches 65% in KSA and 72% in UAE.",
+      "insight": "This foundation layer sets the macro, market, geopolitical, and tech context for all narratives below."
     },
     {
-      "headline": "US Fed Holds Rates, GCC Central Banks Align",
-      "summary": "The US Federal Reserve held rates at 4.25-4.50%, prompting SAMA, UAE CB, and QCB to maintain currency peg alignment. This higher-for-longer rate environment continues to boost GCC banking sector NIMs, with SNB, QNB, and FAB reporting strong quarterly metrics.",
-      "insight": "GCC banks are positioned to benefit from sustained net interest income expansion, reinforcing the sector's attractiveness for institutional investors."
+      "headline": "Fed Holds Rates; GCC Central Banks Peg Aligned",
+      "summary": "The US Federal Reserve held rates at 4.25-4.50%, and GCC central banks (SAMA, UAE CB, QCB) are expected to maintain currency peg alignment. Brent crude trades near $78/bbl as OPEC+ extends 2.2M bpd voluntary cuts amid global demand uncertainty.",
+      "insight": "Higher-for-longer rates support GCC banking NIM expansion and reinforce the dollar peg, while OPEC+ discipline keeps oil prices stable, underpinning fiscal revenues."
     },
     {
-      "headline": "Brent Crude Near $78 as OPEC+ Maintains Cautious Output",
-      "summary": "Brent crude trades near $78/bbl as OPEC+ extends 2.2M bpd voluntary cuts, balancing market share discipline against global demand slowdown signals. Saudi Aramco shares stabilize around SAR 28.50 with a 6.2% dividend yield attracting institutional flows.",
-      "insight": "Stable oil prices and disciplined OPEC+ strategy support GCC fiscal revenues and sovereign wealth fund capital deployment plans."
+      "headline": "GCC Banking Sector Benefits from Higher-for-Longer Rates",
+      "summary": "GCC banking sector shows robust NIM expansion as higher-for-longer rate environment boosts lending income — SNB, QNB, FAB report strong quarterly metrics. Saudi Aramco shares stabilize around SAR 28.50 with a 6.2% dividend yield attracting institutional flows.",
+      "insight": "Institutional capital is rotating into GCC banks and high-dividend stocks, signaling confidence in the region's financial sector resilience."
     },
     {
-      "headline": "GCC-China Trade Surpasses $350B, Yuan Contracts Gain Traction",
-      "summary": "GCC-China trade volumes exceed $350B annually, with yuan-denominated oil contracts gaining traction, signaling de-dollarization momentum in energy trade. This aligns with the GCC's multipolar alignment strategy.",
-      "insight": "The shift toward yuan-denominated energy trade could gradually reduce dollar dependency, reshaping global energy finance corridors."
+      "headline": "OPEC+ Extends Cuts; GCC-China Trade Deepens",
+      "summary": "OPEC+ maintains cautious output strategy with 2.2M bpd voluntary cuts extended, balancing market share discipline against global demand slowdown signals. GCC-China trade volumes exceed $350B annually with yuan-denominated oil contracts gaining traction, signaling de-dollarization momentum in energy trade.",
+      "insight": "The dual strategy of output restraint and yuan-based trade reflects GCC states' push for economic sovereignty and multipolar alignment."
     },
     {
-      "headline": "GCC Fintech Deploys AI at Scale, Digital Banking Adoption Surges",
-      "summary": "GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale. Digital banking adoption reaches 65% in KSA and 72% in UAE, driving financial inclusion and operational efficiency.",
-      "insight": "AI-powered fintech is accelerating the region's digital financial infrastructure, reducing costs and expanding access to credit."
-    },
-    {
-      "headline": "Saudi Arabia Commits $15B to NEOM AI City and Sovereign AI Infrastructure",
-      "summary": "Saudi Arabia accelerates NEOM AI City and data center investments with $15B committed to GPU clusters and sovereign AI infrastructure buildout, reinforcing Vision 2030's tech transformation pillar.",
-      "insight": "This massive investment signals Saudi Arabia's ambition to become a global AI hub, attracting tech talent and foreign direct investment."
+      "headline": "GCC Fintech Scales AI-Driven Services; Digital Banking Hits 65-72%",
+      "summary": "GCC fintech sector deploys AI-driven credit scoring, fraud detection, and robo-advisory at scale — digital banking adoption reaches 65% in KSA and 72% in UAE. Saudi Arabia accelerates NEOM AI City and data center investments with $15B committed to GPU clusters and sovereign AI infrastructure buildout.",
+      "insight": "The region is building sovereign digital infrastructure to reduce external dependencies and position itself as a global AI hub."
     }
   ],
   "strategicInsights": [
