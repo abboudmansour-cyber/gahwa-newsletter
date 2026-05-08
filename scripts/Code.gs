@@ -523,8 +523,8 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.verify) {
     var verifyDeliveryId = e.parameter.verify;
     var lastSent = props.getProperty('lastEmailSent');
-    var isDuplicate = isDuplicate(verifyDeliveryId);
-    var verified = (lastSent === verifyDeliveryId) || isDuplicate;
+    var dupFound = isDuplicate(verifyDeliveryId);
+    var verified = (lastSent === verifyDeliveryId) || dupFound;
 
     return ContentService
       .createTextOutput(JSON.stringify({
@@ -532,7 +532,7 @@ function doGet(e) {
         verified: verified,
         deliveryId: verifyDeliveryId,
         lastEmailSent: lastSent,
-        duplicateExists: isDuplicate
+        duplicateExists: dupFound
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }

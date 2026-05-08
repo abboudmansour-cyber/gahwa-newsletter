@@ -1,24 +1,10 @@
-# Production Inconsistency Fixes
+# Stability Mode — Presentation & Editorial Hardening
 
-## Progress
-
-- [x] **Fix A**: runId propagation — pipelineRunId used everywhere
-  - [x] evaluateTruth() now uses pipelineRunId (line 917)
-  - [x] optimizer now uses pipelineRunId (line 964)
-  - [x] fuseSignals() already receives pipelineRunId correctly
-
-- [x] **Fix B**: stale agent state cleanup
-  - [x] agent-state.json sanitization (test-run-*, empty, undefined) — lines 721-743
-  - [x] runtime/state.json sanitization (stale activeRunId, consecutiveFailures) — lines 745-770
-
-- [x] **Fix C**: webhook secret alignment — Code.gs
-  - [x] Auto-bootstrap with verification loop (3 attempts with sleep/retry)
-  - [x] Same shared secret: `89e9d1671f9a13dbd3cbdc5fd90a2fdecaff7a5d635b81aa`
-
-- [x] **Fix D**: truth evaluator git verification
-  - [x] `git branch -r --contains <hash>` check to verify commit was pushed
-  - [x] `pushedToRemote` boolean eliminates false negatives
-
-## Verification
-
-- [ ] Run: `node operator/operator.js daily-newsletter`
+- [x] Analyze all allowed files (Html.gs, Render.gs, Utilities.gs, Code.gs, Parser.gs, prompts)
+- [x] Identify broken Unicode sequences and CSS variable issues
+- [ ] **1. UTF-8 Hardening** — Fix malformed `\U` emoji sequences, add charset hardening
+- [ ] **2. CSS Variable Resolution** — Replace `--var()` with concrete values for email clients
+- [ ] **3. HTML Email Upgrade** — Tighter typography, exec-brief spacing, mobile-friendly
+- [ ] **4. Editorial De-Robotification** — Update newsletter prompt v11 with banned phrases
+- [ ] **5. Duplicate Language Filter** — Add dedup post-processing to Utilities.gs
+- [ ] **6. Validation** — Generate newsletter, verify HTML renders, email sends, truth passes

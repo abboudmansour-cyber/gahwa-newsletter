@@ -1,10 +1,10 @@
 // ╔══════════════════════════════════════════════════════════════════════╗
-// ║  RENDER.gs &#8212; HTML section renderers &#183; SVG visual builders
-// ║  THE GAHWA &#183; STARTUP SCOUT OS v5
+// ║  RENDER.gs — HTML section renderers · SVG visual builders
+// ║  THE GAHWA · STARTUP SCOUT OS v5
 // ╚══════════════════════════════════════════════════════════════════════╝
 
 // ════════════════════════════════════════════════════════════════════════
-// SCOUT INTERNAL &#8212; SECTION RENDERERS
+// SCOUT INTERNAL — SECTION RENDERERS
 // ════════════════════════════════════════════════════════════════════════
 
 // @agent-target: renderShareBar
@@ -13,16 +13,16 @@ function renderShareBar(shareUrl, sod) {
   var preview = sod ? sod.substring(0, 80) + (sod.length > 80 ? '...' : '') : 'Read today\'s Startup Scout';
   return '<div class="share-bar">\n' +
     '<div class="share-inner">\n' +
-    '<div class="share-label">&#128242; Share on WhatsApp</div>\n' +
+    '<div class="share-label">📲 Share on WhatsApp</div>\n' +
     '<div class="share-url" onclick="navigator.clipboard.writeText(\'' + shareUrl + '\').then(function(){var el=document.getElementById(\'share-copied\');el.style.opacity=1;setTimeout(function(){el.style.opacity=0},2000)})" title="Click to copy">' + shareUrl + '</div>\n' +
-    '<div id="share-copied" class="share-copied">&#9989; Copied!</div>\n' +
-    '<a class="share-btn" href="https://wa.me/?text=' + encodeURIComponent('&#128225; ' + preview + ' ' + shareUrl) + '" target="_blank">Share via WhatsApp</a>\n' +
+    '<div id="share-copied" class="share-copied">✅ Copied!</div>\n' +
+    '<a class="share-btn" href="https://wa.me/?text=' + encodeURIComponent('📡 ' + preview + ' ' + shareUrl) + '" target="_blank">Share via WhatsApp</a>\n' +
     '</div>\n</div>\n';
 }
 
 // @agent-target: renderMasthead
 function renderMasthead(dateStr, nlCount, sigCount, brief, streakTxt, cost, runMin) {
-  var themes   = brief.themes ? brief.themes.split('&#183;').map(function(t) {
+  var themes   = brief.themes ? brief.themes.split('·').map(function(t) {
     return '<span class="mast-theme">' + h(t.trim()) + '</span>';
   }).join('') : '';
   var issueNum = updateIssueNumber();
@@ -53,7 +53,7 @@ function renderFitness(fit) {
   if (!fit || fit.trim().length < 5) return '';
   return '<div class="fitness">\n' +
     '<div class="fitness-label">TODAY\'S MARCHING ORDERS</div>\n' +
-    '<div class="fitness-text">' + h(fit).replace(/\n/g, '<br>').replace(/\r/g, '<br>').replace(/---/g, '<span style="color:#374151">&#8212;</span>') + '</div>\n' +
+    '<div class="fitness-text">' + h(fit).replace(/\n/g, '<br>').replace(/\r/g, '<br>').replace(/---/g, '<span style="color:#374151">—</span>') + '</div>\n' +
     '</div>\n';
 }
 
@@ -149,13 +149,13 @@ function renderSignals(signals, voice) {
         html += '<div class="sig-ctx"><strong>REMEMBER</strong> ' + h(s.ctx.replace(/^REMEMBER:\s*/i, '')) + '</div>\n';
       }
       if (s.url && s.url.length > 5 && s.url !== 'N/A') {
-        html += '<div class="sig-src">&#128206; <a href="' + h(s.url) + '" target="_blank" rel="noopener">Read source</a></div>\n';
+        html += '<div class="sig-src">📎 <a href="' + h(s.url) + '" target="_blank" rel="noopener">Read source</a></div>\n';
       }
-      html += '<div class="sig-w"><strong>&#8594;</strong> ' + h(s.whynow) + '</div>\n';
+      html += '<div class="sig-w"><strong>→</strong> ' + h(s.whynow) + '</div>\n';
     } else {
       html += '<div class="sig-compact">' + h(s.whynow) + '</div>\n';
       if (s.url && s.url.length > 5 && s.url !== 'N/A') {
-        html += '<div class="sig-src">&#128206; <a href="' + h(s.url) + '" target="_blank" rel="noopener">Read source</a></div>\n';
+        html += '<div class="sig-src">📎 <a href="' + h(s.url) + '" target="_blank" rel="noopener">Read source</a></div>\n';
       }
     }
     html += '</div>\n</div>\n';
@@ -181,9 +181,9 @@ function renderThemes(text) {
     html += '<div class="theme">\n';
     html += '<div class="theme-title">' + h(title) + '</div>\n';
     if (sigs)   html += '<div class="theme-sigs">SIGNALS ' + h(sigs) + '</div>\n';
-    if (saudi)  html += '<div class="theme-block"><div class="theme-geo geo-sa">&#127480;&#127462; Saudi / GCC</div><div class="theme-txt">' + h(saudi) + '</div></div>\n';
-    if (mena)   html += '<div class="theme-block"><div class="theme-geo geo-me">&#127757; MENA</div><div class="theme-txt theme-txt-sm">' + h(mena) + '</div></div>\n';
-    if (global) html += '<div class="theme-block"><div class="theme-geo geo-gl">&#127760; Global</div><div class="theme-txt theme-txt-sm">' + h(global) + '</div></div>\n';
+    if (saudi)  html += '<div class="theme-block"><div class="theme-geo geo-sa">🇸🇦 Saudi / GCC</div><div class="theme-txt">' + h(saudi) + '</div></div>\n';
+    if (mena)   html += '<div class="theme-block"><div class="theme-geo geo-me">🌍 MENA</div><div class="theme-txt theme-txt-sm">' + h(mena) + '</div></div>\n';
+    if (global) html += '<div class="theme-block"><div class="theme-geo geo-gl">🌐 Global</div><div class="theme-txt theme-txt-sm">' + h(global) + '</div></div>\n';
     if (action) html += '<div class="theme-do">' + h(action) + '</div>\n';
     html += '</div>\n';
   });
@@ -230,14 +230,14 @@ function renderStartup(text) {
     html += '<div class="startup-hdr"><div><div class="startup-name">' + h(name) + '</div>';
     if (sigs) html += '<div class="startup-sigs">Combines signals ' + h(sigs) + '</div>';
     html += '</div>';
-    if (gcc) html += '<div class="startup-gcc-badge">&#127480;&#127462; GCC First</div>';
+    if (gcc) html += '<div class="startup-gcc-badge">🇸🇦 GCC First</div>';
     html += '</div>\n<div class="startup-body">\n';
     if (prob) html += srow('Problem',  prob);
     if (sol)  html += srow('Solution', sol);
     if (cus)  html += srow('Customer', cus);
     if (mod)  html += srow('Model',    mod);
     if (now)  html += '<div class="startup-row"><span class="startup-lbl">Why Now</span><div class="startup-val"><div class="startup-now">' + h(now) + '</div></div></div>\n';
-    if (gcc)  html += '<div class="startup-gcc">&#127480;&#127462; ' + h(gcc) + '</div>\n';
+    if (gcc)  html += '<div class="startup-gcc">🇸🇦 ' + h(gcc) + '</div>\n';
     html += '</div>\n</div>\n';
   });
   html += '</div>\n';
@@ -312,14 +312,14 @@ function renderFooter(dateStr, nlCount, cost, runMin, closer) {
     '<div class="footer-tagline">A Premium Daily Brew of Gulf Insight</div>\n' +
     (closer ?
       '<div class="footer-closer">' + h(closer) + '</div>\n' :
-      '<div class="footer-closer">See you tomorrow &#8212; same time, same Gulf, different signals.</div>\n') +
+      '<div class="footer-closer">See you tomorrow — same time, same Gulf, different signals.</div>\n') +
     '<div class="footer-compliance">\n' +
     h(CONFIG.MAILING_ADDRESS) + '<br>\n' +
-    '<a href="' + CONFIG.UNSUBSCRIBE_URL + '">Unsubscribe</a> &nbsp;&#183;&nbsp;\n' +
-    '<a href="' + CONFIG.PREFERENCES_URL + '">Manage Preferences</a> &nbsp;&#183;&nbsp;\n' +
+    '<a href="' + CONFIG.UNSUBSCRIBE_URL + '">Unsubscribe</a> &nbsp;·&nbsp;\n' +
+    '<a href="' + CONFIG.PREFERENCES_URL + '">Manage Preferences</a> &nbsp;·&nbsp;\n' +
     '<a href="' + CONFIG.BEEHIIV_URL + '">gahwa.beehiiv.com</a>\n' +
     '</div>\n' +
-    '<div class="footer-meta">' + h(dateStr) + ' &#183; ' + nlCount + ' newsletters &#183; The Gahwa Scout OS v5</div>\n' +
+    '<div class="footer-meta">' + h(dateStr) + ' · ' + nlCount + ' newsletters · The Gahwa Scout OS v5</div>\n' +
     '</div>\n';
 }
 
@@ -377,7 +377,7 @@ function buildChartSVG(chartBlock) {
     var isPos   = item.delta.charAt(0) === '+';
     var isNeg   = item.delta.charAt(0) === '-';
     var deltaBg = isPos ? '#16a34a' : (isNeg ? '#dc2626' : '#6b7280');
-    var dEmoji  = isPos ? '&#9650;' : (isNeg ? '&#9660;' : '');
+    var dEmoji  = isPos ? '▲' : (isNeg ? '▼' : '');
 
     if (item.hero) {
       bars += '<rect x="0" y="' + (y - 3) + '" width="' + svgW + '" height="' + (BAR_H + 6) + '" rx="4" fill="rgba(218,165,32,0.06)"/>';
@@ -397,7 +397,7 @@ function buildChartSVG(chartBlock) {
 
   var titleHtml   = chartTitle ? '<div style="font-family:Montserrat,sans-serif;font-size:14px;font-weight:800;color:#163550;line-height:1.35;margin-bottom:4px;">' + h(chartTitle) + '</div>' : '<div style="font-family:Montserrat,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#7C848C;margin-bottom:10px;">Today\'s numbers</div>';
   var insightHtml = chartInsight ? '<div style="font-family:Work Sans,sans-serif;font-size:12px;color:#7C848C;line-height:1.55;margin-top:10px;padding-top:10px;border-top:1px solid #E8E2D5;font-style:italic;">' + h(chartInsight) + '</div>' : '';
-  var legendHtml  = items.some(function(i) { return i.hero; }) ? '<div style="font-family:Montserrat,sans-serif;font-size:9px;font-weight:600;color:#AE7C3F;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">&#9733; Story bar highlighted</div>' : '';
+  var legendHtml  = items.some(function(i) { return i.hero; }) ? '<div style="font-family:Montserrat,sans-serif;font-size:9px;font-weight:600;color:#AE7C3F;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">★ Story bar highlighted</div>' : '';
 
   return '<div style="margin:0 0 20px;padding:18px 20px 14px;background:#FFFFFF;border-radius:8px;border:1px solid rgba(174,124,63,0.3);border-left:6px solid #163550;">' +
     titleHtml + legendHtml +
@@ -424,7 +424,7 @@ function buildStatCardSVG(statBlock) {
   if (delta && delta.trim() && delta.trim() !== '[leave blank]' && delta.trim() !== 'blank') {
     var isPos = delta.charAt(0) === '+';
     var isNeg = delta.charAt(0) === '-';
-    deltaHtml = '<div style="position:absolute;top:16px;right:16px;background:' + (isPos ? '#16a34a' : (isNeg ? '#dc2626' : '#7C848C')) + ';color:#fff;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;padding:4px 10px;border-radius:20px;white-space:nowrap;">' + (isPos ? '&#9650;' : (isNeg ? '&#9660;' : '&#8594;')) + ' ' + h(delta) + '</div>';
+    deltaHtml = '<div style="position:absolute;top:16px;right:16px;background:' + (isPos ? '#16a34a' : (isNeg ? '#dc2626' : '#7C848C')) + ';color:#fff;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;padding:4px 10px;border-radius:20px;white-space:nowrap;">' + (isPos ? '▲' : (isNeg ? '▼' : '→')) + ' ' + h(delta) + '</div>';
   }
 
   return '<div style="margin:0 0 20px;padding:22px 24px;background:#163550;border-radius:8px;border-top:3px solid #AE7C3F;position:relative;overflow:hidden;">' +
@@ -448,7 +448,7 @@ function buildInfographicSVG(infoBlock) {
 
   var infoTitle   = getField(infoBlock, 'INFOGRAPHIC_TITLE');
   var infoFraming = getField(infoBlock, 'INFOGRAPHIC_FRAMING');
-  var connector   = getField(infoBlock, 'CONNECTOR') || '&#8594;';
+  var connector   = getField(infoBlock, 'CONNECTOR') || '→';
 
   var items = [];
   infoBlock.split('\n').forEach(function(line) {
